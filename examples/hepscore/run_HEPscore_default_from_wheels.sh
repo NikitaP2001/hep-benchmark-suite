@@ -43,7 +43,7 @@ global:
   - hepscore
   mode: singularity
   publish: false
-  rundir: ./suite_results
+  rundir: $WORKDIR/suite_results
   show: true
   tags:
     site: $SITE
