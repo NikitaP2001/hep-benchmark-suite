@@ -261,6 +261,7 @@ def run_hepspec(conf, bench):
         'bmk_set'       : ' -s {}'.format(spec.get('bmk_set')),
         'mode'          : ' -m {}'.format(spec.get('mode')),
         'url_tarball'   : ' -u {}'.format(spec.get('url_tarball')),
+        'config'        : ' -c {}'.format(spec.get('config')),
         'workdir'       : ' -w {}'.format(conf['global'].get('rundir'))
     }
     _log.debug("spec arguments: %s", spec_args)
