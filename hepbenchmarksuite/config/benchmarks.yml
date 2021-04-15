@@ -42,9 +42,9 @@ activemq:
 # Section to configure HEPSpec06 benchmark
 hepspec06:
   # Use the docker registry
-  image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.0"
+  image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.1"
   # Use the CVMFS registry (only available in Singularity)
-  # image: "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.0"
+  # image: "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.1"
   # URL to fetch the hepspec06. It will only be used if the software
   # is  not found under hepspec_volume.
   url_tarball: "https://www.example.com/"
@@ -59,13 +59,17 @@ hepspec06:
   ## Specifies if benchmark is run on 32 or 64 bit mode
   ## Default is 64-bit
   # mode: 32
+  ## Custom compiler configuration only for studies
+  ## Will invalidate the SPEC score results
+  # config: a_spec_config_file_in_the_spec_repo_config
+
 
 # Section to configure Spec2017 benchmark
 spec2017:
   # Use the docker registry
-  image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.0"
+  image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.1"
   # Use the CVMFS registry (only available in Singularity)
-  # image: "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.0"
+  # image: "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.1"
   # URL to fetch the spec2017. It will only be used if the software
   # is not found under hepspec_volume.
   url_tarball: "https://www.example.com/"
@@ -80,6 +84,9 @@ spec2017:
   ## Specifies if benchmark is run on 32 or 64 bit mode
   ## Default is 64-bit
   # mode: 32
+  ## Custom compiler configuration only for studies
+  ## Will invalidate the SPEC score results
+  # config: a_spec_config_file_in_the_spec_repo_config
 
 # Section to configure HEPScore benchmark
 hepscore:

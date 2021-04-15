@@ -45,14 +45,14 @@ global:
   - hs06
   mode: singularity
   publish: true
-  rundir: $WORKDIR/suite_results
+  rundir: ${WORKDIR}/suite_results
   show: true
   tags:
     site: $SITE
 
 hepspec06:
   # Use the docker registry
-  image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.0"
+  image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.1"
   # URL to fetch the hepspec06. It will only be used if the software
   # is  not found under hepspec_volume.
   # url_tarball: "https://this_is_dummy_replace_me"
@@ -67,19 +67,22 @@ hepspec06:
   ## Specifies if benchmark is run on 32 or 64 bit mode
   ## Default is 64-bit
   mode: 32
+  ## Custom compiler configuration only for studies
+  ## Will invalidate the SPEC score results
+  # config: a_spec_config_file_in_the_spec_repo_config
 EOF2
 
 cd $WORKDIR
 export MYENV="env_bmk"        # Define the name of the environment.
 python3 -m venv $MYENV        # Create a directory with the virtual environment.
 source $MYENV/bin/activate    # Activate the environment.
-python3 -m pip install git+https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite.git@v2.0
+python3 -m pip install git+https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite.git@v2.1
 cat bmkrun_config.yml
 
 if [ `cat bmkrun_config.yml | grep "this_is_dummy_replace_me" | grep -c -v "#"` == 1 ];
 then
   echo -e "\nERROR. You are using the url_tarball parameter. Please replace the dummy url with a real one"
-  exit 1 
+  exit 1
 fi
 bmkrun -c bmkrun_config.yml
 
