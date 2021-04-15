@@ -45,7 +45,7 @@ global:
   - hs06
   mode: singularity
   publish: true
-  rundir: ./suite_results
+  rundir: $WORKDIR/suite_results
   show: true
   tags:
     site: $SITE
