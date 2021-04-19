@@ -74,6 +74,12 @@ class Extractor():
         if cmd.returncode != 0:
             cmd_reply = "not_available"
             _log.error(cmd_error)
+
+        # Force not_available when command return is empty
+        elif len(cmd_reply) == 0 and cmd.returncode == 0:
+            _log.debug('Result is empty: %s', cmd_reply)
+            cmd_reply = "not_available"
+
         else:
             # Convert bytes to text and remove \n
             try:
@@ -120,7 +126,7 @@ class Extractor():
             'Power_Policy': self.exec_cmd("cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor | sort | uniq"),
             'Power_Driver': self.exec_cmd("cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_driver   | sort | uniq"),
             'Microcode'   : self.exec_cmd("grep microcode /proc/cpuinfo | uniq | awk 'NR==1{print $3}'"),
-            'SMT_Enabled?': bool(self.exec_cmd("cat /sys/devices/system/cpu/smt/active"))
+            'SMT_Enabled' : self.exec_cmd("cat /sys/devices/system/cpu/smt/active")
         })
 
         return cpu
