@@ -208,7 +208,7 @@ class TestHWExtractor(unittest.TestCase):
                                                     },
                                          "STORAGE": { Optional(str) : Optional(str) },
                                          "CPU"    : { str : str,
-                                                      "SMT_Enabled?"     : bool,
+                                                      "SMT_Enabled"      : str,
                                                       "CPU_num"          : int,
                                                       "Threads_per_core" : int,
                                                       "Cores_per_socket" : int,

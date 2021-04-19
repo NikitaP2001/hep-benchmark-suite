@@ -23,7 +23,7 @@ LOG_HANDLER.setFormatter(LOG_FORMAT)
 logger.addHandler(LOG_HANDLER)
 
 # Collect data
-hw = Extractor()
+hw = Extractor(extra={'mode':''})
 hw.collect()
 
 # Print the output to stdout and save metadata to json file
