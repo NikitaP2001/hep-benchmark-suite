@@ -341,31 +341,50 @@ docker_spec2017:
 #####           BUILD & PUBLISH PACKAGE                #####
 ############################################################
 
-dist_hep-benchmark-suite:
-  stage: deploy
-  dependencies: []
-  environment:
-    # production keyword for gitlab value tracking
-    name: production
-    url: https://staging.example.com
+.build_wheel_common:
   script:
-    - yum install -y -q git python3-pip sshpass coreutils
     - python3 -m pip install --upgrade setuptools wheel pip
     - python3 -m pip wheel -r requirements.txt --wheel-dir=suite_wheels .
-    - export PKG_NAME="hep-benchmark-suite-wheels-${CI_COMMIT_TAG}.tar"
+    - export PKG_NAME="hep-benchmark-suite-wheels-${PY_VERSION}-${CI_COMMIT_TAG}.tar"
     - tar -cvf ${PKG_NAME} suite_wheels/
-    - export PKG_HASH=$(md5sum ${PKG_NAME} | cut -d ' ' -f 1)
-    - SSHPASS=${CI_CPUBMK} sshpass -v -e scp -v -oStrictHostKeyChecking=no -r ${PKG_NAME} cpubmk@lxplus.cern.ch:${CI_EOS_RELEASES}
+    - export PKG_HASH="$(sha256sum ${PKG_NAME}) $(date +%Y-%m-%d_%H%M) pipeline-${CI_PIPELINE_ID}"
+    - export FULL_RELEASE_PATH=${CI_EOS_RELEASES}/${CI_COMMIT_TAG}
+    - SSHPASS=${CI_CPUBMK} sshpass -v -e ssh -oStrictHostKeyChecking=no cpubmk@lxplus.cern.ch "[ -d ${FULL_RELEASE_PATH} ] || mkdir ${FULL_RELEASE_PATH}"
+    - SSHPASS=${CI_CPUBMK} sshpass -v -e ssh -oStrictHostKeyChecking=no cpubmk@lxplus.cern.ch "echo ${PKG_HASH} >> ${FULL_RELEASE_PATH}/sha256sum.txt"
+    - SSHPASS=${CI_CPUBMK} sshpass -v -e ssh -oStrictHostKeyChecking=no cpubmk@lxplus.cern.ch "echo ${CI_COMMIT_TAG} > ${CI_EOS_RELEASES}/latest"
+    - SSHPASS=${CI_CPUBMK} sshpass -v -e scp -v -oStrictHostKeyChecking=no -r ${PKG_NAME} cpubmk@lxplus.cern.ch:${FULL_RELEASE_PATH}
+  artifacts:
+    paths:
+      - suite_wheels
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v.*$/'
+
+build_py38_wheels:
+  stage: deploy
+  image: gitlab-registry.cern.ch/linuxsupport/c8-base
+  extends: .build_wheel_common
+  before_script:
+    - dnf install -y epel-release
+    - dnf install -y -q git python38 python38-pip sshpass
+    - export PY_VERSION="py38"
+
+build_py37_wheels:
+  stage: deploy
+  image: gitlab-registry.cern.ch/linuxsupport/cc7-base
+  extends: .build_wheel_common
+  before_script:
+    - yum install -y -q git python3-pip sshpass coreutils
+    - export PY_VERSION="py37"
+
+add_gitlab_release_info:
+  stage: deploy
+  image: gitlab-registry.cern.ch/linuxsupport/cc7-base
+  script:
     - |
       curl -X POST "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/releases" \
       --header "PRIVATE-TOKEN: ${CI_API_TOKEN}" \
       --header "Content-Type: application/json" \
-      --data "{\"tag_name\": \"${CI_COMMIT_TAG}\", \"name\": \"${CI_COMMIT_TAG}\", \"description\": \"${CI_COMMIT_TAG_MESSAGE:-No release notes.}\", \"assets\": { \"links\": [{ \"name\": \"HEP Benchmark Suite python wheels (md5sum: ${PKG_HASH})\", \"url\": \"${CI_WEB_RELEASES}/${PKG_NAME}\", \"link_type\":\"package\" }] }}" \
+      --data "{\"tag_name\": \"${CI_COMMIT_TAG}\", \"name\": \"${CI_COMMIT_TAG}\", \"description\": \"${CI_COMMIT_TAG_MESSAGE:-No release notes.}\", \"assets\": { \"links\": [{ \"name\": \"HEP Benchmark Suite Python3 wheels\", \"url\": \"${CI_WEB_RELEASES}/${CI_COMMIT_TAG}\", \"link_type\":\"other\" }] }}" \
       --fail --output "/dev/null" --silent --show-error --write-out "HTTP response: ${http_code:-OK}\n\n"
-    - curl -o retrieved_file ${CI_WEB_RELEASES}/${PKG_NAME}
-    - cmp retrieved_file ${PKG_NAME}
-  artifacts:
-    paths:
-      - suite_wheels
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v.*$/'
