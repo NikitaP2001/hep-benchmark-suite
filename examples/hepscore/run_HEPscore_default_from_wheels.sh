@@ -2,17 +2,17 @@
 
 #####################################################################
 # This script of example installs and runs the HEP-Benchmark-Suite
-# The Suite configuration file 
-#       bmkrun_config.yml 
+# The Suite configuration file
+#       bmkrun_config.yml
 # is included in the script itself.
 # The configuration script enables the benchmarks to run
-# and defines some meta-parameters, including tags as the SITE name.  
-# 
+# and defines some meta-parameters, including tags as the SITE name.
+#
 # In this example only the HEP-score benchmark is configured to run
 # with default configuration available in the HEP-score relase
 #
 # The only requirements to run are
-# git python3-pip singularity 
+# git python3-pip singularity
 #####################################################################
 
 #----------------------------------------------
@@ -29,7 +29,7 @@ WORKDIR=`pwd`/workdir
 mkdir -p $WORKDIR
 chmod a+rw -R $WORKDIR
 
-cat > $WORKDIR/bmkrun_config.yml <<EOF2 
+cat > $WORKDIR/bmkrun_config.yml <<EOF2
 activemq:
   server: dashb-mb.cern.ch
   topic: /topic/vm.spec
@@ -60,8 +60,23 @@ cd $WORKDIR
 export MYENV="env_bmk"        # Define the name of the environment.
 python3 -m venv $MYENV        # Create a directory with the virtual environment.
 source $MYENV/bin/activate    # Activate the environment.
-wheels_version=hep-benchmark-suite-wheels-v2.0.tar
-curl -O https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/${wheels_version}
+
+# Select wheel version
+PKG_VERSION="latest"          # The latest points always to latest stable release
+
+# Select Python3 version (py37, py38)
+PY_VERSION="py37"
+
+if [ $PKG_VERSION = "latest" ];
+then
+  echo "Latest release selected."
+  PKG_VERSION=$(curl --silent https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/latest)
+fi
+
+wheels_version="hep-benchmark-suite-wheels-${PY_VERSION}-${PKG_VERSION}.tar"
+echo -e "-> Downloading wheel: $wheels_version \n"
+
+curl -O "https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/${PKG_VERSION}/${wheels_version}"
 tar xvf ${wheels_version}
 python3 -m pip install suite_wheels/*.whl
 cat bmkrun_config.yml
