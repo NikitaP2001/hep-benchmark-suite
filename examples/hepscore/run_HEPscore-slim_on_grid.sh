@@ -2,18 +2,18 @@
 
 #####################################################################
 # This script of example installs and runs the HEP-Benchmark-Suite
-# The Suite configuration file 
-#       bmkrun_config_job.yml 
+# The Suite configuration file
+#       bmkrun_config_job.yml
 # is included in the script itself.
 # The configuration script enables the benchmarks to run
-# and defines some meta-parameters, including tags as the SITE name.  
-# 
+# and defines some meta-parameters, including tags as the SITE name.
+#
 # In this example only the HEP-score benchmark is configured to run.
 # It runs with a slim configuration hepscore_slim.yml ideal to run
-# in grid jobs (average duration: 40 min) 
+# in grid jobs (average duration: 40 min)
 #
 # The only requirements to run are
-# git python3-pip singularity 
+# git python3-pip singularity
 #####################################################################
 
 #----------------------------------------------
@@ -30,7 +30,7 @@ WORKDIR=`pwd`/workdir
 mkdir -p $WORKDIR
 chmod a+rw -R $WORKDIR
 
-cat > $WORKDIR/hepscore_slim.yml <<'EOF' 
+cat > $WORKDIR/hepscore_slim.yml <<'EOF'
 hepscore_benchmark:
   benchmarks:
     cms-gen-sim-bmk:
@@ -68,7 +68,7 @@ hepscore_benchmark:
     container_exec: singularity
 EOF
 
-cat > $WORKDIR/bmkrun_config_job.yml <<EOF2 
+cat > $WORKDIR/bmkrun_config_job.yml <<EOF2
 activemq:
   server: dashb-mb.cern.ch
   topic: /topic/vm.spec
@@ -99,7 +99,7 @@ cd $WORKDIR
 export MYENV="env_bmk"        # Define the name of the environment.
 python3 -m venv $MYENV        # Create a directory with the virtual environment.
 source $MYENV/bin/activate    # Activate the environment.
-python3 -m pip install git+https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite.git@v2.0
+python3 -m pip install git+https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite.git
 cat bmkrun_config_job.yml
 bmkrun -c bmkrun_config_job.yml
 

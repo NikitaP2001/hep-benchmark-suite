@@ -138,7 +138,7 @@ There are cases on which the user would like to keep current Python3 library ver
 export MYENV="bmk_env"        # Define the name of the environment.
 python3 -m venv $MYENV        # Create a directory with the virtual environment.
 source $MYENV/bin/activate    # Activate the environment.
-python3 -m pip install git+https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite.git@v2.0
+python3 -m pip install git+https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite.git
 ```
 
 _Note: When using virtual environments, hep-score will also be installed in this environment._

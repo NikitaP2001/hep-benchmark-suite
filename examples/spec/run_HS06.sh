@@ -2,19 +2,19 @@
 
 #####################################################################
 # This script of example installs and runs the HEP-Benchmark-Suite
-# The Suite configuration file 
-#       bmkrun_config.yml 
+# The Suite configuration file
+#       bmkrun_config.yml
 # is included in the script itself.
 # The configuration script enables the benchmarks to run
-# and defines some meta-parameters, including tags as the SITE name.  
-# 
+# and defines some meta-parameters, including tags as the SITE name.
+#
 # In this example only the HS06 at 32 bits benchmark is configured to run.
-# In order to run, the HS06 package needs to be available in the 
-# location specified by 
+# In order to run, the HS06 package needs to be available in the
+# location specified by
 # or a tarball needs to be passed by
 
 # The only requirements to run are
-# git python3-pip singularity 
+# git python3-pip singularity
 #####################################################################
 
 #----------------------------------------------
@@ -31,7 +31,7 @@ WORKDIR=`pwd`/workdir
 mkdir -p $WORKDIR
 chmod a+rw -R $WORKDIR
 
-cat > $WORKDIR/bmkrun_config.yml <<EOF2 
+cat > $WORKDIR/bmkrun_config.yml <<EOF2
 activemq:
   server: dashb-mb.cern.ch
   topic: /topic/vm.spec
@@ -76,7 +76,7 @@ cd $WORKDIR
 export MYENV="env_bmk"        # Define the name of the environment.
 python3 -m venv $MYENV        # Create a directory with the virtual environment.
 source $MYENV/bin/activate    # Activate the environment.
-python3 -m pip install git+https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite.git@v2.1
+python3 -m pip install git+https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite.git
 cat bmkrun_config.yml
 
 if [ `cat bmkrun_config.yml | grep "this_is_dummy_replace_me" | grep -c -v "#"` == 1 ];
