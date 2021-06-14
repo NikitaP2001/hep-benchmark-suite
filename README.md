@@ -1,48 +1,51 @@
 # HEP Benchmark Suite
 
-|   qa-v2.0 | master |
+|   qa-v2.1 | master |
 | --------- | -------- |
-|   [![pipeline status](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/badges/qa-v2.0/pipeline.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/pipelines?ref=qa-v2.0)     |  [![pipeline status](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/badges/master/pipeline.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/pipelines?ref=master)     |
-[![coverage report](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/badges/qa-v2.0/coverage.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/commits/qa-v2.0)|[![coverage report](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/badges/master/coverage.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/commits/master)|
-|[![code quality](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/jobs/artifacts/qa-v2.0/raw/public/badges/code_quality.svg?job=code_quality)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/pipelines?ref=qa-v2.0)| [![code quality](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/jobs/artifacts/master/raw/public/badges/code_quality.svg?job=code_quality)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/pipelines?ref=master)|
+|   [![pipeline status](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/badges/qa-v2.1/pipeline.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/pipelines?ref=qa-v2.1)     |  [![pipeline status](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/badges/master/pipeline.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/pipelines?ref=master)     |
+[![coverage report](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/badges/qa-v2.1/coverage.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/commits/qa-v2.1)|[![coverage report](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/badges/master/coverage.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/commits/master)|
+|[![code quality](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/jobs/artifacts/qa-v2.1/raw/public/badges/code_quality.svg?job=code_quality)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/pipelines?ref=qa-v2.1)| [![code quality](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/jobs/artifacts/master/raw/public/badges/code_quality.svg?job=code_quality)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/pipelines?ref=master)|
 
 | License | Python Support |
 | --------- | -------- |
-| [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) | [![image](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-372/) |
+| [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) | [![image](https://img.shields.io/badge/python-3.6%2B-blue.svg)](https://www.python.org/downloads/release/python-368/) |
 
 [[_TOC_]]
 
 ## Feedback/Support
-Feedback, and support questions are welcome in the HEP Benchmarks project [Discourse Forum](https://wlcg-discourse.web.cern.ch/c/hep-benchmarks/13).  You can also contact the developers via e-mail: benchmark-suite-wg-devel@cern.ch.
+
+Feedback, and support questions are welcome in the HEP Benchmarks project [Discourse Forum](https://wlcg-discourse.web.cern.ch/c/hep-benchmarks).
+
+Alternatively, you can [create an issue on gitlab](https://gitlab.cern.ch/groups/hep-benchmarks/-/issues).
 
 ## About
 
-The HEP Benchmark Suite is a toolkit which orchestrates different benchmarks in one single application for characterizing the perfomance of individual and clustered heterogeneous hardware.
+The HEP Benchmark Suite is a toolkit which orchestrates different benchmarks in one single application for characterizing the performance of individual and clustered heterogeneous hardware.
 
 It is built in a modular approach to target the following use cases in HEP computing:
 
 1. **Mimic the usage of WLCG resources for experiment workloads**
-   * Run workloads representative of the production applications running on WLCG.
+   - Run workloads representative of the production applications running on WLCG.
 1. **Allow collection of a configurable number of benchmarks**
-   * Enable performance studies on heterogeneous hardware.
+   - Enable performance studies on heterogeneous hardware.
 1. **Collect the hardware metadata and the running conditions**
-   * Compare the benchmark outcome under similar conditions.
+   - Compare the benchmark outcome under similar conditions.
 1. **Have prompt feedback about executed benchmarks**
-   * By publishing results to a monitoring system.
+   - By publishing results to a monitoring system.
 1. **Probe randomly assigned slots in a cloud environment**
-   * In production can suggest deletion and re-provisioning of underperforming resources.
+   - In production can suggest deletion and re-provisioning of under-performing resources.
 
 ## Examples
 
 This is a short list of configuration examples to run the suite.
 For an in depth understanding of the installation and configuration options refer to the dedicated [section](##installation)
 
-1. HEPscore
-   * [Run](examples/hepscore/run_HEPscore_default.sh) HEPscore default configuration
-   * [Run](examples/hepscore/run_HEPscore-slim_on_grid.sh) HEPscore custom configuration
-   * [Run](examples/hepscore/run_HEPscore_on_HPC_slurm.sh) HEPscore default configuration on HPC via SLURM
-1. HEP SPEC
-   * [Run](examples/spec/run_HS06.sh) HS06 32 bits
+1. HEPscore example runscripts:
+   - [HEPscore default configuration](examples/hepscore/run_HEPscore_default.sh)
+   - [Run HEPscore custom configuration](examples/hepscore/run_HEPscore-slim_on_grid.sh)
+   - [Run HEPscore default configuration on HPC via SLURM](examples/hepscore/run_HEPscore_on_HPC_slurm.sh)
+1. HEP SPEC example runscripts:
+   - [Run](examples/spec/run_HS06.sh) HS06 32 bits
 
 ## Benchmark suite architecture
 
@@ -64,7 +67,7 @@ Users may also execute the suite in stand-alone mode without result reporting - 
 
 The current Hep-Benchmark-Suite integration status.
 
-* Benchmarks
+- Benchmarks
 
 Benchmark   | Docker             | Singularity
 :---:       | :---:              | :---:
@@ -72,7 +75,7 @@ HEPSpec06   | :white_check_mark: | :white_check_mark:
 SPEC2017    | :white_check_mark: | :white_check_mark:
 HEP-Score   | :white_check_mark: | :white_check_mark:
 
-* Plugins
+- Plugins
 
 Plugin        | Status |
 :---:         | :--:               |
@@ -84,12 +87,12 @@ Elastic Search|:x:        |
 
 The HEP Benchmark Suite is delivered **ready-to-run** with a [default yaml](hepbenchmarksuite/config/benchmarks.yml) configuration file (see [How to run](#how-to-run)). The  currently available benchmarks are:
 
-* [HEP-score](https://gitlab.cern.ch/hep-benchmarks/hep-score)
-* [HS06](https://w3.hepix.org/benchmarking.html)
-* [SPEC CPU2017](https://www.spec.org/cpu2017/)
-* Fast benchmarks (should not be used for performance measurments):
-  * [DIRAC Benchmark (DB12)](hepbenchmarksuite/db12.py)
-  * [ATLAS Kit Validation](https://gitlab.cern.ch/hep-benchmarks/hep-workloads/blob/master/atlas/kv/atlas-kv/DESCRIPTION)
+- [HEP-score](https://gitlab.cern.ch/hep-benchmarks/hep-score)
+- [HS06](https://w3.hepix.org/benchmarking.html)
+- [SPEC CPU2017](https://www.spec.org/cpu2017/)
+- Fast benchmarks (should not be used for performance measurements):
+  - [DIRAC Benchmark (DB12)](hepbenchmarksuite/db12.py)
+  - [ATLAS Kit Validation](https://gitlab.cern.ch/hep-benchmarks/hep-workloads/blob/master/atlas/kv/atlas-kv/DESCRIPTION)
 
 **Due to proprietary license requirements, HS06 and SPEC CPU 2017 must be provided by the end user.** This tool will work with either a pre-installed or tarball archive of SPEC software.
 
@@ -109,13 +112,13 @@ Users are free to build/use transport and aggregation/visualization tools of the
 
 ## Installation
 
-> **This package requires `pip3` >= 19.1, `python3.4+` and `git`**\
+> **This package requires `pip3` >= 19.1, `python3.6+` and `git`**\
   If your `pip3 --version` is older, please update with: `pip3 install --user --upgrade pip` before installing!
 
 ### Local user space
 
 ```sh
-python3 -m pip install --user git+https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite.git@v2.0
+python3 -m pip install --user git+https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite.git
 ```
 
 This will install the suite to the user's home directory:
@@ -124,7 +127,7 @@ This will install the suite to the user's home directory:
 ~/.local/bin/bmkrun
 ```
 
-You can additionally add the executible to you $PATH:
+You can additionally add the executable to you $PATH:
 
 ```sh
 export PATH=$PATH:~/.local/bin
@@ -132,7 +135,7 @@ export PATH=$PATH:~/.local/bin
 
 ### Python virtual environments (minimum footprint)
 
-There are cases on which the user would like to keep current Python3 library versions and have a minimum footprint of newly installed packages. For such purporses, it is possible to install the `hep-benchmark-suite` using [Python Virtual Environments](https://docs.python.org/3/tutorial/venv.html). This is the desired approach when the user requires a minimum footprint on the system.
+There are cases on which the user would like to keep current Python3 library versions and have a minimum footprint of newly installed packages. For such purposes, it is possible to install the `hep-benchmark-suite` using [Python Virtual Environments](https://docs.python.org/3/tutorial/venv.html). This is the desired approach when the user requires a minimum footprint on the system.
 
 ```sh
 export MYENV="bmk_env"        # Define the name of the environment.
@@ -143,30 +146,31 @@ python3 -m pip install git+https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-s
 
 _Note: When using virtual environments, hep-score will also be installed in this environment._
 
-
 ### Limited connectivity (wheel installation)
+
 An alternative installation method, not requiring git, is based on python wheels, which is suitable for environments with limited connectivity. All python wheels can be found [here](https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/).
 
 ```sh
-export SUITE_RELEASE=hep-benchmark-suite-wheels-v2.0.tar
+export SUITE_RELEASE=hep-benchmark-suite-wheels-v2.1.tar
 wget https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/${SUITE_RELEASE}
 tar -xvf ${SUITE_RELEASE}
 python3 -m pip install suite_wheels/*.whl
 ```
-
 
 ## How to run
 
 The python executable `bmkrun` can be added to the user's `$PATH`, and launched directly. The `bmkrun` requires one argument to be able to execute:  `--config`.
 Users are free to provide [command-line arguments](#description-of-all-arguments), or edit the [`benchmarks.yml`](hepbenchmarksuite/config/benchmarks.yml) file directly.
 
-* Running the HEP Benchmark Suite with default configuration (hepscore is the default benchmark)
-  ```
+- Running the HEP Benchmark Suite with default configuration (hepscore is the default benchmark)
+
+  ```sh
   bmkrun -c default
   ```
 
-* Execute with an alternative configuration
-  ```
+- Execute with an alternative configuration
+
+  ```sh
   bmkrun -c <config path>
   ```
 
@@ -192,18 +196,18 @@ Points of attention:
 
 The suite ships with a [hardware metadata plugin](hepbenchmarksuite/plugins/extractor.py) which is responsible to collect system hardware and software information. This data is then compiled and reported in the results json file.
 
-This plugin relies on system tools such as: `lscpu`, `lshw`, `dmidecode`. Some of these tools require escalated priviledges for a complete output. Please take this into consideration if some outputs are empty in the final json report.
+This plugin relies on system tools such as: `lscpu`, `lshw`, `dmidecode`. Some of these tools require escalated privileges for a complete output. Please take this into consideration if some outputs are empty in the final json report.
 
 <div align="center">
   <img src="doc/images/HEP-Benchmark-Suite-Json.png" width="554" height="393" />
 </div>
 
-
 ### Advanced Message Queuing (AMQ)
 
-AMQ publishing is implemented using the [STOMP protocol](https://stomp.github.io/). Users must provide either a valid username/password or key/cert pair, in addition to the server and topic. The relevant section of the [config yaml](hepbenchmarksuite/config/benchmarks.yml) is given below. You can then pass the argument `--publish` to the suite.
+AMQ publishing is implemented using the [STOMP protocol](https://stomp.github.io/). Users must provide either a valid username/password or key/cert pair, in addition to the server and topic. The relevant section of the [config yaml](hepbenchmarksuite/config/benchmarks.yml) is given below. You must then pass the argument `--publish` to the suite.
 
-**1. username/password settings**
+#### username/password settings
+
 ```yaml
 activemq:
   server: dashb-mb.cern.ch
@@ -213,7 +217,8 @@ activemq:
   port: 61113
 ```
 
-**2. user cert settings**
+#### user cert settings
+
 ```yaml
 activemq:
   server: dashb-mb.cern.ch
@@ -226,11 +231,11 @@ activemq:
 In order to publish to the dedicated CERN AMQ broker, the authentication with key/cert pair is preferred.
 The user DN needs to be whitelisted in the broker configuration. Please extract the user DN in this format
 
-```
+```sh
 openssl x509 -noout -in usercert.pem -subject -nameopt RFC2253
 ```
- 
-Additional information on user certificate can be found at the official CA documentation https://ca.cern.ch/ca/Help/?kbid=024010
+
+Additional information on user certificate can be found at [the official CERN CA documentation](https://ca.cern.ch/ca/Help/?kbid=024010)
 
 ## Description of all arguments
 
@@ -244,7 +249,7 @@ High Energy Physics Benchmark Suite
 This utility orchestrates several benchmarks
 
 Author: Benchmarking Working Group
-Contact: benchmark-suite-wg-devel@cern.ch
+Contact: https://wlcg-discourse.web.cern.ch/c/hep-benchmarks
 
 optional arguments:
   -h, --help            Show this help message and exit
@@ -271,7 +276,6 @@ optional arguments:
 
 ### Typical use cases
 
-
 - Show default configuration.
 
     ```sh
@@ -290,15 +294,14 @@ optional arguments:
     bmkrun -c default --tags
     ```
 
-- Run a test bencharmk DB12 (should not be used for system benchmarking)
+- Run a test benchmark DB12 (should not be used for system benchmarking)
 
     ```sh
     bmkrun -c default -b db12
     ```
 
-- Run HS06 and SPEC2017 (Alternate config should be based on [`benchmarks.yml`](hepbenchmarksuite/config/benchmarks.yml))
+- Run HS06 and SPEC2017. 64bit mode by default (Alternate config should be based on [`benchmarks.yml`](hepbenchmarksuite/config/benchmarks.yml))
 
     ```sh
-    bmkrun -c <alternate config>  -b hs06_32 spec2017
+    bmkrun -c <alternate config>  -b hs06 spec2017
     ```
-
