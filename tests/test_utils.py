@@ -9,7 +9,6 @@
 
 import contextlib
 import difflib
-import json
 import unittest
 from hepbenchmarksuite import utils
 import os
@@ -18,7 +17,6 @@ import pytest
 import tempfile
 import tarfile
 import yaml
-import pprint
 from schema import Schema, And, Use, Optional, Or
 
 
@@ -126,7 +124,7 @@ def test_bench_versions():
     # Valid benchmark version that should be printed
     valid_version_output = {
         "db12"     : "v0.1",
-        "hepscore" : "v1.0",
+        "hepscore" : "v1.1",
         "hs06"     : "v2.1",
         "spec2017" : "v2.1",
         "newbench" : "not_available",

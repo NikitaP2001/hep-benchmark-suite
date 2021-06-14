@@ -51,7 +51,7 @@ def main():
         This utility orchestrates several benchmarks.
 
         Author: Benchmarking Working Group
-        Contact: benchmark-suite-wg-devel@cern.ch
+        Contact: https://wlcg-discourse.web.cern.ch/c/hep-benchmarks
         '''), epilog=textwrap.dedent('''
         -----------------------------------------------
         '''),
