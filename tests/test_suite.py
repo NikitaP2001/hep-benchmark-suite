@@ -7,7 +7,6 @@
 ###############################################################################
 """
 
-import json
 import unittest
 from hepbenchmarksuite.hepbenchmarksuite import HepBenchmarkSuite
 from hepbenchmarksuite.exceptions import PreFlightError, BenchmarkFailure, BenchmarkFullFailure
@@ -15,27 +14,25 @@ from hepbenchmarksuite import benchmarks
 from hepbenchmarksuite import utils
 import yaml
 from unittest.mock import patch, mock_open, MagicMock
-import pytest
 import os
-import sys
 import shutil
 import time
 
 class TestSuite(unittest.TestCase):
     """ Test the HepBenchmarkSuite """
-
-    def setup(self):
+    
+    @classmethod
+    def setUpClass(cls):
         """ Load CI configuration """
 
         with open("tests/ci/benchmarks.yml", 'r') as cfg_file:
-            self.config_file = yaml.full_load(cfg_file)
-            self.config_file['global']['parent_dir']='.'
+            cls.config_file = yaml.full_load(cfg_file)
+            cls.config_file['global']['parent_dir']='.'
 
 
     def test_preflight_fail(self):
         """ Test the suite preflight failures. """
 
-        self.setup()
         sample_config = self.config_file.copy()
 
         # Force a failure of missing singularity/docker
@@ -63,7 +60,7 @@ class TestSuite(unittest.TestCase):
          - Assumes that preflight were successfull.
          - Avoids running cleanup stage.
         """
-        self.setup()
+
         sample_config = self.config_file.copy()
 
         # To avoid running the benchmarks.
@@ -84,12 +81,13 @@ class TestSuite(unittest.TestCase):
             self.assertIn('INFO:hepbenchmarksuite.hepbenchmarksuite:Completed hepscore with return code 1', " ".join(log.output))
 
 
-    def test_cleanup_failure(self):
+    @patch('builtins.open', new_callable=mock_open, read_data="{'data':1}")
+    def test_cleanup(self, mock_file):
         """ Test if suite cleanup raises exceptions on failed benchmarks. """
 
-        self.setup()
         sample_config = self.config_file.copy()
         sample_config['global']['mp_num']=2
+        mock_data={'data':1}
 
         suite = HepBenchmarkSuite(sample_config)
 
@@ -97,6 +95,14 @@ class TestSuite(unittest.TestCase):
         suite._extra['end_time'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
 
         os.makedirs(sample_config['global']['rundir'], exist_ok=True)
+
+        # Test success
+        with self.assertLogs('hepbenchmarksuite.hepbenchmarksuite', level='INFO') as cleanuplog:
+            suite.cleanup()
+            # test requires python3.9 dict union operator
+            # self.assertEqual(suite._result | mock_data, suite._result) 
+            self.assertIn('INFO:hepbenchmarksuite.hepbenchmarksuite:Successfully completed all requested benchmarks', cleanuplog.output)
+
 
         # Test when one benchmark fails with multiple benchmarks selected
         suite.failures = [1]
@@ -107,6 +113,12 @@ class TestSuite(unittest.TestCase):
         # Test when all selected benchmarks fail
         suite.selected_benchmarks = ['db12']
         with self.assertRaises(BenchmarkFullFailure):
+            suite.cleanup()
+
+        # Test array of failures, but reportable success
+        suite.failures = [1, 2]
+        suite.selected_benchmarks = ['db12', 'hepscore', 'hs06_32']
+        with self.assertRaises(BenchmarkFailure):
             suite.cleanup()
 
 
