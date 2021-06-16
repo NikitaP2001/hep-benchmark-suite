@@ -207,7 +207,7 @@ class HepBenchmarkSuite():
             raise BenchmarkFullFailure
 
         elif len(self.failures) > 0:
-            _log.error("%s Failed. Please check the logs.", *self.failures)
+            _log.error("%s Failed. Please check the logs.", self.failures)
             raise BenchmarkFailure
 
         else:
