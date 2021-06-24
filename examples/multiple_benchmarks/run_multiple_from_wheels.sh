@@ -51,7 +51,7 @@ global:
     site: $SITE
 
 hepscore:
-  version: v1.1
+  version: v1.2
   config: default
 
 hepspec06:
