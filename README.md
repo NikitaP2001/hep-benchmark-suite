@@ -232,14 +232,28 @@ activemq:
   port: 61123
 ```
 
-In order to publish to the dedicated CERN AMQ broker, the authentication with key/cert pair is preferred.
-The user DN needs to be whitelisted in the broker configuration. Please extract the user DN in this format
+Please note that key/cert authentication is preferred to publish the results to the CERN AMQ Broker.
+
+In order to authenticate this way, you can request a grid user certificate from the [CERN Certification Authority](https://ca.cern.ch). There you can check [whether you are elegible for a certificate](https://ca.cern.ch/ca/certificates/CheckAccount.aspx) as well as [request the certificate itself](https://ca.cern.ch/ca/user/Request.aspx?template=EE2User).
+
+As of today (08 Sep 2021), the certificate is issued in a single PKCS#12 file (.p12) containing both the certificate and the key. So as to use it in this application, it needs to be split into a certificate and a key PEM file by:
 
 ```sh
-openssl x509 -noout -in usercert.pem -subject -nameopt RFC2253
+openssl pkcs12 -in user.p12 -out user.crt.pem -clcerts -nokeys
+openssl pkcs12 -in user.p12 -out user.key.pem -nocerts -nodes
 ```
 
-Additional information on user certificate can be found at [the official CERN CA documentation](https://ca.cern.ch/ca/Help/?kbid=024010)
+Optionally, you can ommit the `-nodes` flag if you want to encrypt the private key. Then, to obtain the user DN in the format required by the Messaging Service (AMQ Broker) for the whitelisting, run:
+
+```sh
+openssl x509 -noout -in user.crt.pem -subject -nameopt RFC2253
+```
+
+which should output something similar to:
+```
+subject=CN=Name Surname,CN=123456,CN=username,OU=Users,OU=Organic Units,DC=cern,DC=ch
+```
+Pass this information to the Messaging Team alongside the server and topic to set up the authentication. Additional information on user certificates can be found at [the official CERN CA documentation](https://ca.cern.ch/ca/Help).
 
 ## Description of all arguments
 
