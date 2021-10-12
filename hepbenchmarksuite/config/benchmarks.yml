@@ -91,7 +91,7 @@ spec2017:
 # Section to configure HEPScore benchmark
 hepscore:
   # Select which version of hep-score to use
-  version: "v1.1"
+  version: "v1.2"
   # Users can provide an alternative config file, three options are possible:
   # "default"  - Uses the default configuration provided with hepscore.
   # local path - Search locally for the configuration.
