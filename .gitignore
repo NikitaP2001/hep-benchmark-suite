@@ -14,6 +14,7 @@ develop-eggs
 # Unit test / coverage reports
 .coverage*
 report.xml
+coverage.xml
 .tox
 .venv
 .python-version

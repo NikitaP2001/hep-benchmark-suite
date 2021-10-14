@@ -9,16 +9,18 @@
 
 import json
 import unittest
+from pathlib import Path
 from hepbenchmarksuite.plugins.extractor import Extractor
 from schema import Schema, And, Use, Optional, Or
 
+
 class TestHWExtractor(unittest.TestCase):
     """********************************************************
-                *** HEP-BENCHMARK-SUITE ***
+                 *** HEP-BENCHMARK-SUITE ***
 
-    Testing the extraction of Hardware Metadata.
+     Testing the extraction of Hardware Metadata.
 
-   *********************************************************"""
+    *********************************************************"""
 
     def test_command_success(self):
         """
@@ -26,8 +28,8 @@ class TestHWExtractor(unittest.TestCase):
         """
 
         hw = Extractor(extra={})
-        result = hw.exec_cmd('echo 1')
-        self.assertEqual(result, '1')
+        result = hw.exec_cmd("echo 1")
+        self.assertEqual(result, "1")
 
     def test_command_failure(self):
         """
@@ -35,8 +37,8 @@ class TestHWExtractor(unittest.TestCase):
         """
 
         hw = Extractor(extra={})
-        result = hw.exec_cmd('echofail 1')
-        self.assertEqual(result, 'not_available')
+        result = hw.exec_cmd("echofail 1")
+        self.assertEqual(result, "not_available")
 
     def test_parser_bios(self):
         """
@@ -45,18 +47,18 @@ class TestHWExtractor(unittest.TestCase):
 
         hw = Extractor(extra={})
 
-        with open('tests/data/BIOS.sample', 'r') as bios_file:
+        with open("tests/data/BIOS.sample", "r") as bios_file:
             bios_text = bios_file.read()
 
         parser = hw.get_parser(bios_text)
 
-        self.assertEqual(parser('Version'),
-                         'SE5C600.86B.02.01.0002.082220131453',
-                         'BIOS parser mismatch!')
-        self.assertEqual(parser('Vendor'), 'Intel Corp.',
-                         'BIOS parser mismatch!')
-        self.assertEqual(parser('Release Date'), '08/22/2013',
-                         'BIOS parser mismatch!')
+        self.assertEqual(
+            parser("Version"),
+            "SE5C600.86B.02.01.0002.082220131453",
+            "BIOS parser mismatch!",
+        )
+        self.assertEqual(parser("Vendor"), "Intel Corp.", "BIOS parser mismatch!")
+        self.assertEqual(parser("Release Date"), "08/22/2013", "BIOS parser mismatch!")
 
     def test_parser_cpu_Intel(self):
         """
@@ -65,7 +67,7 @@ class TestHWExtractor(unittest.TestCase):
 
         hw = Extractor(extra={})
 
-        with open('tests/data/CPU_Intel.sample', 'r') as cpu_file:
+        with open("tests/data/CPU_Intel.sample", "r") as cpu_file:
             cpu_text = cpu_file.read()
 
         CPU_OK = {
@@ -85,7 +87,7 @@ class TestHWExtractor(unittest.TestCase):
             "BogoMIPS": 4788.43,
             "L2_cache": "256K",
             "L3_cache": "30720K",
-            'NUMA_nodes': 2,
+            "NUMA_nodes": 2,
             "NUMA_node0_CPUs": "0-11,24-35",
             "NUMA_node1_CPUs": "12-23,36-47",
         }
@@ -101,7 +103,7 @@ class TestHWExtractor(unittest.TestCase):
 
         hw = Extractor(extra={})
 
-        with open('tests/data/CPU_AMD.sample', 'r') as cpu_file:
+        with open("tests/data/CPU_AMD.sample", "r") as cpu_file:
             cpu_text = cpu_file.read()
 
         CPU_OK = {
@@ -121,7 +123,7 @@ class TestHWExtractor(unittest.TestCase):
             "BogoMIPS": 4491.51,
             "L2_cache": "512K",
             "L3_cache": "16384K",
-            'NUMA_nodes': 8,
+            "NUMA_nodes": 8,
             "NUMA_node0_CPUs": "0-15",
             "NUMA_node1_CPUs": "16-31",
             "NUMA_node2_CPUs": "32-47",
@@ -137,8 +139,6 @@ class TestHWExtractor(unittest.TestCase):
         self.maxDiff = None
         self.assertEqual(cpu_output, CPU_OK, "CPU parser mismatch!")
 
-
-
     def test_parser_memory(self):
         """
         Test the parser for a memory output.
@@ -146,7 +146,7 @@ class TestHWExtractor(unittest.TestCase):
 
         hw = Extractor(extra={})
 
-        with open('tests/data/MEM.sample', 'r') as mem_file:
+        with open("tests/data/MEM.sample", "r") as mem_file:
             mem_text = mem_file.read()
 
         mem_output = hw.get_mem_parser(mem_text)
@@ -159,7 +159,7 @@ class TestHWExtractor(unittest.TestCase):
             "dimm5": "8192 MB DDR3 | Nanya | NT8GC72C4NG0NL-CG",
             "dimm6": "8192 MB DDR3 | Nanya | NT8GC72C4NG0NL-CG",
             "dimm7": "8192 MB DDR3 | Nanya | NT8GC72C4NG0NL-CG",
-            "dimm8": "8192 MB DDR3 | Nanya | NT8GC72C4NG0NL-CG"
+            "dimm8": "8192 MB DDR3 | Nanya | NT8GC72C4NG0NL-CG",
         }
 
         self.assertEqual(mem_output, MEM_OK, "Memory parser mismatch!")
@@ -171,7 +171,7 @@ class TestHWExtractor(unittest.TestCase):
 
         hw = Extractor(extra={})
 
-        with open('tests/data/STORAGE.sample', 'r') as storage_file:
+        with open("tests/data/STORAGE.sample", "r") as storage_file:
             storage_text = storage_file.read()
 
         storage_output = hw.get_storage_parser(storage_text)
@@ -179,55 +179,66 @@ class TestHWExtractor(unittest.TestCase):
         STORAGE_OK = {
             "disk1": "/dev/sda | INTEL SSDSC2CW24 | 223GiB (240GB)",
             "disk2": "/dev/sdb | INTEL SSDSC2CW24 | 223GiB (240GB)",
-            "disk3": "/dev/sdc | INTEL SSDSC2CW24 | 223GiB (240GB)"
+            "disk3": "/dev/sdc | INTEL SSDSC2CW24 | 223GiB (240GB)",
         }
 
-        self.assertEqual(storage_output, STORAGE_OK,
-                         "Storage parser mismatch!")
+        self.assertEqual(storage_output, STORAGE_OK, "Storage parser mismatch!")
 
     def test_full_metadata(self):
         """
         Test the metadata schema
         """
         # Collect data
-        hw=Extractor(extra={'mode': 'docker'})
+        hw = Extractor(extra={"mode": "docker"})
         hw.collect()
 
         # Print the output to stdout and save metadata to json file
-        TMP_FILE='metadata.tmp'
+        TMP_FILE = Path("metadata.tmp")
         hw.dump(stdout=True, outfile=TMP_FILE)
 
         # Define Hardware metadata schema
-        metadata_schema = Schema(And(Use(json.loads),
-                                {
-                                 "HW": { "BIOS"   : { str : str },
-                                         "SYSTEM" : { str : str },
-                                         "MEMORY" : { "Mem_Available" : int,
-                                                      "Mem_Total"     : int,
-                                                      "Mem_Swap"      : int,
-                                                    },
-                                         "STORAGE": { Optional(str) : Optional(str) },
-                                         "CPU"    : { str : str,
-                                                      "SMT_Enabled"      : str,
-                                                      "CPU_num"          : int,
-                                                      "Threads_per_core" : int,
-                                                      "Cores_per_socket" : int,
-                                                      "Sockets"          : int,
-                                                      "BogoMIPS"         : float,
-                                                      "CPU_MHz"          : float,
-                                                      "CPU_Max_Speed_MHz": Or(int, float),
-                                                      "CPU_Min_Speed_MHz": Or(int, float),
-                                                      "NUMA_nodes"       : int,
-                                                      "Stepping"         : str,
-                                                    }
-                                 },
-                                 "SW" : { str : str },
-                                 "Hostname" : str,
-                                }))
+        metadata_schema = Schema(
+            And(
+                Use(json.loads),
+                {
+                    "HW": {
+                        "BIOS": {str: str},
+                        "SYSTEM": {str: str},
+                        "MEMORY": {
+                            "Mem_Available": int,
+                            "Mem_Total": int,
+                            "Mem_Swap": int,
+                        },
+                        "STORAGE": {Optional(str): Optional(str)},
+                        "CPU": {
+                            str: str,
+                            "SMT_Enabled": str,
+                            "CPU_num": int,
+                            "Threads_per_core": int,
+                            "Cores_per_socket": int,
+                            "Sockets": int,
+                            "BogoMIPS": float,
+                            "CPU_MHz": float,
+                            "CPU_Max_Speed_MHz": Or(int, float),
+                            "CPU_Min_Speed_MHz": Or(int, float),
+                            "NUMA_nodes": int,
+                            "Stepping": str,
+                        },
+                    },
+                    "SW": {str: str},
+                    "Hostname": str,
+                },
+            )
+        )
 
         # Validate schema from extractor
-        with open(TMP_FILE, 'r') as fin:
+        with open(TMP_FILE, "r") as fin:
             metadata_schema.validate(fin.read())
 
-if __name__ == '__main__':
+        # Cleanup tmp file
+        if TMP_FILE.exists():
+            TMP_FILE.unlink()
+
+
+if __name__ == "__main__":
     unittest.main(verbosity=2)
