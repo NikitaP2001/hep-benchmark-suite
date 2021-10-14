@@ -265,6 +265,10 @@ class TestHWExtractor(unittest.TestCase):
         with open(TMP_FILE, "r") as fin:
             metadata_schema.validate(fin.read())
 
+        # Cleanup tmp file
+        if TMP_FILE.exists():
+            TMP_FILE.unlink()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main(verbosity=2)

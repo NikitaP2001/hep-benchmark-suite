@@ -222,7 +222,10 @@ def test_failed_download(url):
 @pytest.fixture(scope="session")
 def test_success_download(url, tmpdir_factory):
     """Test the download success."""
-    assert utils.download_file(url, "downloaded_README.md") == 0
+    assert (
+        utils.download_file(url, tmpdir_factory.mktemp().join("downloaded_README.md"))
+        == 0
+    )
     assert os.path.isfile("downloaded_README.md") == 1
 
 
