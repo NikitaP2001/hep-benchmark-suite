@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+"""
+###############################################################################
+# Copyright 2019-2021 CERN. See the COPYRIGHT file at the top-level directory
+# of this distribution. For licensing information, see the COPYING file at
+# the top-level directory of this distribution.
+################################################################################
+"""
+import argparse
+import logging
+from pathlib import Path
+import sys
+import yaml
+from hepbenchmarksuite.plugins import send_queue
+
+
+logging.basicConfig(
+    format="%(asctime)s, %(name)s:%(funcName)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("bmksend")
+
+# suite report filename, as hard-coded in `bmkrun`.
+# this global is used to limit uploading of renamed result json
+REPORT = "bmkrun_report.json"
+
+
+def main():
+    """CLI entrypoint for batch AMQ uploading"""
+    parser = argparse.ArgumentParser(
+        description="Utility for sending 'bmkrun_report.json' to an AMQ broker via STOMP. "
+        "Connection details from your custom config.yaml are used for credentials."
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=Path,
+        required=True,
+        help="yaml containing connection credentials.",
+    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose printing")
+    parser.add_argument(
+        "-f", "--force", action="store_true", help="override check of report name"
+    )
+    parser.add_argument(
+        "report_path", nargs="+", type=Path, help="Path(s) to bmkrun_report.json"
+    )
+    args = parser.parse_args()
+
+    # Configure logging
+    logger.setLevel(logging.DEBUG) if args.verbose else logger.setLevel(logging.INFO)
+    logger.debug(args)
+
+    # Load configuration file
+    try:
+        with open(args.config.resolve(), "r") as yam:
+            active_config = yaml.full_load(yam)
+            connection = active_config["activemq"]
+            logger.debug("Found config %s", args.config)
+    except FileNotFoundError:
+        print("Failed to load configuration file: {}".format(args.config))
+        sys.exit(1)
+
+    # Build upload list
+    sendlist = []
+    for path in args.report_path:
+        if path.is_file():
+            logger.debug("%s added", path)
+            sendlist.append(path.resolve())
+        elif path.is_dir():
+            logger.debug("Traversing %s for reports", path)
+            for file in path.glob("**/*.json"):
+                logger.debug("%s added", file)
+                sendlist.append(file.resolve())
+        else:
+            logger.info("skipping %s, not a file or dir.", path)
+
+    # send
+    if args.force:
+        logger.warning("Force sending enabled")
+    for file in sendlist:
+        if file.name == REPORT or args.force:
+            logger.info("Sending %s", file)
+            # try:
+            #     send_queue.send_message(file, connection)
+            # except Exception as err:
+            #     logger.error("Something went wrong attempting to report via AMQ.")
+            #     logger.error("Results may not have been correctly transmitted.")
+            #     logger.exception(err)
+        else:
+            logger.debug("skipping %s, use '--force' to override.", file)
+
+
+if __name__ == "__main__":
+    main()
