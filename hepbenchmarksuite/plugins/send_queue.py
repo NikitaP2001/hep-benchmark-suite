@@ -41,7 +41,7 @@ def send_message(filepath, connection):
     """expects a filepath string, and a dict of args"""
 
     if not Path(filepath).is_file():
-        raise IOError("{} is not a valid filepath!".format(filepath))
+        raise FileNotFoundError("{} is not a valid filepath!".format(filepath))
 
     with open(filepath, "r") as f:
         message_contents = f.read()
