@@ -43,7 +43,7 @@ def send_message(filepath, connection):
     if not Path(filepath).is_file():
         raise FileNotFoundError("{} is not a valid filepath!".format(filepath))
 
-    with open(filepath, "r") as f:
+    with open(filepath, "r", encoding="utf8") as f:
         message_contents = f.read()
 
     conn = stomp.Connection(
@@ -56,7 +56,6 @@ def send_message(filepath, connection):
             for_hosts=[(connection["server"], int(connection["port"]))],
             cert_file=connection["cert"],
             key_file=connection["key"],
-            # TODO: verify SSL support
             ssl_version=5,
         )  # <_SSLMethod.PROTOCOL_TLSv1_2: 5>
         conn.connect(wait=True)
@@ -117,7 +116,7 @@ def main():
     non_empty = {k: v for k, v in vars(args).items() if v is not None}
 
     # Populate active config with cli override
-    connection_details = dict()
+    connection_details = {}
     for i in non_empty.keys():
         connection_details[i] = non_empty[i]
 
