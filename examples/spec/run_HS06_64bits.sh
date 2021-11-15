@@ -10,9 +10,9 @@
 #
 # In this example only the HS06 at 64 bits benchmark is configured to run.
 # In order to run, the HS06 package needs to be available in the
-# location specified by
-# or a tarball needs to be passed by
-
+# # location specified by hepspec_volume
+# or a tarball needs to be passed by url_tarball
+#
 # The only requirements to run are
 # git python3-pip singularity
 #####################################################################
@@ -53,9 +53,10 @@ global:
 hepspec06:
   # Use the docker registry
   image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.2"
-  # URL to fetch the hepspec06. It will only be used if the software
-  # is  not found under hepspec_volume.
-  # url_tarball: "https://this_is_dummy_replace_me"
+ 
+  # URL to fetch the hepspec06. It will only be used if the software is  not found under hepspec_volume.
+  # use file:// for local files, https:// for web url
+  # url_tarball: "[file|https]://this_is_dummy_replace_me"
 
   # Define the location on where hepspec06 should be found
   # If hepspec06 is not present, the directory should be writeable
