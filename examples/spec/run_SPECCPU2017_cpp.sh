@@ -65,6 +65,13 @@ spec2017:
   ## Number of iterations to run the benchmark
   iterations: 3
 
+  # Run the bset named "pure rate cpp" defined in 
+  # https://gitlab.cern.ch/hep-benchmarks/hep-spec/-/blob/master/scripts/spec2017/pure_rate_cpp.bset
+  # for any other bset to run, change this parameter accordingly and make sure the bset file
+  # is stored in the location expected by specrun `/benchspec/CPU/`
+  bmk_set: 'pure_rate_cpp'
+
+
 EOF2
 
 cd "$WORKDIR"
