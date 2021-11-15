@@ -68,6 +68,7 @@ hepspec06:
   ## Specifies if benchmark is run on 32 or 64 bit mode
   ## Default is 64-bit
   mode: 64
+  
   ## Custom compiler configuration only for studies
   ## Will invalidate the SPEC score results
   # config: a_spec_config_file_in_the_spec_repo_config
