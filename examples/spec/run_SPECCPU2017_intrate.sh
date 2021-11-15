@@ -8,7 +8,7 @@
 # The configuration script enables the benchmarks to run
 # and defines some meta-parameters, including tags as the SITE name.
 #
-# In this example only the SPEC CPU 2017 Rate cpp is configured to run.
+# In this example only the SPEC CPU 2017 Int Rate is configured to run.
 # In order to run, the SPEC CPU 2017 package needs to be available in the
 # location specified by hepspec_volume
 # or a tarball needs to be passed by url_tarball
@@ -69,7 +69,7 @@ spec2017:
   # https://gitlab.cern.ch/hep-benchmarks/hep-spec/-/blob/master/scripts/spec2017/pure_rate_cpp.bset
   # for any other bset to run, change this parameter accordingly and make sure the bset file
   # is stored in the location expected by specrun `/benchspec/CPU/`
-  bmk_set: 'pure_rate_cpp'
+  bmk_set: 'intrate'
 
   ## Custom compiler configuration only for studies
   # config: a_spec_config_file_in_the_spec_repo_config
@@ -104,4 +104,5 @@ cat bmkrun_config.yml
 bmkrun -c bmkrun_config.yml
 
 echo "You are in python environment $MYENV. run \`deactivate\` to exit from it"
+
 

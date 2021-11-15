@@ -68,9 +68,11 @@ hepspec06:
   ## Specifies if benchmark is run on 32 or 64 bit mode
   ## Default is 64-bit
   mode: 32
+
   ## Custom compiler configuration only for studies
   ## Will invalidate the SPEC score results
   # config: a_spec_config_file_in_the_spec_repo_config
+  # Default is https://gitlab.cern.ch/hep-benchmarks/hep-spec/-/blob/master/scripts/spec2k6/linux_gcc_cern.cfg
 EOF2
 
 cd $WORKDIR
