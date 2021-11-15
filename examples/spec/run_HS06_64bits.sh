@@ -8,7 +8,7 @@
 # The configuration script enables the benchmarks to run
 # and defines some meta-parameters, including tags as the SITE name.
 #
-# In this example only the HS06 at 32 bits benchmark is configured to run.
+# In this example only the HS06 at 64 bits benchmark is configured to run.
 # In order to run, the HS06 package needs to be available in the
 # location specified by
 # or a tarball needs to be passed by
