@@ -43,7 +43,7 @@ def send_message(filepath, connection):
     if not Path(filepath).is_file():
         raise FileNotFoundError("{} is not a valid filepath!".format(filepath))
 
-    with open(filepath, "r", encoding="utf8") as f:
+    with open(filepath, "r", encoding="utf-8") as f:
         message_contents = f.read()
 
     conn = stomp.Connection(

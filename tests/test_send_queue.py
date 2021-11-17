@@ -181,7 +181,9 @@ class TestAMQ(unittest.TestCase):
             # Test no credentials
             with self.assertRaises(OSError):
                 send_queue.send_message(self.test_file_path, test_args)
-            mock_json.assert_called_once_with(self.test_file_path, "r")
+            mock_json.assert_called_once_with(
+                self.test_file_path, "r", encoding="utf-8"
+            )
             mock_stomp.Connection.assert_called_once_with(
                 host_and_ports=[(test_args["server"], int(test_args["port"]))]
             )
