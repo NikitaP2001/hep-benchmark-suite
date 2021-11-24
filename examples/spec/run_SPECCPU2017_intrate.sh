@@ -2,21 +2,38 @@
 
 #####################################################################
 # This example script installs and runs the HEP-Benchmark-Suite
+#
 # The Suite configuration file
 #       bmkrun_config.yml
 # is included in the script itself.
 # The configuration script enables the benchmarks to run
 # and defines some meta-parameters, including tags as the SITE name.
 #
-# In this example all the supported benchmarks are configured to run
+# In this example only the SPEC CPU 2017 Int Rate is configured to run.
+# ****** IMPORTANT ********
+# In order to run, the SPEC CPU 2017 package needs to be available in the
+# location assigned to the hepspec_volume parameter.
+# As an alternative a tarball needs to be passed to the suite by 
+# the parameter url_tarball
 #
-# The only requirements to run are
-# python3-pip singularity 
+# Requirements 
+#    - Install: python3-pip singularity
+#    - Define values for the parameters SITE and PURPOSE 
+#    - Make available the x509 key/cert files for the publication 
+#
+#
+# Example:
+# > yum install -y python3-pip singularity
+# > curl -O https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/raw/master/examples/spec/run_SPECCPU2017_intrate.sh
+# > chmod u+x run_SPECCPU2017_intrate.sh
+# - EDIT SITE and PURPOSE and location of key/cern
+# > ./run_SPECCPU2017_intrate.sh
 #####################################################################
 
 #----------------------------------------------
 # Replace somesite with a meaningful site name
 SITE=somesite
+PURPOSE="a test"
 #----------------------------------------------
 
 
@@ -24,7 +41,7 @@ echo "Running script: $0"
 cd $( dirname $0)
 
 WORKDIR=$(pwd)/workdir
-
+echo "Creating the WORKDIR $WORKDIR"
 mkdir -p $WORKDIR
 chmod a+rw -R $WORKDIR
 
@@ -39,47 +56,21 @@ activemq:
 
 global:
   benchmarks:
-  - hepscore
-  - db12
-  # - hs06
-  # - spec2017
-  # comment/uncomment any of the above benchmarks to exclude/include them
+  - spec2017
   mode: singularity
   publish: true
   rundir: /tmp/suite_results
   tags:
     site: $SITE
-
-hepscore:
-  version: v1.2
-  config: default
-
-hepspec06:
-  # Use the docker registry
-  image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.3"
-  # URL to fetch the hepspec06. It will only be used if the software
-  # is  not found under hepspec_volume.
-
-  # url_tarball: "_include_path_to_HS06_tarball_if_not_unpacked_already_in_hepspec_volume_"
-
-  # Define the location on where hepspec06 should be found
-  # If hepspec06 is not present, the directory should be writeable
-  # to allow the installation via the url_tarball
-  hepspec_volume: "/tmp/SPEC"
-
-  ## Number of iterations to run the benchmark
-  iterations: 3
-  ## Specifies if benchmark is run on 32 or 64 bit mode
-  ## Default is 64-bit
-  # mode: 32
+    purpose: "$PURPOSE"
 
 spec2017:
   # Use the docker registry
-  image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.2"
-  # URL to fetch the spec cpu 2017. It will only be used if the software
-  # is  not found under hepspec_volume.
-
-  # url_tarball: "_include_path_to_spec2017_tarball_if_not_unpacked_already_in_hepspec_volume_"
+  image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.3"
+  
+  # URL to fetch the spec cpu 2017. It will only be used if the software is not found under hepspec_volume.
+  # use file:// for local files, https:// for web url
+  # url_tarball: "[file|https]://_include_path_to_spec2017_tarball_if_not_unpacked_already_in_hepspec_volume_"
 
   # Define the location on where spec cpu 2017 should be found
   # If spec cpu 2017 is not present, the directory should be writeable
@@ -89,6 +80,17 @@ spec2017:
   ## Number of iterations to run the benchmark
   iterations: 3
 
+  # Run the bset named "Int Rate" defined in 
+  # https://gitlab.cern.ch/hep-benchmarks/hep-spec/-/blob/master/scripts/spec2017/intrate.bset
+  # for any other bset to run, change this parameter accordingly and make sure the bset file
+  # is stored in the location expected by specrun /benchspec/CPU/
+  bmk_set: 'intrate'
+  #bmk_set: '511.povray_r'
+
+  ## Custom compiler configuration only for studies
+  # config: a_spec_config_file_in_the_spec_repo_config
+  # Default is https://gitlab.cern.ch/hep-benchmarks/hep-spec/-/blob/master/scripts/spec2017/cern-gcc-linux-x86.cfg
+  # config: cern-gcc-linux-x86.cfg
 EOF2
 
 cd "$WORKDIR"
@@ -118,3 +120,5 @@ cat bmkrun_config.yml
 bmkrun -c bmkrun_config.yml
 
 echo "You are in python environment $MYENV. run \`deactivate\` to exit from it"
+
+

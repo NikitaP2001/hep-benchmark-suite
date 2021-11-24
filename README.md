@@ -45,7 +45,11 @@ For an in depth understanding of the installation and configuration options refe
    - [Run HEPscore custom configuration](examples/hepscore/run_HEPscore-slim_on_grid.sh)
    - [Run HEPscore default configuration on HPC via SLURM](examples/hepscore/run_HEPscore_on_HPC_slurm.sh)
 1. HEP SPEC example runscripts:
-   - [Run](examples/spec/run_HS06.sh) HS06 32 bits
+   - [Run](examples/spec/run_HS06_32bits.sh) HS06 32 bits
+   - [Run](examples/spec/run_HS06_64bits.sh) HS06 64 bits
+   - [Run](examples/spec/run_SPECCPU2017_intrate.sh) SPEC CPU 2017 Int Rate
+   - [Run](examples/spec/run_SPECCPU2017_cpp.sh) SPEC CPU 2017 Rate cpp
+
 
 ## Benchmark suite architecture
 
