@@ -2,6 +2,7 @@
 
 #####################################################################
 # This example script installs and runs the HEP-Benchmark-Suite
+#
 # The Suite configuration file
 #       bmkrun_config.yml
 # is included in the script itself.
@@ -9,17 +10,30 @@
 # and defines some meta-parameters, including tags as the SITE name.
 #
 # In this example only the SPEC CPU 2017 Int Rate is configured to run.
+# ****** IMPORTANT ********
 # In order to run, the SPEC CPU 2017 package needs to be available in the
-# location specified by hepspec_volume
-# or a tarball needs to be passed by url_tarball
+# location assigned to the hepspec_volume parameter.
+# As an alternative a tarball needs to be passed to the suite by 
+# the parameter url_tarball
 #
-# The only requirements to run are
-# python3-pip singularity 
+# Requirements 
+#    - Install: python3-pip singularity 
+#    - Define values for the parameters SITE and PURPOSE 
+#    - Make available the x509 key/cert files for the publication 
+
+
+# Example:
+# > yum install -y python3-pip singularity
+# > curl -O https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/raw/master/examples/spec/run_SPECCPU2017_intrate.sh
+# > chmod u+x run_SPECCPU2017_intrate.sh
+# - EDIT SITE and PURPOSE and location of key/cern
+# > ./run_SPECCPU2017_intrate.sh
 #####################################################################
 
 #----------------------------------------------
 # Replace somesite with a meaningful site name
 SITE=somesite
+PURPOSE="a test"
 #----------------------------------------------
 
 
@@ -48,6 +62,7 @@ global:
   rundir: /tmp/suite_results
   tags:
     site: $SITE
+    purpose: "$PURPOSE"
 
 spec2017:
   # Use the docker registry
@@ -68,8 +83,9 @@ spec2017:
   # Run the bset named "Int Rate" defined in 
   # https://gitlab.cern.ch/hep-benchmarks/hep-spec/-/blob/master/scripts/spec2017/intrate.bset
   # for any other bset to run, change this parameter accordingly and make sure the bset file
-  # is stored in the location expected by specrun `/benchspec/CPU/`
+  # is stored in the location expected by specrun /benchspec/CPU/
   bmk_set: 'intrate'
+  #bmk_set: '511.povray_r'
 
   ## Custom compiler configuration only for studies
   # config: a_spec_config_file_in_the_spec_repo_config
