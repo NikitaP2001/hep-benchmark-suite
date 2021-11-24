@@ -1,7 +1,8 @@
 #!/bin/bash
 
 #####################################################################
-# This script of example installs and runs the HEP-Benchmark-Suite
+# This example script installs and runs the HEP-Benchmark-Suite
+#
 # The Suite configuration file
 #       bmkrun_config.yml
 # is included in the script itself.
@@ -9,17 +10,30 @@
 # and defines some meta-parameters, including tags as the SITE name.
 #
 # In this example only the HS06 at 32 bits benchmark is configured to run.
+# ****** IMPORTANT ********
 # In order to run, the HS06 package needs to be available in the
-# location specified by hepspec_volume
-# or a tarball needs to be passed by url_tarball
+# location assigned to the hepspec_volume parameter.
+# As an alternative a tarball needs to be passed to the suite by 
+# the parameter url_tarball
 #
-# The only requirements to run are
-# git python3-pip singularity
+# Requirements 
+#    - Install: python3-pip singularity
+#    - Define values for the parameters SITE and PURPOSE 
+#    - Make available the x509 key/cert files for the publication 
+#
+#
+# Example:
+# > yum install -y python3-pip singularity
+# > curl -O https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/raw/master/examples/spec/run_HS06_32bits.sh
+# > chmod u+x run_HS06_32bits.sh
+# - EDIT SITE and PURPOSE and location of key/cern
+# > ./run_HS06_32bits.sh
 #####################################################################
 
 #----------------------------------------------
 # Replace somesite with a meaningful site name
 SITE=somesite
+PURPOSE="a test"
 #----------------------------------------------
 
 
@@ -27,7 +41,7 @@ echo "Running script: $0"
 cd $( dirname $0)
 
 WORKDIR=`pwd`/workdir
-
+echo "Creating the WORKDIR $WORKDIR"
 mkdir -p $WORKDIR
 chmod a+rw -R $WORKDIR
 
