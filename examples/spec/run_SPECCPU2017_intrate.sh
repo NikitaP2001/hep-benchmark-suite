@@ -20,8 +20,8 @@
 #    - Install: python3-pip singularity
 #    - Define values for the parameters SITE and PURPOSE 
 #    - Make available the x509 key/cert files for the publication 
-
-
+#
+#
 # Example:
 # > yum install -y python3-pip singularity
 # > curl -O https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/raw/master/examples/spec/run_SPECCPU2017_intrate.sh
