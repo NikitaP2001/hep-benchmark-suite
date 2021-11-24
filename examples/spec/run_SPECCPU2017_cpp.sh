@@ -66,7 +66,7 @@ global:
 
 spec2017:
   # Use the docker registry
-  image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.2"
+  image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.3"
   
   # URL to fetch the spec cpu 2017. It will only be used if the software is not found under hepspec_volume.
   # use file:// for local files, https:// for web url
