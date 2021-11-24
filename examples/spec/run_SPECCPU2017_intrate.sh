@@ -41,7 +41,7 @@ echo "Running script: $0"
 cd $( dirname $0)
 
 WORKDIR=$(pwd)/workdir
-
+echo "Creating the WORKDIR $WORKDIR"
 mkdir -p $WORKDIR
 chmod a+rw -R $WORKDIR
 
