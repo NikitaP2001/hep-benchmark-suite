@@ -205,8 +205,8 @@ def test_failed_download(url):
     assert utils.download_file(url, "test") == 1
 
 
-@pytest.mark.parametrize('url', ["https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/raw/qa-v2.0/README.md",
-                                 "https://gitlab.cern.ch/hep-benchmarks/hep-score/-/raw/master/README.md"])
+@pytest.mark.parametrize('url', ["https://gitlab.cern.ch/hep-benchmarks/hep-score/-/raw/master/README.md"])
+
 def test_success_download(url):
     """Test the download success."""
     assert utils.download_file(url, "downloaded_README.md") == 0
