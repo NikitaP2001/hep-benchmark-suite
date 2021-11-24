@@ -17,7 +17,7 @@
 # the parameter url_tarball
 #
 # Requirements 
-#    - Install: python3-pip singularity gcc-gfortran
+#    - Install: python3-pip singularity
 #    - Define values for the parameters SITE and PURPOSE 
 #    - Make available the x509 key/cert files for the publication 
 
