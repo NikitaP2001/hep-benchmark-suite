@@ -24,10 +24,10 @@
 #
 # Example:
 # > yum install -y python3-pip singularity
-# > curl -O https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/raw/master/examples/spec/run_SPECCPU2017_intrate.sh
-# > chmod u+x run_SPECCPU2017_intrate.sh
+# > curl -O https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/raw/master/examples/spec/run_SPECCPU2017_cpp.sh
+# > chmod u+x run_SPECCPU2017_cpp.sh
 # - EDIT SITE and PURPOSE and location of key/cern
-# > ./run_SPECCPU2017_intrate.sh
+# > ./run_SPECCPU2017_cpp.sh
 #####################################################################
 
 #----------------------------------------------
