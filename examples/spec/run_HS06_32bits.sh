@@ -26,7 +26,7 @@
 # > yum install -y python3-pip singularity
 # > curl -O https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/raw/master/examples/spec/run_HS06_32bits.sh
 # > chmod u+x run_HS06_32bits.sh
-# - EDIT SITE and PURPOSE and location of key/cern
+# - MANDATORY: EDIT the user editable section
 # > ./run_HS06_32bits.sh
 #####################################################################
 
