@@ -26,15 +26,18 @@
 # > yum install -y python3-pip singularity
 # > curl -O https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/raw/master/examples/spec/run_SPECCPU2017_cpp.sh
 # > chmod u+x run_SPECCPU2017_cpp.sh
-# - EDIT SITE and PURPOSE and location of key/cern
+# - MANDATORY: EDIT the user editable section
 # > ./run_SPECCPU2017_cpp.sh
 #####################################################################
 
-#----------------------------------------------
-# Replace somesite with a meaningful site name
-SITE=somesite
+#--------------[Start of user editable section]---------------------- 
+SITE=somesite  # Replace somesite with a meaningful site name
 PURPOSE="a test"
-#----------------------------------------------
+PUBLISH=false  # Replace false with true in order to publish results in AMQ
+CERTIFKEY=path_to_user_key_pem  
+CERTIFCRT=path_to_user_cert_pem
+HEPSPEC_VOLUME=path_to_SPEC_installation # Make sure this directory is writable
+#--------------[End of user editable section]------------------------- 
 
 
 echo "Running script: $0"
@@ -51,14 +54,14 @@ activemq:
   topic: /topic/vm.spec
   port: 61123  # Port used for certificate
   ## include the certificate full path (see documentation)
-  key: 'userkey.pem'
-  cert: 'usercert.pem'
+  key: $CERTIFKEY
+  cert: $CERTIFCRT
 
 global:
   benchmarks:
   - spec2017
   mode: singularity
-  publish: true
+  publish: $PUBLISH
   rundir: /tmp/suite_results
   tags:
     site: $SITE
@@ -75,7 +78,7 @@ spec2017:
   # Define the location on where spec cpu 2017 should be found
   # If spec cpu 2017 is not present, the directory should be writeable
   # to allow the installation via the url_tarball
-  hepspec_volume: "/tmp/SPEC"
+  hepspec_volume: "$HEPSPEC_VOLUME"
 
   ## Number of iterations to run the benchmark
   iterations: 3
