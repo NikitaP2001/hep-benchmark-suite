@@ -70,9 +70,9 @@ EOF
 
 cat > $WORKDIR/bmkrun_config_job.yml <<EOF2
 activemq:
-  server: dashb-mb.cern.ch
-  topic: /topic/vm.spec
-  port: 61123  # Port used for certificate
+  server: *****
+  topic:  *****
+  port:   *****  # Port used for certificate
   ## include the certificate full path (see documentation)
   key: 'userkey.pem'
   cert: 'usercert.pem'
