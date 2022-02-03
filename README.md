@@ -325,3 +325,17 @@ optional arguments:
     ```sh
     bmkrun -c <alternate config>  -b hs06 spec2017
     ```
+
+- Running at sites with network storage or restrictive network (eg. HPC)
+
+    By default the suite pulls the images required to run during execution. This traffic can be avoided by pre-caching them in a shared location (in the case of multiple runs across nodes that share access to a network storage, or where compute nodes have network restrictions).
+    
+    Before running:
+    ```sh
+    # set a common cachedir env to store a single copy of the images
+    # this must be accessible across all nodes via shared mountpoint, or symlink
+    export SINGULARITY_CACHEDIR=/cephfs/user/johndoe/.singularity
+    ./populate_image_cache.sh [optional yourconfig.yml]
+    srun bmkrun -c <yourconfig.yml> # SLURM job submission for example
+    ```
+    where [populate_image_cache.sh](hepbenchmarksuite/examples/populate_image_cache.sh) is used to pull all needed images before launching a batch benchmarking job. 
