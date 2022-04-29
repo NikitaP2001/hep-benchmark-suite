@@ -1,7 +1,7 @@
 #setuptools
 pytest
 pylint
-stomp.py
+stomp.py<=7.0.0
 coverage
 bandit
 schema
