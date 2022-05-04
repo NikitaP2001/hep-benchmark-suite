@@ -212,8 +212,8 @@ bats_test_docker_compose_qa:
   dependencies: []
   tags: 
     # Currently restricted to XL as we hard-code 20GB free requirement
-    - docker-privileged-xl
-    #- hep-benchmark-suite-docker-runner
+    #- docker-privileged-xl
+    - hep-benchmark-suite-docker-runner
   # use image that has singularity.cern repo
   image: gitlab-registry.cern.ch/linuxsupport/cc7-base
   variables:
