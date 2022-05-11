@@ -189,7 +189,7 @@ class TestHWExtractor(unittest.TestCase):
         Test the metadata schema
         """
         # Collect data
-        hw = Extractor(extra={"mode": "docker"})
+        hw = Extractor(extra={'mode': 'docker'})
         hw.collect()
 
         # Print the output to stdout and save metadata to json file
@@ -197,48 +197,39 @@ class TestHWExtractor(unittest.TestCase):
         hw.dump(stdout=True, outfile=TMP_FILE)
 
         # Define Hardware metadata schema
-        metadata_schema = Schema(
-            And(
-                Use(json.loads),
-                {
-                    "HW": {
-                        "BIOS": {str: str},
-                        "SYSTEM": {str: str},
-                        "MEMORY": {
-                            "Mem_Available": int,
-                            "Mem_Total": int,
-                            "Mem_Swap": int,
-                        },
-                        "STORAGE": {Optional(str): Optional(str)},
-                        "CPU": {
-                            str: str,
-                            "SMT_Enabled": str,
-                            "CPU_num": int,
-                            "Threads_per_core": int,
-                            "Cores_per_socket": int,
-                            "Sockets": int,
-                            "BogoMIPS": float,
-                            "CPU_MHz": float,
-                            "CPU_Max_Speed_MHz": Or(int, float),
-                            "CPU_Min_Speed_MHz": Or(int, float),
-                            "NUMA_nodes": int,
-                            "Stepping": str,
-                        },
-                    },
-                    "SW": {str: str},
-                    "Hostname": str,
-                },
-            )
-        )
+        metadata_schema = Schema(And(Use(json.loads),
+                                {
+                                 "HW": { "BIOS"   : { str : str },
+                                         "SYSTEM" : {  str   : str,
+                                                      "isVM" : bool,
+                                                    },
+                                         "MEMORY" : { "Mem_Available" : int,
+                                                      "Mem_Total"     : int,
+                                                      "Mem_Swap"      : int,
+                                                    },
+                                         "STORAGE": { Optional(str) : Optional(str) },
+                                         "CPU"    : { str : str,
+                                                      "SMT_Enabled"      : str,
+                                                      "CPU_num"          : int,
+                                                      "Threads_per_core" : int,
+                                                      "Cores_per_socket" : int,
+                                                      "Sockets"          : int,
+                                                      "BogoMIPS"         : float,
+                                                      "CPU_MHz"          : float,
+                                                      "CPU_Max_Speed_MHz": Or(int, float),
+                                                      "CPU_Min_Speed_MHz": Or(int, float),
+                                                      "NUMA_nodes"       : int,
+                                                      "Stepping"         : str,
+                                                    }
+                                 },
+                                 "SW" : { str : str },
+                                 "Hostname" : str,
+                                }))
 
         # Validate schema from extractor
         with open(TMP_FILE, "r") as fin:
             metadata_schema.validate(fin.read())
 
-        # Cleanup tmp file
-        if TMP_FILE.exists():
-            TMP_FILE.unlink()
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main(verbosity=2)
