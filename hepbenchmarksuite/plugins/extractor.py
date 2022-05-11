@@ -48,13 +48,13 @@ class Extractor():
         # If the tools are not present, the output will be limited on certain fields.
         # The dict self.pkg enforces the switching of outputs.
 
-        req_packages = ('lshw', 'ipmitool', 'dmidecode')
+        req_packages = ('lshw', 'ipmitool', 'dmidecode', 'facter')
 
         for pkg_name in req_packages:
 
             _sys_pkg = shutil.which(pkg_name)
 
-            if _sys_pkg != None:
+            if _sys_pkg is not None:
                 _log.debug("Package installed: %s", pkg_name)
                 self.pkg[pkg_name] = True
             else:
@@ -209,12 +209,18 @@ class Extractor():
         else:
             parse_bmc_fru = lambda x: "not_available"
 
+        if self.pkg['facter']:
+            is_virtual = self.exec_cmd("facter is_virtual").casefold() == 'true'
+        else:
+            is_virtual = self.exec_cmd("grep hypervisor /proc/cpuinfo") != "not_available"
+
         system = {
             'Manufacturer'     : parse_system("Manufacturer"),
             'Product_Name'     : parse_system("Product Name"),
             'Version'          : parse_system("Version"),
             'Product_Serial'   : parse_bmc_fru("Product Serial"),
-            'Product_Asset_Tag': parse_bmc_fru("Product Asset Tag")
+            'Product_Asset_Tag': parse_bmc_fru("Product Asset Tag"),
+            'isVM'             : is_virtual
         }
 
         return system
