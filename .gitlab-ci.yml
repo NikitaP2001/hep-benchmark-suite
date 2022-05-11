@@ -416,6 +416,8 @@ build_py37_wheels:
 update_release_info:
   stage: deploy
   image: gitlab-registry.cern.ch/linuxsupport/cc7-base
+  before_script:
+    - yum install -y git sshpass
   script:
     - |
       curl -X POST "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/releases" \
