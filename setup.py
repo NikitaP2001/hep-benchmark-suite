@@ -14,15 +14,15 @@ with open("README.md", "r") as readme_file:
     LONG_DESC = readme_file.read()
 
 about = {}
-with open(os.path.join('hepbenchmarksuite', '__version__.py')) as info:
+with open(os.path.join("hepbenchmarksuite", "__version__.py")) as info:
     exec(info.read(), about)
 
 setup(
-    name=about['__title__'],
-    version=about['__version__'],
-    description=about['__description__'],
-    author=about['__author__'],
-    author_email=about['__author_email__'],
+    name=about["__title__"],
+    version=about["__version__"],
+    description=about["__description__"],
+    author=about["__author__"],
+    author_email=about["__author_email__"],
     long_description=LONG_DESC,
     long_description_content_type="text/markdown",
     url=about['__url__'],
