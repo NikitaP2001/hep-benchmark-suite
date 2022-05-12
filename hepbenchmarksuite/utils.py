@@ -71,6 +71,7 @@ def export(result_dir, outfile):
 
     return 0
 
+
 def exec_wait_benchmark(cmd_str):
     """Accept command string to execute and waits for process to finish.
 

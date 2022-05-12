@@ -26,6 +26,7 @@ run_*
 *~
 .*.swp
 .*sw?
+.idea
 .vscode
 .idea
 
