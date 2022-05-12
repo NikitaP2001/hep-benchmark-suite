@@ -19,6 +19,7 @@ import subprocess
 import pytest
 import yaml
 
+
 class TestHepscore(unittest.TestCase):
     """Test extra utility methods."""
 
@@ -52,13 +53,16 @@ class TestHepscore(unittest.TestCase):
 
         self.assertEqual(context.exception.code, 1)
 
+
 #--------------------------------------------------------------------------------------------------------------
 # HEPspec06 and SPEC2017 interface related tests
 #-------------------------------------------------------------------------------------------------------------
 
+
 def alternate_exec(arg):
     """ Custom function to mock utils.exec_wait_benchmark. """
     return arg
+
 
 # It does not inherit from unittest.TestCase to allow using
 # pytest.parametrization without issues.
@@ -153,6 +157,7 @@ class TestSpec:
 #        self.assertEqual(ret, 1)
 #        mock_gen.assert_called()
 #        mock_write.assert_called_once_with('json', '/tmp/HEPSCORE/hepscore_result.json')
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

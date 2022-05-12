@@ -10,6 +10,7 @@
 import contextlib
 import difflib
 import unittest
+
 from hepbenchmarksuite import utils
 import os
 import sys

@@ -18,11 +18,12 @@ from hepbenchmarksuite import benchmarks
 from hepbenchmarksuite.exceptions import PreFlightError
 from hepbenchmarksuite.exceptions import BenchmarkFailure
 from hepbenchmarksuite.exceptions import BenchmarkFullFailure
+from hepbenchmarksuite.plugins.send_queue import is_key_password_protected
 
 _log = logging.getLogger(__name__)
 
 
-class HepBenchmarkSuite():
+class HepBenchmarkSuite:
     """********************************************************
                   *** HEP-BENCHMARK-SUITE ***
      *********************************************************"""
@@ -121,6 +122,16 @@ class HepBenchmarkSuite():
 
             # Flag for a failed check
             checks.append(1)
+
+        # Checking if private key for AMQ is password protected
+        if self._config.get('publish') and 'activemq' in self._config_full:
+            _log.info(" - Checking AMQ configuration for key protection")
+            amq_cfg = self._config_full['activemq']
+            if "key" in amq_cfg and is_key_password_protected(amq_cfg['key']):
+                _log.warning("The private key is password protected. After the configured benchmark(s) have run, you "
+                             "will need to input the password or the execution will stall")
+                _log.warning("Otherwise, you may set the publish variable to false and send the results afterwards "
+                             "using bmksend, which is included in the suite")
 
         # Check if any pre-flight check failed
         if any(checks):

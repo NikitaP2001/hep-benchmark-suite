@@ -166,6 +166,7 @@ db12_benchmark:
     - yum install -y -q singularity python3-pip
     - python3 -m pip install --user --upgrade pip
     - python3 -m pip install --user .
+    - python3 -m pip install -r requirements.txt
     - export PATH=~/.local/bin:$PATH
     - bmkrun --config default --rundir . --benchmarks db12
   artifacts:

@@ -9,18 +9,24 @@
 
 import argparse
 import logging
-from pathlib import Path
+import subprocess
 import sys
 import time
+from pathlib import Path
+
+from OpenSSL import SSL, crypto
 import stomp
 
 _log = logging.getLogger(__name__)
 
+CERTIFICATE = "cert"
+KEY = "key"
+
 
 class Listener(stomp.ConnectionListener):
-    """A generic STOMP protocol listner
+    """A generic STOMP protocol listener
     Args:
-        stomp (stomp.ConnectionListner): a connection listner
+        stomp (stomp.ConnectionListener): a connection listener
     """
 
     def __init__(self, conn):
@@ -28,13 +34,57 @@ class Listener(stomp.ConnectionListener):
         self.status = True
         self.message = ""
 
-    def on_error(self, headers, body):
-        _log.error("received error: %s", body)
+    def on_error(self, frame):
+        _log.error("received error: %s", frame.body)
         self.status = False
-        self.message = body
+        self.message = frame.body
 
-    def on_message(self, headers, body):
-        _log.info("received message: %s", body)
+    def on_message(self, frame):
+        _log.error("received message: %s", frame.body)
+
+
+def _check_certificate_config(connection):
+    cert, key = _load_cert_and_key(connection)
+    _ensure_key_matches_cert(cert, connection, key)
+    _validate_certificate(cert)
+
+
+def _ensure_key_matches_cert(cert, connection, key):
+    context = SSL.Context(SSL.TLS_METHOD)
+    context.use_privatekey(key)
+    context.use_certificate(cert)
+    try:
+        context.check_privatekey()
+    except SSL.Error:
+        raise Exception(f"Certificate {connection[CERTIFICATE]} and private key {connection[KEY]} do not match")
+
+
+def _validate_certificate(cert):
+    """ The certificate is verified against itself. That way it is always trusted, but other checks are still performed.
+    E.g. if the certificate is expired """
+    store = crypto.X509Store()
+    store.add_cert(cert)
+    store_ctx = crypto.X509StoreContext(store, cert)
+
+    try:
+        store_ctx.verify_certificate()
+    except crypto.X509StoreContextError as e:
+        raise ValueError(f"The provided certificate is invalid: {e.args[0][2]}")
+
+
+def _load_cert_and_key(connection):
+    # TODO: Check for other file types
+    try:
+        cert = crypto.load_certificate(crypto.FILETYPE_PEM, open(connection[CERTIFICATE]).read())
+    except crypto.Error as e:
+        raise Exception(f"Error while loading the certificate {connection[CERTIFICATE]}: {e}")
+
+    try:
+        key = crypto.load_privatekey(crypto.FILETYPE_PEM, open(connection[KEY]).read())
+    except crypto.Error as e:
+        raise Exception(f"Error while loading the private key {connection[KEY]}: {e}")
+
+    return cert, key
 
 
 def send_message(filepath, connection):
@@ -51,11 +101,15 @@ def send_message(filepath, connection):
     )
     conn.set_listener("mylistener", Listener(conn))
 
-    if "key" in connection and "cert" in connection:
+    if KEY in connection and CERTIFICATE in connection:
+        if is_key_password_protected(connection[KEY]):
+            _log.warning("The private key is password protected, please enter the password or the execution will stall")
+
+        _check_certificate_config(connection)
         conn.set_ssl(
             for_hosts=[(connection["server"], int(connection["port"]))],
-            cert_file=connection["cert"],
-            key_file=connection["key"],
+            cert_file=connection[CERTIFICATE],
+            key_file=connection[KEY],
             ssl_version=5,
         )  # <_SSLMethod.PROTOCOL_TLSv1_2: 5>
         conn.connect(wait=True)
@@ -81,6 +135,11 @@ def send_message(filepath, connection):
     conn.disconnect()
 
     _log.info("Results sent to AMQ topic")
+
+
+def is_key_password_protected(key):
+    return_code = subprocess.run([f"ssh-keygen -y -P '' -f {key} &>/dev/null"]).returncode
+    return return_code != 0
 
 
 def parse_args(args):
