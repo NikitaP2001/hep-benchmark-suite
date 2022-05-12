@@ -4,13 +4,17 @@
 # of this distribution. For licensing information, see the COPYING file at
 # the top-level directory of this distribution.
 ###############################################################################
-
+import re
 from datetime import datetime
 import json
 import os
 import unittest
 from unittest.mock import patch, mock_open, MagicMock
+
+from OpenSSL import crypto
+
 from hepbenchmarksuite.plugins import send_queue
+from OpenSSL.crypto import X509, PKey
 
 
 class TestAMQ(unittest.TestCase):
@@ -57,7 +61,7 @@ class TestAMQ(unittest.TestCase):
 
     @patch("builtins.open", new_callable=mock_open())
     def test_genJSON(self, mock_open_file):
-        """Test if the json creation is successfull."""
+        """Test if the json creation is successful."""
         # currently unused
         ret = self.genJSON("testString")
 
@@ -158,11 +162,13 @@ class TestAMQ(unittest.TestCase):
                 send_queue.send_message("garbage.json", dict())
         self.assertTrue(mock_filecheck.called)
 
+    @patch("hepbenchmarksuite.plugins.send_queue.is_key_password_protected", return_value=True)
+    @patch("hepbenchmarksuite.plugins.send_queue._check_certificate_config", return_value=True)
     @patch("hepbenchmarksuite.plugins.send_queue.time.sleep", return_value=None)
     @patch("hepbenchmarksuite.plugins.send_queue.Listener", autospec=True)
     @patch("hepbenchmarksuite.plugins.send_queue.Path.is_file", return_value=True)
     @patch("hepbenchmarksuite.plugins.send_queue.stomp", autospec=True)
-    def test_send_message(self, mock_stomp, mock_filecheck, mock_listener, mock_sleep):
+    def test_send_message(self, mock_stomp, mock_filecheck, mock_listener, mock_sleep, mock_cert_check, mock_is_key_protected):
         """Pass config object to send_queue"""
         test_args = {"port": 8181, "server": "home.cern", "topic": "test"}
         mock_conn = MagicMock()
@@ -196,7 +202,7 @@ class TestAMQ(unittest.TestCase):
 
             # Test user/pw
             test_args = {
-                "port": 8181,
+                "port": 60013,
                 "server": "home.cern",
                 "topic": "test",
                 "username": "Dave",
@@ -228,7 +234,7 @@ class TestAMQ(unittest.TestCase):
 
             # Test cert/key
             test_args = {
-                "port": 8181,
+                "port": 60023,
                 "server": "home.cern",
                 "topic": "test",
                 "cert": "somecert",
@@ -244,6 +250,11 @@ class TestAMQ(unittest.TestCase):
                 key_file=test_args["key"],
                 ssl_version=5,
             )
+
+            self.assertTrue(mock_is_key_protected.called)
+            self.assertTrue(any(re.match(r'.*The private key is password protected.*', line) for line in logger.output))
+            self.assertTrue(mock_cert_check.called)
+
             mock_conn.connect.assert_called_once_with(wait=True)
             self.assertIn(
                 "INFO:hepbenchmarksuite.plugins.send_queue:AMQ SSL: certificate based authentication",
@@ -262,6 +273,42 @@ class TestAMQ(unittest.TestCase):
             mock_conn.get_listener("mylistener").configure_mock(status=False)
             with self.assertRaises(Exception):
                 send_queue.send_message(self.test_file_path, test_args)
+
+    def test_load_cert_and_key(self):
+        connection = {"cert": "wrong cert path", "key": "wrong key path"}
+        with self.assertRaisesRegex(Exception, ".*No such file or directory.*"):
+            send_queue._load_cert_and_key(connection)
+
+        connection["cert"] = "tests/data/certs/test.cert.pem"
+        with self.assertRaisesRegex(Exception, ".*No such file or directory.*"):
+            send_queue._load_cert_and_key(connection)
+
+        connection["key"] = "tests/data/certs/test.key.pem"
+        cert, key = send_queue._load_cert_and_key(connection)
+        assert isinstance(cert, X509)
+        assert isinstance(key, PKey)
+
+    def test_ensure_key_matches_cert(self):
+        connection = {
+            'cert': 'tests/data/certs/test.cert.pem',
+            'key': 'tests/data/certs/another.key.pem'
+        }
+
+        cert, key = send_queue._load_cert_and_key(connection)
+        with self.assertRaisesRegex(Exception, "Certificate .* and private key .* do not match"):
+            send_queue._ensure_key_matches_cert(cert, connection, key)
+
+        connection['key'] = 'tests/data/certs/test.key.pem'
+        cert, key = send_queue._load_cert_and_key(connection)
+        send_queue._ensure_key_matches_cert(cert, connection, key)
+
+    def test_validate_certificate(self):
+        cert = crypto.load_certificate(crypto.FILETYPE_PEM, open("tests/data/certs/expired.crt").read())
+        with self.assertRaisesRegex(ValueError, "The provided certificate is invalid.*"):
+            send_queue._validate_certificate(cert)
+
+        cert = crypto.load_certificate(crypto.FILETYPE_PEM, open("tests/data/certs/test.cert.pem").read())
+        send_queue._validate_certificate(cert)
 
     def test_listener(self):
         """TODO(anyone): listener function"""
