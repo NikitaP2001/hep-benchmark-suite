@@ -287,6 +287,8 @@ optional arguments:
                         file are ignored.
   -p, --publish         Enable reporting via AMQ credentials in YAML file.
   -s, --show            Show running config and exit.
+  -V, --extra_volumes VOLUME [VOLUME ...]
+                        List of additional volumes to mount on the container.
   -v, --verbose         Enables verbose mode. Display debug messages.
   --version             Show program's version number and exit
 -----------------------------------------------

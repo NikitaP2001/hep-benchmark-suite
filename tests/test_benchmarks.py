@@ -98,24 +98,43 @@ class TestSpec:
         self.setup()
         sample_config = self.config_file.copy()
 
-        sample_config['global']['mode']=mode
-        sample_config['global']['benchmarks']=bench
+        sample_config['global']['mode'] = mode
+        sample_config['global']['benchmarks'] = bench
 
         if bench == "hs06":
             bmkset = '453.povray'
-
         elif bench == 'spec2017':
             bmkset = '508.namd_r'
 
+        params = [f'-b {bench}',
+                   '-w /tmp/hep-spec_wd3',
+                   '-n None',
+                   '-u https://www.example.com/',
+                   '-p /tmp/SPEC',
+                   '-i 1',
+                   f'-s {bmkset}']
+
         if mode == 'singularity':
-            valid = 'SINGULARITY_CACHEDIR=./singularity_cachedir singularity run -B /tmp/hep-spec_wd3:/tmp/hep-spec_wd3 -B /tmp/SPEC:/tmp/SPEC docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:qa  -b {} -w /tmp/hep-spec_wd3 -n None -u https://www.example.com/ -p /tmp/SPEC -i 1 -s {}'.format(bench, bmkset)
-
+            command_start = 'SINGULARITY_CACHEDIR=./singularity_cachedir singularity run'
+            params.extend(['-B /tmp/hep-spec_wd3:/tmp/hep-spec_wd3',
+                           '-B /tmp/SPEC:/tmp/SPEC',
+                           'docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:qa'])
         elif mode == 'docker':
-            valid = 'docker run --rm --network=host -v /tmp/hep-spec_wd3:/tmp/hep-spec_wd3:Z -v /tmp/SPEC:/tmp/SPEC:Z gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:qa  -b {} -w /tmp/hep-spec_wd3 -n None -u https://www.example.com/ -p /tmp/SPEC -i 1 -s {}'.format(bench, bmkset)
+            command_start = 'docker run'
+            params.extend(['--rm',
+                           '--network=host',
+                           '-v /tmp/hep-spec_wd3:/tmp/hep-spec_wd3:Z',
+                           '-v /tmp/SPEC:/tmp/SPEC:Z',
+                           'gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:qa'])
 
-        assert benchmarks.run_hepspec(sample_config, bench) == valid
+        command = str(benchmarks.run_hepspec(sample_config, bench))
+        assert command.startswith(command_start)
 
-#----------------------------------------------------------
+        for param in params:
+            assert param in command
+
+
+# ----------------------------------------------------------
 # This section should be ported to HEP-SCORE unittest
 #
 #    @patch.object(HEPscore, 'write_output')

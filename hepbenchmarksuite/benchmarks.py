@@ -243,10 +243,10 @@ def run_hepspec(conf, bench):
     _log.debug("Configuration in use for benchmark %s: %s", bench, conf)
 
     # Config section to use
-    if bench in ('hs06'):
+    if bench == 'hs06':
         spec = conf['hepspec06']
 
-    elif bench in ('spec2017'):
+    elif bench == 'spec2017':
         spec = conf['spec2017']
 
     # Select run mode: docker, singularity, podman, etc
@@ -254,20 +254,19 @@ def run_hepspec(conf, bench):
 
     # Possible hepspec06 arguments
     spec_args = {
-        'bench'         : ' -b {}'.format(bench),
         'iterations'    : ' -i {}'.format(spec.get('iterations')),
-        'mp_num'        : ' -n {}'.format(conf['global'].get('mp_num')),
         'hepspec_volume': ' -p {}'.format(spec.get('hepspec_volume')),
         'bmk_set'       : ' -s {}'.format(spec.get('bmk_set')),
         'mode'          : ' -m {}'.format(spec.get('mode')),
         'url_tarball'   : ' -u {}'.format(spec.get('url_tarball')),
-        'config'        : ' -c {}'.format(spec.get('config')),
-        'workdir'       : ' -w {}'.format(conf['global'].get('rundir'))
+        'config'        : ' -c {}'.format(spec.get('config'))
     }
     _log.debug("spec arguments: %s", spec_args)
 
     # Populate CLI from the global configuration section
-    _run_args = spec_args['bench'] + spec_args['workdir'] + spec_args['mp_num']
+    _run_args = f" -b {bench}" \
+                f" -w {conf['global'].get('rundir')}" \
+                f" -n {conf['global'].get('mp_num')}"
 
     # Populate CLI from the hepspec06 configuration section
     # Removing image key from this population since its specified bellow at command level
@@ -282,7 +281,7 @@ def run_hepspec(conf, bench):
             _log.error("Not a valid HEPSPEC06 key: %s.", err)
 
     # Check if docker image is properly passed
-    docker_image=''
+    docker_image = ''
     if run_mode == "docker":
         if spec['image'].startswith('docker://'):
             docker_image = spec['image'].replace('docker://', '')
@@ -291,17 +290,20 @@ def run_hepspec(conf, bench):
             _log.error("Invalid docker image specified. Image should start with docker://")
             return 1
 
+    # Create the set of volumes to be mounted
+    volumes = {conf['global']['rundir'], spec['hepspec_volume']}
+    if 'extra_volumes' in conf['global']:
+        volumes.update(conf['global']['extra_volumes'])
+
     # Command specification
     cmd = {
-        'docker': "docker run --rm --network=host -v {0}:{0}:Z -v {1}:{1}:Z {2} {3}"
-            .format(conf['global']['rundir'],
-                    spec['hepspec_volume'],
+        'docker': "docker run --rm --network=host {0} {1} {2}"
+            .format(format_volume_string('docker', volumes),
                     docker_image,
                     _run_args),
-        'singularity': "SINGULARITY_CACHEDIR={0}/singularity_cachedir singularity run -B {1}:{1} -B {2}:{2} {3} {4}"
+        'singularity': "SINGULARITY_CACHEDIR={0}/singularity_cachedir singularity run {1} {2} {3}"
             .format(conf['global']['parent_dir'],
-                    conf['global']['rundir'],
-                    spec['hepspec_volume'],
+                    format_volume_string('singularity', volumes),
                     spec['image'],
                     _run_args)
     }
@@ -310,3 +312,12 @@ def run_hepspec(conf, bench):
     _log.debug(cmd[run_mode])
     returncode = utils.exec_wait_benchmark(cmd[run_mode])
     return returncode
+
+
+def format_volume_string(platform, volumes):
+    volume_formats = {
+        'docker': "-v {0}:{0}:Z",
+        'singularity': "-B {0}:{0}"
+    }
+
+    return ' '.join(list(map(lambda volume: volume_formats[platform].format(volume), volumes)))
