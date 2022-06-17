@@ -249,10 +249,10 @@ def main():
 
     try:
         suite.start()
-    except (PreFlightError, BenchmarkFullFailure):
+    except PreFlightError:
         logger.error("HEP-Benchmark Suite failed.")
         sys.exit(1)
-    except BenchmarkFailure:
+    except (BenchmarkFailure, BenchmarkFullFailure):
         logger.warning("HEP-Benchmark Suite ran with failed benchmarks. Please be aware of the results.")
 
     # Export logs and json to a compressed tarball
