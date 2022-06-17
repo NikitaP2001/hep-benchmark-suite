@@ -399,7 +399,7 @@ delete_dev_image:
 
 build_py38_wheels:
   stage: deploy
-  image: gitlab-registry.cern.ch/linuxsupport/c8-base
+  image: gitlab-registry.cern.ch/linuxsupport/cs8-base
   extends: .build_wheel_common
   before_script:
     - dnf install -y epel-release
