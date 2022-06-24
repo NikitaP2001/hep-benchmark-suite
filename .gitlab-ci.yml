@@ -4,7 +4,6 @@ stages:
   - test-components
   - test-benchmarks
   - deploy
-  - dev-image
   - build-examples
 
 variables:

@@ -71,7 +71,8 @@ function run_amq_bats_test() {
     sleep 30s
     docker run --rm --net=amq_to_es_${CI_COMMIT_SHORT_SHA}_default --name mytester_write \
         -v $this_work_dir:$this_work_dir -w $this_work_dir \
-        ${CI_REGISTRY_IMAGE}/hep-benchmark-suite-cc7:v1.8 bats tests/qa_send_queue.bat
+        ${CI_REGISTRY_IMAGE}/docker-compose:latest bats tests/qa_send_queue.bat
+    # bats /opt/hep-benchmark-suite/tests/qa_send_queue.bat
 }
 
 function run_es_reader() {

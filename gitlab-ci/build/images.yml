@@ -46,15 +46,34 @@ build_elasticsearch_image:
 build_suite_prior_image:
   extends: .build_suite_image
   rules:
-    - if: $CI_COMMIT_BRANCH =~ /^qa.*$/ || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/ || $CI_COMMIT_TAG =~ $PEP440_VERSION_REGEX
+    - if: $CI_COMMIT_BRANCH =~ /^qa.*$/
       changes:
         - docker-images/hep-benchmark-suite/Dockerfile-cc7
+      variables:
+        ID: '$CI_COMMIT_BRANCH'
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/
+      changes:
+        - docker-images/hep-benchmark-suite/Dockerfile-cc7
+      variables:
+        ID: '$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME'
+    - if: $CI_COMMIT_TAG =~ $PEP440_VERSION_REGEX
+      changes:
+        - docker-images/hep-benchmark-suite/Dockerfile-cc7
+      variables:
+        ID: '$CI_COMMIT_TAG'
 
-# Useful for development
-#
-# build_suite_image_dev:
-#   stage: dev-image
-#   extends: .build_suite_image
-#   rules:
-#     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-#       when: manual
+# Build image that containts docker compose to test pipelines in docker compose in privileged runner
+build_docker_compose_image:
+    stage: build-base-image
+    extends: .template_build_image
+    before_script:
+        - ls -lta $CI_PROJECT_DIR
+        - export DOCKERFILE=$CI_PROJECT_DIR/docker-images/docker-compose/Dockerfile
+        - export CONTEXT=$CI_PROJECT_DIR/
+        - export IMAGE_NAME=docker-compose
+        - export IMAGE_TAG=latest
+        - export DESTINATIONS="--destination $CI_REGISTRY_IMAGE/$IMAGE_NAME:$IMAGE_TAG --destination $CI_REGISTRY_IMAGE/$IMAGE_NAME:ci-${CI_COMMIT_BRANCH}-${CI_COMMIT_SHORT_SHA}"
+    rules:
+      - if: '$CI_COMMIT_BRANCH =~ /^qa.*$/'
+        changes:
+          - docker-images/docker-compose/*
