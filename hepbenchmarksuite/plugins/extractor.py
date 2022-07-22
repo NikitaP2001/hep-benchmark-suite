@@ -85,7 +85,8 @@ class Extractor():
             try:
                 cmd_reply = cmd_reply.decode('utf-8').rstrip()
             except UnicodeDecodeError:
-                _log.error("Failed to decode to utf-8.")
+                _log.error("Failed to decode to utf-8: %s", cmd_reply)
+                cmd_reply = "not_available"
 
         return cmd_reply
 
