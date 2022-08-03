@@ -326,16 +326,17 @@ optional arguments:
     bmkrun -c <alternate config>  -b hs06 spec2017
     ```
 
-- Running at sites with network storage or restrictive network (eg. HPC)
-
-    By default the suite pulls the images required to run during execution. This traffic can be avoided by pre-caching them in a shared location (in the case of multiple runs across nodes that share access to a network storage, or where compute nodes have network restrictions).
+- Parallel running (HPC, Cloud, etc)
     
-    Before running:
+    By default the suite pulls all workload images and files needed during execution. This traffic can be eliminated by pre-caching them in a shared location (dramatically speeding up runs across nodes that share access to a network storage, or where compute nodes have network restrictions).
+    
+    Before running with HEPscore:
     ```sh
     # set a common cachedir env to store a single copy of the images
-    # this must be accessible across all nodes via shared mountpoint, or symlink
+    # this must be accessible across all nodes at the same mountpoint (or symlink)
     export SINGULARITY_CACHEDIR=/cephfs/user/johndoe/.singularity
-    ./populate_image_cache.sh [optional yourconfig.yml]
+    source populate_image_cache.sh [optional yourconfig.yml]
     srun bmkrun -c <yourconfig.yml> # SLURM job submission for example
     ```
-    where [populate_image_cache.sh](hepbenchmarksuite/examples/populate_image_cache.sh) is used to pull all needed images before launching a batch benchmarking job. 
+    where [populate_image_cache.sh](hepbenchmarksuite/examples/populate_image_cache.sh) is used to pull all needed images before launching a benchmarking job. 
+    HS06/17 can load the SPEC distribution from a local file by setting the location to `url_tarball: "file:/abs/path/HS06.tar.bz2"`
