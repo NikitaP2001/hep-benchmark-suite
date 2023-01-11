@@ -1,5 +1,8 @@
 *.py[cod]
 
+# Virtual environments
+venv/
+
 # Packages
 *.egg*
 dist

@@ -2,7 +2,7 @@ stages:
   - build-base-image
   - test-parsing-and-injection
   - test-components
-  - test-singularity
+  - test-apptainer
   - test-docker
   - dev-image
   - deploy
@@ -210,21 +210,21 @@ bats_test_docker_compose_qa:
 #####              TEST SINGULARITY                    #####
 ############################################################
 
-.test_qa_singularity:
+.test_qa_apptainer:
     # This job tests the hep-benchmark-suite
     # running a configurable set of benchmarks defined in $BMKLIST
-  stage: test-singularity
+  stage: test-apptainer
   dependencies: []
   tags: 
     # Currently restricted to XL as we hard-code 20GB free requirement
     #- docker-privileged-xl
     - hep-benchmark-suite-docker-runner
-  # use image that has singularity.cern repo
+  # use image that has apptainer.cern repo
   image: gitlab-registry.cern.ch/linuxsupport/cc7-base
   variables:
     BMK_VOLUME: /tmp/${CI_JOB_NAME}_${CI_JOB_ID}
     RESULTS_FILE: $CI_JOB_NAME.json
-    SINGULARITY_CACHEDIR: $CI_PROJECT_DIR/singularity_cachedir
+    SINGULARITY_CACHEDIR: $CI_PROJECT_DIR/apptainer_cachedir
   script:
     - yum install -y -q git apptainer python3-pip
     - python3 -m pip install -U pip wheel
@@ -247,29 +247,29 @@ bats_test_docker_compose_qa:
   cache:
     key: "$CI_JOB_STAGE-$CI_COMMIT_REF_SLUG"
     paths:
-      - singularity_cachedir/**/*
+      - apptainer_cachedir/**/*
   artifacts:
     paths:
       - $RESULTS_FILE
     exclude:
-      - singularity_cachedir
+      - apptainer_cachedir
     expire_in: 1 week
     when: always
 
 sing_hepscore:
-  extends: .test_qa_singularity
+  extends: .test_qa_apptainer
   before_script:
     - export BMKLIST="hepscore"
 
 sing_hs06:
-  extends: .test_qa_singularity
+  extends: .test_qa_apptainer
   before_script:
     - export BMKLIST="hs06"
     - export HS06URL=$HS06URL
     - sed -ri "s|url_tarball:.*|url_tarball:\ \"$HS06URL\"|" tests/ci/benchmarks.yml
 
 sing_spec2017:
-  extends: .test_qa_singularity
+  extends: .test_qa_apptainer
   before_script:
     - export BMKLIST="spec2017"
     - export SPEC2017URL=$SPEC2017URL
@@ -282,7 +282,7 @@ sing_spec2017:
 .test_qa_docker:
     # This job tests the hep-benchmark-suite
     # running a configurable set of benchmarks defined in $BMKLIST
-  extends: .test_qa_singularity
+  extends: .test_qa_apptainer
   image: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads-builder/dind:v1.0
   cache:
   stage: test-docker

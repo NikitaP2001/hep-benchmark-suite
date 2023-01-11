@@ -31,5 +31,5 @@ setup(
     packages=['hepbenchmarksuite', 'hepbenchmarksuite.plugins', 'hepbenchmarksuite.config'],
     package_data={'hepbenchmarksuite': ['config/*.yml']},
     python_requires='~=3.4',
-    install_requires=['pyyaml>=5.1', 'stomp.py<=7.0.0', 'importlib-metadata', 'pyOpenSSL>=21.0.0']
+    install_requires=['pip>=21.3.1', 'pyyaml>=5.1', 'stomp.py<=7.0.0', 'importlib-metadata', 'pyOpenSSL>=21.0.0']
 )

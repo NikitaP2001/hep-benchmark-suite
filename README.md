@@ -116,7 +116,7 @@ Users are free to build/use transport and aggregation/visualization tools of the
 
 ## Installation
 
-> **This package requires `pip3` >= 19.1, `python3.6+` and `git`**\
+> **This package requires `pip3` >= 21.3.1, `python3.6+` and `git`**\
   If your `pip3 --version` is older, please update with: `pip3 install --user --upgrade pip` before installing!
 
 ### Local user space
