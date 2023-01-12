@@ -27,6 +27,7 @@ REPORT = "bmkrun_report.json"
 
 def main():
     """CLI entrypoint for batch AMQ uploading"""
+
     parser = argparse.ArgumentParser(
         description="Utility for sending 'bmkrun_report.json' to an AMQ broker via STOMP. "
         "Connection details from your custom config.yaml are used for credentials."
