@@ -23,7 +23,7 @@ from pathlib import Path
 from urllib.request import urlopen
 from subprocess import run
 import sys
-from yaml import safe_load, dump
+from yaml import safe_load
 
 # Singularity is default for suite, will override if defined in suite config
 pull_exec = "singularity"
@@ -31,7 +31,6 @@ hs06_image = False
 hsconfig_file = False
 hs_images = dict()
 SCACHE=getenv("SINGULARITY_CACHEDIR", default=None)
-uri = {"singularity":"oras://", "docker":"https://"}
 
 # use conf given, or get default one according to version
 if len(sys.argv) > 1:
@@ -82,8 +81,7 @@ for bmk, conf in config['benchmarks'].items():
         print(f"Skipping commented benchmark {bmk}")
         continue
     hs_images[bmk] = conf['version']
-registry = config['settings']['registry'].split('//')[1]
-
+registry = config['settings']['registry']+"/"
 
 print()
 print(f"This script will pull the following images via {pull_exec} {'to '+SCACHE if SCACHE else ''}")
@@ -98,7 +96,4 @@ if response[:1] != 'y':
 
 for image, tag in hs_images.items():
     print(f"Pulling {image}:{tag}")
-    run([pull_exec, "pull", uri[pull_exec]+registry+image+":"+tag], check=True)
-
-#print(hs06_image)
-#print(registry)
+    run([pull_exec, "pull", registry+image+":"+tag], check=True)

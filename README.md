@@ -50,10 +50,9 @@ For an in depth understanding of the installation and configuration options refe
    - [Run](examples/spec/run_SPECCPU2017_intrate.sh) SPEC CPU 2017 Int Rate
    - [Run](examples/spec/run_SPECCPU2017_cpp.sh) SPEC CPU 2017 Rate cpp
 
-
 ## Benchmark suite architecture
 
-*The figure shows the high level architecture of the benchmark suite.*
+_The figure shows the high level architecture of the benchmark suite._
 
 <div align="center">
   <img src="doc/images/HEP-Benchmark-Suite.png" width="484" height="490" />
@@ -106,9 +105,9 @@ The HEP Benchmark Suite is delivered **ready-to-run** with a [default yaml](hepb
   <img src="doc/images/HEP-Benchmark-Suite-Workflow.png">
 </div>
 
-*The above figure shows an example adoption of the HEP Benchmark suite for a multi-partition deployment.*
+_The above figure shows an example adoption of the HEP Benchmark suite for a multi-partition deployment._
 
-Servers belonging to different data centres (or cloud providers) are benchmarked by executing the HEP Benchmark Suite in each of them. The mentioned servers can be *bare metal* servers as well as *virtual machines*. After running, the final JSON report is published to an AMQ message broker (*shown as transport layer above*).
+Servers belonging to different data centres (or cloud providers) are benchmarked by executing the HEP Benchmark Suite in each of them. The mentioned servers can be _bare metal_ servers as well as _virtual machines_. After running, the final JSON report is published to an AMQ message broker (_shown as transport layer above_).
 
 In this example, an AMQ consumer may then digest the messages from the broker, and insert them in an Elasticsearch cluster so that the benchmark results can be aggregated and visualized in dashboards. Metadata (such as UID, CPU architecture, OS, Cloud name, IP address, etc.) are also included into the searchable results.
 
@@ -250,9 +249,11 @@ openssl x509 -noout -in user.crt.pem -subject -nameopt RFC2253
 ```
 
 which should output something similar to:
+
 ```
 subject=CN=Name Surname,CN=123456,CN=username,OU=Users,OU=Organic Units,DC=cern,DC=ch
 ```
+
 Pass this information to the Messaging Team alongside the server and topic to set up the authentication. Additional information on user certificates can be found at [the official CERN CA documentation](https://ca.cern.ch/ca/Help).
 
 ## Description of all arguments
@@ -327,16 +328,18 @@ optional arguments:
     ```
 
 - Parallel running (HPC, Cloud, etc)
-    
+
     By default the suite pulls all workload images and files needed during execution. This traffic can be eliminated by pre-caching them in a shared location (dramatically speeding up runs across nodes that share access to a network storage, or where compute nodes have network restrictions).
-    
+
     Before running with HEPscore:
+
     ```sh
     # set a common cachedir env to store a single copy of the images
     # this must be accessible across all nodes at the same mountpoint (or symlink)
     export SINGULARITY_CACHEDIR=/cephfs/user/johndoe/.singularity
-    source populate_image_cache.sh [optional yourconfig.yml]
+    ./populate_image_cache.sh [optional yourconfig.yml]
     srun bmkrun -c <yourconfig.yml> # SLURM job submission for example
     ```
-    where [populate_image_cache.sh](hepbenchmarksuite/examples/populate_image_cache.sh) is used to pull all needed images before launching a benchmarking job. 
+
+    where [populate_image_cache.sh](hepbenchmarksuite/examples/populate_image_cache.sh) is used to pull all needed images before launching a benchmarking job.
     HS06/17 can load the SPEC distribution from a local file by setting the location to `url_tarball: "file:/abs/path/HS06.tar.bz2"`
