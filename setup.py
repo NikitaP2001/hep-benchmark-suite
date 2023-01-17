@@ -29,7 +29,7 @@ setup(
     license=about['__license__'],
     scripts=['bin/bmkrun', 'bin/bmk_show_metadata'],
     packages=['hepbenchmarksuite', 'hepbenchmarksuite.plugins', 'hepbenchmarksuite.config'],
-    package_data={'hepbenchmarksuite': ['config/*.yml']},
-    python_requires='~=3.4',
-    install_requires=['pip>=21.3.1', 'pyyaml>=5.1', 'stomp.py<=7.0.0', 'importlib-metadata', 'pyOpenSSL>=21.0.0']
+    package_data={'hepbenchmarksuite': ['config/*.yml', 'plugins/CA/*']},
+    python_requires='~=3.6',
+    install_requires=['importlib-metadata', 'pem', 'pip>=21.3.1', 'pyOpenSSL>=21.0.0', 'pyyaml>=5.1', 'stomp.py<=7.0.0']
 )

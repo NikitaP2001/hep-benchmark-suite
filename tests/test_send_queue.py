@@ -288,6 +288,19 @@ class TestAMQ(unittest.TestCase):
         assert isinstance(cert, X509)
         assert isinstance(key, PKey)
 
+    def test_key_password_protection(self):
+        # Change permissions for all certs to 600
+        for dirpath, dirnames, filenames in os.walk('tests/data/certs'):
+            for filename in filenames:
+                path = os.path.join(dirpath, filename)
+                os.chmod(path, 0o600)
+
+        key = 'tests/data/certs/protected.key.pem'
+        self.assertTrue(send_queue.is_key_password_protected(key))
+
+        key = 'tests/data/certs/test.key.pem'
+        self.assertFalse(send_queue.is_key_password_protected(key))
+
     def test_ensure_key_matches_cert(self):
         connection = {
             'cert': 'tests/data/certs/test.cert.pem',
@@ -303,11 +316,16 @@ class TestAMQ(unittest.TestCase):
         send_queue._ensure_key_matches_cert(cert, connection, key)
 
     def test_validate_certificate(self):
-        cert = crypto.load_certificate(crypto.FILETYPE_PEM, open("tests/data/certs/expired.crt").read())
-        with self.assertRaisesRegex(ValueError, "The provided certificate is invalid.*"):
+        cert = crypto.load_certificate(crypto.FILETYPE_PEM, open("tests/data/certs/self_signed.crt", 'rb').read())
+        with self.assertRaisesRegex(ValueError, ".*self-signed certificate.*"):
             send_queue._validate_certificate(cert)
 
-        cert = crypto.load_certificate(crypto.FILETYPE_PEM, open("tests/data/certs/test.cert.pem").read())
+        cert = crypto.load_certificate(crypto.FILETYPE_PEM, open("tests/data/certs/expired.crt", 'rb').read())
+        with self.assertRaisesRegex(ValueError, ".*certificate has expired.*"):
+            send_queue._validate_certificate(cert)
+
+        # The certificate will need to be updated by Feb 21 13:57:57 2024 GMT
+        cert = crypto.load_certificate(crypto.FILETYPE_PEM, open("tests/data/certs/valid.crt", 'rb').read())
         send_queue._validate_certificate(cert)
 
     def test_listener(self):

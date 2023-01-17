@@ -9,16 +9,20 @@
 
 import argparse
 import logging
+import os
 import subprocess
+from subprocess import DEVNULL, STDOUT
 import sys
 import time
 from pathlib import Path
+import pem
 
 from OpenSSL import SSL, crypto
 import stomp
 
 _log = logging.getLogger(__name__)
 
+CA_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "CA")
 CERTIFICATE = "cert"
 KEY = "key"
 
@@ -60,22 +64,29 @@ def _ensure_key_matches_cert(cert, connection, key):
 
 
 def _validate_certificate(cert):
-    """ The certificate is verified against itself. That way it is always trusted, but other checks are still performed.
-    E.g. if the certificate is expired """
+    """ The certificate is validated against CA certificates, and other checks are performed.
+    E.g. that the certificate is not expired. """
+
     store = crypto.X509Store()
-    store.add_cert(cert)
+
+    for root, dirs, files in os.walk(CA_DIR):
+        for file in files:
+            for _ca in pem.parse_file(os.path.join(root, file)):
+                crt = crypto.load_certificate(crypto.FILETYPE_PEM, _ca.as_bytes())
+                store.add_cert(crt)
+
     store_ctx = crypto.X509StoreContext(store, cert)
 
     try:
         store_ctx.verify_certificate()
     except crypto.X509StoreContextError as e:
-        raise ValueError(f"The provided certificate is invalid: {e.args[0][2]}")
+        raise ValueError(f"An error occurred while validating your certificate: {e}")
 
 
 def _load_cert_and_key(connection):
     # TODO: Check for other file types
     try:
-        cert = crypto.load_certificate(crypto.FILETYPE_PEM, open(connection[CERTIFICATE]).read())
+        cert = crypto.load_certificate(crypto.FILETYPE_PEM, open(connection[CERTIFICATE], 'rb').read())
     except crypto.Error as e:
         raise Exception(f"Error while loading the certificate {connection[CERTIFICATE]}: {e}")
 
@@ -138,7 +149,8 @@ def send_message(filepath, connection):
 
 
 def is_key_password_protected(key):
-    return_code = subprocess.run([f"ssh-keygen -y -P '' -f {key} &>/dev/null"]).returncode
+    os.chmod(key, 0o600)
+    return_code = subprocess.run(["ssh-keygen", "-y", "-P", "''", "-f", key], stdout=DEVNULL, stderr=STDOUT).returncode
     return return_code != 0
 
 
