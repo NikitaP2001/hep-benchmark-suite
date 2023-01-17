@@ -97,6 +97,7 @@ hepscore:
   # local path - Search locally for the configuration.
   # remote     - Download from a remote url the configuration and uses it.
   config: "default"
+  # config: "builtin://hepscore_testkv"
   # config: "tests/hepscore_ci.yaml"
   # config: "https://"
   ## HEPScore extra options

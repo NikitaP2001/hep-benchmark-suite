@@ -155,51 +155,43 @@ def run_hepscore(suite_conf):
         _log.error("The hepscore section was not found in configuration file.")
         sys.exit(1)
 
+    _hsconf = suite_conf['hepscore']['config']
+    _hsfinal = _hsconf
     # Use hepscore-distributed config by default
-    if suite_conf['hepscore']['config'] == 'default':
-        _log.info("Using default config provided by hepscore.")
+    if _hsconf  == "default" or _hsconf.startswith("builtin://"):
+        _log.info("Using %s config provided by hepscore.", _hsconf)
+        if _hsconf == "default":
+            # config_path available in 1.5rc4+ but not available in earlier releases
+            _hsfinal = os.path.join(hepscore.__path__[0], 'etc/hepscore-default.yaml')
+        else:
+            if 'named_conf' in dir(hepscore.hepscore):
+                _hsfinal = hepscore.hepscore.named_conf(_hsconf[10:])
+            else:
+                _log.error("Installed version of hepscore does not support the builtin:// option")
+                return(-1)
 
-        try:
-            _hepscore_conf_path = os.path.join(hepscore.__path__[0], 'etc/hepscore-default.yaml')
-            _log.debug("Loading hepscore default config from %s", _hepscore_conf_path)
-
-            with open(_hepscore_conf_path, 'r') as conf:
-                hepscore_conf = yaml.full_load(conf)
-
-            _log.debug("Loaded hepscore default config.")
-
-        except Exception:
-            _log.exception("Unable to load default config yaml.")
-            return -1
-
-    # Use config provided from remote link
-    elif "http" in suite_conf['hepscore']['config']:
-        _log.info("Skipping hepscore default config. Loading config from remote: %s", suite_conf['hepscore']['config'])
+    elif _hsconf.startswith("http://") or _hsconf.startswith("https://"):
+        _log.info("Loading config from remote: %s", _hsconf)
 
         # Save the remote file to the user specified rundir
-        hepscore_file_dest = os.path.join(suite_conf['global']['rundir'], "hepscore.yaml")
-
+        _hsfinal = os.path.join(suite_conf['global']['rundir'], "hepscore.yaml")
         # Download remote file
-        error_code = utils.download_file(suite_conf['hepscore']['config'], hepscore_file_dest)
-
-        # Succeeds on download, open file
-        if error_code == 0:
-            with open(hepscore_file_dest, 'r') as http_conf:
-                hepscore_conf = yaml.safe_load(http_conf)
-                _log.info("Using hepscore config: %s", hepscore_file_dest)
-        else:
-            return -1
+        if utils.download_file(_hsconf, _hsfinal) != 0:
+            _log.error("Error downloading %s", _hsconf,)
+            return(-1)
 
     else:
-        _log.info("Skipping hepscore default config. Loading user provided config: %s", suite_conf['hepscore']['config'])
+        _log.info("Loading user provided config: %s", _hsfinal)
 
-        try:
-            with open(suite_conf['hepscore']['config'], 'r') as alt_conf_file:
-                hepscore_conf = yaml.safe_load(alt_conf_file)
-
-        except FileNotFoundError:
-            _log.error("Alternative hepscore config file not found: %s", suite_conf['hepscore']['config'])
-            return -1
+    try:
+        with open(_hsfinal, 'r') as conf:
+            hepscore_conf = yaml.full_load(conf)
+    except FileNotFoundError:
+        _log.error("hepscore config file not found: %s", _hsfinal)
+        return -1
+    except Exception:
+        _log.exception("Unable to load config yaml %s.", _hsfinal)
+        return -1
 
     # ensure same runmode as suite
     hepscore_conf['hepscore_benchmark']['settings']['container_exec'] = suite_conf['global']['mode']
