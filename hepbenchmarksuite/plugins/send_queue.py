@@ -6,25 +6,44 @@
 ###############################################################################
 """
 
-
 import argparse
 import logging
-import os
-import subprocess
-from subprocess import DEVNULL, STDOUT
+import stomp
 import sys
 import time
-from pathlib import Path
 import pem
+import requests
+import tarfile
+
+import os
+from os import listdir, makedirs
+from os.path import join, isfile, dirname, realpath, exists
+
+import subprocess
+from subprocess import DEVNULL, STDOUT
 
 from OpenSSL import SSL, crypto
-import stomp
+from bs4 import BeautifulSoup
+from pathlib import Path
+
 
 _log = logging.getLogger(__name__)
 
-CA_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "CA")
+CA_DIR = join(dirname(realpath(__file__)), "CA")
+CA_URL = "https://repository.egi.eu/sw/production/cas/1/current/tgz/"  # CAs included in ca-policy-egi-core
+CA_EXTRA = {"geant_personal_ca_4.pem": "https://services.renater.fr/_media/tcs/geant_personal_ca_4.pem",  # Extra CAs
+            "USERTrust_RSA_Certification_Authority.pem": "https://crt.sh/?d=1199354"}
+
+# Parameters
+PORT = "port"
+SERVER = "server"
+USERNAME = "username"
+PASSWORD = "password"
+TOPIC = "topic"
 CERTIFICATE = "cert"
 KEY = "key"
+VERIFY_CERT = "verify_cert"
+FILE = "file"
 
 
 class Listener(stomp.ConnectionListener):
@@ -50,7 +69,9 @@ class Listener(stomp.ConnectionListener):
 def _check_certificate_config(connection):
     cert, key = _load_cert_and_key(connection)
     _ensure_key_matches_cert(cert, connection, key)
-    _validate_certificate(cert)
+
+    verify = connection.get(VERIFY_CERT, False)
+    _validate_certificate(cert, verify)
 
 
 def _ensure_key_matches_cert(cert, connection, key):
@@ -63,15 +84,49 @@ def _ensure_key_matches_cert(cert, connection, key):
         raise Exception(f"Certificate {connection[CERTIFICATE]} and private key {connection[KEY]} do not match")
 
 
-def _validate_certificate(cert):
+def download_ca_certificates():
+    if not exists(CA_DIR):
+        makedirs(CA_DIR)
+
+    # Download ca-policy-egi-core compressed CA certificates
+    data = requests.get(CA_URL)
+    html = BeautifulSoup(data.text, "html.parser")
+
+    for link in html.find_all("a"):
+        if link.get("href").endswith(".tar.gz"):
+            data = requests.get(CA_URL + link["href"])
+
+            with open(join(CA_DIR, link["href"]), "wb") as f:
+                f.write(data.content)
+
+    # Extract all tar.gz files
+    compressed_files = [join(CA_DIR, f) for f in listdir(CA_DIR) if isfile(join(CA_DIR, f)) and f.endswith(".tar.gz")]
+    for file in compressed_files:
+        tar = tarfile.open(file, "r:gz")
+        tar.extractall(path=CA_DIR)
+        tar.close()
+        os.remove(file)
+
+    # Download extra CAs
+    for name, url in CA_EXTRA.items():
+        data = requests.get(url)
+        with open(join(CA_DIR, name), "wb") as f:
+            f.write(data.content)
+
+
+def _validate_certificate(cert, verify=False):
     """ The certificate is validated against CA certificates, and other checks are performed.
     E.g. that the certificate is not expired. """
 
     store = crypto.X509Store()
 
-    for root, dirs, files in os.walk(CA_DIR):
-        for file in files:
-            for _ca in pem.parse_file(os.path.join(root, file)):
+    if verify:
+        _log.info("Validating certificate's signature against CA certificates")
+        download_ca_certificates()
+
+        certificates = [join(CA_DIR, f) for f in listdir(CA_DIR) if isfile(join(CA_DIR, f)) and f.endswith(".pem")]
+        for file in certificates:
+            for _ca in pem.parse_file(join(CA_DIR, file)):
                 crt = crypto.load_certificate(crypto.FILETYPE_PEM, _ca.as_bytes())
                 store.add_cert(crt)
 
@@ -80,7 +135,11 @@ def _validate_certificate(cert):
     try:
         store_ctx.verify_certificate()
     except crypto.X509StoreContextError as e:
-        raise ValueError(f"An error occurred while validating your certificate: {e}")
+        if "unable to get local issuer certificate" in str(e):
+            if verify:
+                raise ValueError("The certificate used is not signed by a trusted CA")
+        else:
+            raise ValueError(f"An error occurred while validating your certificate: {e}")
 
 
 def _load_cert_and_key(connection):
@@ -98,46 +157,52 @@ def _load_cert_and_key(connection):
     return cert, key
 
 
+def is_key_password_protected(key):
+    os.chmod(key, 0o600)
+    return_code = subprocess.run(["ssh-keygen", "-y", "-P", "''", "-f", key], stdout=DEVNULL, stderr=STDOUT).returncode
+    return return_code != 0
+
+
 def send_message(filepath, connection):
-    """expects a filepath string, and a dict of args"""
+    """Expects a filepath string, and a dict of args"""
 
     if not Path(filepath).is_file():
-        raise FileNotFoundError("{} is not a valid filepath!".format(filepath))
+        raise FileNotFoundError(f"{filepath} is not a valid filepath!")
+
+    if not connection.get(PORT) or not connection.get(SERVER) or not connection.get(TOPIC):
+        raise ValueError(f"The following parameters are mandatory: {PORT}, {SERVER}, {TOPIC}")
 
     with open(filepath, "r", encoding="utf-8") as f:
         message_contents = f.read()
 
-    conn = stomp.Connection(
-        host_and_ports=[(connection["server"], int(connection["port"]))]
-    )
+    conn = stomp.Connection(host_and_ports=[(connection[SERVER], int(connection[PORT]))])
     conn.set_listener("mylistener", Listener(conn))
 
     if KEY in connection and CERTIFICATE in connection:
         if is_key_password_protected(connection[KEY]):
-            _log.warning("The private key is password protected, please enter the password or the execution will stall")
+            _log.warning("The key is password protected, remember to enter the password or the execution will stall")
 
         _check_certificate_config(connection)
         conn.set_ssl(
-            for_hosts=[(connection["server"], int(connection["port"]))],
+            for_hosts=[(connection[SERVER], int(connection[PORT]))],
             cert_file=connection[CERTIFICATE],
             key_file=connection[KEY],
             ssl_version=5,
         )  # <_SSLMethod.PROTOCOL_TLSv1_2: 5>
         conn.connect(wait=True)
         _log.info("AMQ SSL: certificate based authentication")
-    elif "username" in connection and "password" in connection:
-        conn.connect(connection["username"], connection["password"], wait=True)
+    elif USERNAME in connection and PASSWORD in connection:
+        conn.connect(connection[USERNAME], connection[PASSWORD], wait=True)
         _log.info("AMQ Plain: user-password based authentication")
     else:
         raise IOError(
-            "The input arguments do not include a valid pair of authentication"
-            "(certificate, key) or (user,password)"
+            "The input arguments do not include a valid pair of authentication (certificate, key) or (user, password)"
         )
 
     _log.info("Sending results to AMQ topic")
     time.sleep(5)
     _log.debug("Attempting send of message %s", message_contents)
-    conn.send(connection["topic"], message_contents, "application/json")
+    conn.send(connection[TOPIC], message_contents, "application/json")
 
     time.sleep(5)
 
@@ -148,34 +213,20 @@ def send_message(filepath, connection):
     _log.info("Results sent to AMQ topic")
 
 
-def is_key_password_protected(key):
-    os.chmod(key, 0o600)
-    return_code = subprocess.run(["ssh-keygen", "-y", "-P", "''", "-f", key], stdout=DEVNULL, stderr=STDOUT).returncode
-    return return_code != 0
-
-
 def parse_args(args):
     """Parse passed list of args"""
     parser = argparse.ArgumentParser(
-        description="This sends a file.json to an AMQ broker via STOMP."
-        "Default STOMP port is 61613, if not overridden"
+        description="Sends a JSON file to an AMQ broker via STOMP. Default STOMP port is 61613, if not overridden"
     )
-    parser.add_argument("-p", "--port", default=61613, type=int, help="Queue port")
-    parser.add_argument("-s", "--server", required=True, help="Queue host")
-    parser.add_argument(
-        "-u", "--username", nargs="?", default=None, help="Queue username"
-    )
-    parser.add_argument(
-        "-w", "--password", nargs="?", default=None, help="Queue password"
-    )
-    parser.add_argument("-t", "--topic", required=True, help="Queue name")
-    parser.add_argument(
-        "-k", "--key", nargs="?", default=None, help="AMQ authentication key"
-    )
-    parser.add_argument(
-        "-c", "--cert", nargs="?", default=None, help="AMQ authentication certificate"
-    )
-    parser.add_argument("-f", "--file", required=True, help="File to send")
+    parser.add_argument("-p", f"--{PORT}", default=61613, type=int, help="Queue port")
+    parser.add_argument("-s", f"--{SERVER}", required=True, help="Queue host")
+    parser.add_argument("-u", f"--{USERNAME}", nargs="?", default=None, help="Queue username")
+    parser.add_argument("-w", f"--{PASSWORD}", nargs="?", default=None, help="Queue password")
+    parser.add_argument("-t", f"--{TOPIC}", required=True, help="Queue name")
+    parser.add_argument("-k", f"--{KEY}", nargs="?", default=None, help="AMQ authentication key")
+    parser.add_argument("-c", f"--{CERTIFICATE}", nargs="?", default=None, help="AMQ authentication certificate")
+    parser.add_argument('-v', f"--{VERIFY_CERT}", action='store_true')
+    parser.add_argument("-f", f"--{FILE}", required=True, help="File to send")
     return parser.parse_args(args)
 
 
@@ -191,7 +242,7 @@ def main():
     for i in non_empty.keys():
         connection_details[i] = non_empty[i]
 
-    connection_details.pop("file", None)
+    connection_details.pop(FILE, None)
     send_message(args.file, connection_details)
 
 

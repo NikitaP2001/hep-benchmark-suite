@@ -14,6 +14,7 @@ from unittest.mock import patch, mock_open, MagicMock
 from OpenSSL import crypto
 
 from hepbenchmarksuite.plugins import send_queue
+from hepbenchmarksuite.plugins.send_queue import PORT, SERVER, TOPIC
 from OpenSSL.crypto import X509, PKey
 
 
@@ -159,7 +160,7 @@ class TestAMQ(unittest.TestCase):
             "hepbenchmarksuite.plugins.send_queue.Path.is_file", autospec=True
         ) as mock_filecheck:
             with self.assertRaises(FileNotFoundError):
-                send_queue.send_message("garbage.json", dict())
+                send_queue.send_message("garbage.json", {PORT: 111, SERVER: "google.com", TOPIC: "a"})
         self.assertTrue(mock_filecheck.called)
 
     @patch("hepbenchmarksuite.plugins.send_queue.is_key_password_protected", return_value=True)
@@ -176,7 +177,7 @@ class TestAMQ(unittest.TestCase):
 
         with self.assertRaises(FileNotFoundError):
             # test bad file read
-            send_queue.send_message("garbage/file.json", dict())
+            send_queue.send_message("garbage/file.json", {PORT: 111, SERVER: "google.com", TOPIC: "a"})
             self.assertTrue(mock_filecheck.called)
 
         with patch.object(
@@ -252,7 +253,7 @@ class TestAMQ(unittest.TestCase):
             )
 
             self.assertTrue(mock_is_key_protected.called)
-            self.assertTrue(any(re.match(r'.*The private key is password protected.*', line) for line in logger.output))
+            self.assertTrue(any(re.match(r'.*The key is password protected.*', line) for line in logger.output))
             self.assertTrue(mock_cert_check.called)
 
             mock_conn.connect.assert_called_once_with(wait=True)
@@ -322,7 +323,7 @@ class TestAMQ(unittest.TestCase):
 
         cert = crypto.load_certificate(crypto.FILETYPE_PEM, open("tests/data/certs/expired.crt", 'rb').read())
         with self.assertRaisesRegex(ValueError, ".*certificate has expired.*"):
-            send_queue._validate_certificate(cert)
+            send_queue._validate_certificate(cert, verify=True)
 
         # The certificate will need to be updated by Feb 21 13:57:57 2024 GMT
         cert = crypto.load_certificate(crypto.FILETYPE_PEM, open("tests/data/certs/valid.crt", 'rb').read())

@@ -29,6 +29,7 @@ from hepbenchmarksuite.exceptions import BenchmarkFullFailure
 from hepbenchmarksuite.plugins import send_queue
 from hepbenchmarksuite.__version__ import __version__
 
+
 class Color:
     """ Console colors. """
     CYAN      = '\033[96m'
@@ -38,6 +39,7 @@ class Color:
     BOLD      = '\033[1m'
     END       = '\033[0m'
     WHITE     = "\033[97m"
+
 
 def main():
     """ bmkrun cli. """
