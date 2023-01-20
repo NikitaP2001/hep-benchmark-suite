@@ -38,7 +38,23 @@ class TestHWExtractor(unittest.TestCase):
 
         hw = Extractor(extra={})
         result = hw.exec_cmd("echofail 1")
-        self.assertEqual(result, "not_available")
+        self.assertEqual(result, "extractor_exec_cmd_fail")
+        
+    def test_command_success_with_grep(self):
+        """
+        Test if the execution of a command fails.
+        """
+
+        hw = Extractor(extra={})
+        result = hw.exec_cmd("(echo abc | grep -c 'abc') || [[ $? -le 1 ]] ;")
+        self.assertEqual(result, "1")
+        result = hw.exec_cmd("(echo abc | grep -c 'def') || [[ $? -le 1 ]] ;")
+        self.assertEqual(result, "0")
+        result = hw.exec_cmd("(grep 'def' nofile)|| [[ $? -le 1 ]] ;")
+        self.assertEqual(result, "extractor_exec_cmd_fail")
+        result = hw.exec_cmd("grep -c hypervisor /proc/cpuinfo || [[ $? -le 1 ]] ")
+        self.assertGreater(int(result), 0)
+
 
     def test_parser_bios(self):
         """
@@ -60,16 +76,21 @@ class TestHWExtractor(unittest.TestCase):
         self.assertEqual(parser("Vendor"), "Intel Corp.", "BIOS parser mismatch!")
         self.assertEqual(parser("Release Date"), "08/22/2013", "BIOS parser mismatch!")
 
+
+    def base_parser_cpu(self, input_to_parse, expected_output):
+        hw = Extractor(extra={})
+
+        with open(input_to_parse, "r") as cpu_file:
+            cpu_text = cpu_file.read()
+            
+        cpu_output = hw.get_cpu_parser(cpu_text)
+        self.maxDiff = None
+        self.assertEqual(cpu_output, expected_output, "CPU parser mismatch!")
+        
     def test_parser_cpu_Intel(self):
         """
         Test the parser for an Intel CPU output.
         """
-
-        hw = Extractor(extra={})
-
-        with open("tests/data/CPU_Intel.sample", "r") as cpu_file:
-            cpu_text = cpu_file.read()
-
         CPU_OK = {
             "Architecture": "x86_64",
             "CPU_Model": "Intel(R) Xeon(R) CPU E5-2695 v2 @ 2.40GHz",
@@ -91,21 +112,12 @@ class TestHWExtractor(unittest.TestCase):
             "NUMA_node0_CPUs": "0-11,24-35",
             "NUMA_node1_CPUs": "12-23,36-47",
         }
-
-        cpu_output = hw.get_cpu_parser(cpu_text)
-
-        self.assertEqual(cpu_output, CPU_OK, "CPU parser mismatch!")
+        self.base_parser_cpu("tests/data/CPU_Intel.sample", CPU_OK)
 
     def test_parser_cpu_AMD(self):
         """
         Test the parser for an AMD CPU output.
         """
-
-        hw = Extractor(extra={})
-
-        with open("tests/data/CPU_AMD.sample", "r") as cpu_file:
-            cpu_text = cpu_file.read()
-
         CPU_OK = {
             "Architecture": "x86_64",
             "CPU_Model": "AMD EPYC 7742 64-Core Processor",
@@ -133,11 +145,34 @@ class TestHWExtractor(unittest.TestCase):
             "NUMA_node6_CPUs": "96-111",
             "NUMA_node7_CPUs": "112-127",
         }
+        self.base_parser_cpu("tests/data/CPU_AMD.sample", CPU_OK)
 
-        cpu_output = hw.get_cpu_parser(cpu_text)
-        # If difference in output is found, dump all lines
-        self.maxDiff = None
-        self.assertEqual(cpu_output, CPU_OK, "CPU parser mismatch!")
+    def test_parser_cpu_ARM(self):
+        """
+        Test the parser for an AMD CPU output.
+        """
+        CPU_OK = {
+            "Architecture": "aarch64",
+            "CPU_Model": "Neoverse-N1",
+            "CPU_Family": "not_available",
+            "CPU_num": 160,
+            "Online_CPUs_list": "0-159",
+            "Threads_per_core": 1,
+            "Cores_per_socket": 80,
+            "Sockets": 2,
+            "Vendor_ID": "ARM",
+            "Stepping": "r3p1",
+            "CPU_MHz": -1.0,
+            "CPU_Max_Speed_MHz": 3000.0000,
+            "CPU_Min_Speed_MHz":  1000.0000,
+            "BogoMIPS": 50.00,
+            "L2_cache": "160 MiB (160 instances)",
+            "L3_cache": "not_available",
+            "NUMA_nodes": 2,
+            "NUMA_node0_CPUs": "0-79",
+            "NUMA_node1_CPUs": "80-159",
+        }
+        self.base_parser_cpu("tests/data/CPU_ARM.sample", CPU_OK)
 
     def test_parser_memory(self):
         """
