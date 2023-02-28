@@ -85,9 +85,13 @@ EXECUTOR="${executor:-singularity}"
 INSTALL_FROM_WHEELS="${install_from_wheels:-false}"
 #--------------[End of user editable section]------------------------- 
 
+# AMQ
+SERVER=some-server.com
+PORT=12345
+TOPIC=/topic/my.topic
 
-echo "Running script: $0"
-cd $( dirname $0)
+HEPSCORE_VERSION="v1.5rc10"
+SUITE_VERSION="v2.2-rc6" # Use "latest" for the latest stable release
 
 WORKDIR=$(pwd)/workdir
 RUNDIR=$WORKDIR/suite_results
@@ -96,16 +100,8 @@ LOGFILE=$WORKDIR/output.txt
 SUITE_CONFIG_FILE=bmkrun_config.yml
 HEPSCORE_CONFIG_FILE=hepscore_config.yml
 
-HEPSCORE_VERSION="v1.5rc8"
-SUITE_VERSION="v2.2-rc6" # Use "latest" for the latest stable release
-
 SUPPORTED_PY_VERSIONS=(py37 py38)
 DEFAULT_PY_VERSION="py37"
-
-# AMQ
-SERVER=some-server.com
-PORT=12345
-TOPIC=/topic/my.topic
 
 # Colors
 GREEN='\033[0;32m'
@@ -113,10 +109,40 @@ CYAN='\033[0;36m'
 ORANGE='\033[1;33m'
 NC='\033[0m' # No Color
 
+echo "Running script: $0"
+cd $( dirname $0)
+
 create_python_venv(){
     cd $WORKDIR
     python3 -m venv $MYENV        # Create a directory with the virtual environment.
     source $MYENV/bin/activate    # Activate the environment.
+}
+
+validate_params(){
+    validate_site
+    validate_publish
+    validate_container_executor
+}
+
+validate_site(){
+    if [ -z "$SITE" ]; then
+        echo "The site name is not set. Please use the -s SITE option or set the SITE variable in the script."
+        exit 1
+    fi
+}
+
+validate_publish(){
+    if [ $PUBLISH == true ]; then
+        if [ $CERTIFKEY == 'PATH_TO_CERT_KEY' ]; then
+            echo "The certificate key is not set. Please set the CERTIFKEY variable in the script."
+            exit 1
+        fi
+
+        if [ $CERTIFCRT == 'PATH_TO_CERT' ]; then
+            echo "The certificate is not set. Please set the CERTIFCRT variable in the script."
+            exit 1
+        fi
+    fi
 }
 
 validate_container_executor(){
@@ -135,16 +161,16 @@ hepscore_install(){
     mkdir -p $WORKDIR
     chmod a+rw -R $WORKDIR
 
-    validate_container_executor
+    validate_params
     create_python_venv
     install_suite
 
     # CONFIG_FILE_CREATION
-    cat > $WORKDIR/bmkrun_config.yml <<EOF2 
+    cat > $WORKDIR/$SUITE_CONFIG_FILE <<EOF2
 activemq:
-  server: *****
-  topic:  *****
-  port:   *****  # Port used for certificate
+  server: $SERVER
+  topic: $TOPIC
+  port: $PORT
   ## include the certificate full path (see documentation)
   key: $CERTIFKEY
   cert: $CERTIFCRT
