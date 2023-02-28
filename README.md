@@ -213,22 +213,22 @@ AMQ publishing is implemented using the [STOMP protocol](https://stomp.github.io
 
 ```yaml
 activemq:
-  server: dashb-mb.cern.ch
-  topic: /topic/vm.spec
+  server: some-server.com
+  topic: /topic/my.topic
   username: user
   password: secret
-  port: 61113
+  port: 12345
 ```
 
 #### user cert settings
 
 ```yaml
 activemq:
-  server: dashb-mb.cern.ch
-  topic: /topic/vm.spec
+  server: some-server.com
+  topic: /topic/my.topic
   key: /path/key-file.key
   cert: /path/cert-file.pem
-  port: 61123
+  port: 12345
 ```
 
 Please note that key/cert authentication is preferred to publish the results to the CERN AMQ Broker.

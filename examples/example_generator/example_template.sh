@@ -140,32 +140,7 @@ hepscore_install(){
     install_suite
 
     # CONFIG_FILE_CREATION
-    cat > $WORKDIR/bmkrun_config.yml <<EOF2
-activemq:
-  server: *****
-  topic:  *****
-  port:   *****  # Port used for certificate
-  ## include the certificate full path (see documentation)
-  key: 'userkey.pem'
-  cert: 'usercert.pem'
 
-global:
-  benchmarks:
-  - hepscore
-  mode: singularity
-  publish: false
-  rundir: $WORKDIR/suite_results
-  show: true
-  tags:
-    site: $SITE
-
-hepscore:
-  version: v1.5
-  config: default
-  options:
-      userns: True
-      clean: True
-EOF2
 
     if [ -f $WORKDIR/$HEPSCORE_CONFIG_FILE ]; then
         cat $WORKDIR/$HEPSCORE_CONFIG_FILE

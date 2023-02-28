@@ -23,7 +23,6 @@ coverage.xml
 .python-version
 htmlcov*
 result_dump
-run_*
 
 # Editors
 *~
