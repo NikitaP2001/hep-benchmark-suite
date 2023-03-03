@@ -74,7 +74,7 @@ Options:
 
 done
 
-#--------------[Start of user editable section]---------------------- 
+#--------------[Start of user editable section]----------------------
 SITE="${site}"  # Replace somesite with a meaningful site name
 PUBLISH="${publish:-false}"  # Set to true in order to publish results in AMQ
 CERTIFKEY="${key:-PATH_TO_CERT_KEY}"
@@ -83,19 +83,19 @@ INSTALL_ONLY="${install_only:-false}"
 RUN_ONLY="${run_only:-false}"
 EXECUTOR="${executor:-singularity}"
 INSTALL_FROM_WHEELS="${install_from_wheels:-false}"
-#--------------[End of user editable section]------------------------- 
+#--------------[End of user editable section]-------------------------
 
 # AMQ
 SERVER=some-server.com
 PORT=12345
 TOPIC=/topic/my.topic
 
-HEPSCORE_VERSION="v1.5rc10"
+HEPSCORE_VERSION="v1.5"
 SUITE_VERSION="v2.2-rc6" # Use "latest" for the latest stable release
 
 WORKDIR=$(pwd)/workdir
 RUNDIR=$WORKDIR/suite_results
-MYENV="env_bmk"        # Define the name of the python environment.
+MYENV="env_bmk"        # Define the name of the python environment
 LOGFILE=$WORKDIR/output.txt
 SUITE_CONFIG_FILE=bmkrun_config.yml
 HEPSCORE_CONFIG_FILE=hepscore_config.yml
@@ -114,8 +114,8 @@ cd $( dirname $0)
 
 create_python_venv(){
     cd $WORKDIR
-    python3 -m venv $MYENV        # Create a directory with the virtual environment.
-    source $MYENV/bin/activate    # Activate the environment.
+    python3 -m venv $MYENV        # Create a directory with the virtual environment
+    source $MYENV/bin/activate    # Activate the environment
 }
 
 validate_params(){
@@ -178,19 +178,55 @@ activemq:
 global:
   benchmarks:
   - hepscore
-  mode: singularity
-  publish: false
-  rundir: $WORKDIR/suite_results
-  show: true
+  - db12
+  # - hs06
+  # - spec2017
+  # comment/uncomment any of the above benchmarks to exclude/include them
+  mode: $EXECUTOR
+  publish: $PUBLISH
+  rundir: $RUNDIR
   tags:
     site: $SITE
 
 hepscore:
-  version: v1.5
+  version: $HEPSCORE_VERSION
   config: default
-  options:
-      userns: True
-      clean: True
+
+hepspec06:
+  # Use the docker registry
+  image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.3"
+  # URL to fetch the hepspec06. It will only be used if the software
+  # is  not found under hepspec_volume.
+
+  # url_tarball: "_include_path_to_HS06_tarball_if_not_unpacked_already_in_hepspec_volume_"
+
+  # Define the location on where hepspec06 should be found
+  # If hepspec06 is not present, the directory should be writeable
+  # to allow the installation via the url_tarball
+  hepspec_volume: "/tmp/SPEC"
+
+  ## Number of iterations to run the benchmark
+  iterations: 3
+  ## Specifies if benchmark is run on 32 or 64 bit mode
+  ## Default is 64-bit
+  # mode: 32
+
+spec2017:
+  # Use the docker registry
+  image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.2"
+  # URL to fetch the spec cpu 2017. It will only be used if the software
+  # is  not found under hepspec_volume.
+
+  # url_tarball: "_include_path_to_spec2017_tarball_if_not_unpacked_already_in_hepspec_volume_"
+
+  # Define the location on where spec cpu 2017 should be found
+  # If spec cpu 2017 is not present, the directory should be writeable
+  # to allow the installation via the url_tarball
+  hepspec_volume: "/tmp/SPEC"
+
+  ## Number of iterations to run the benchmark
+  iterations: 3
+
 EOF2
 
     if [ -f $WORKDIR/$HEPSCORE_CONFIG_FILE ]; then

@@ -74,7 +74,7 @@ Options:
 
 done
 
-#--------------[Start of user editable section]---------------------- 
+#--------------[Start of user editable section]----------------------
 SITE="${site}"  # Replace somesite with a meaningful site name
 PUBLISH="${publish:-false}"  # Set to true in order to publish results in AMQ
 CERTIFKEY="${key:-PATH_TO_CERT_KEY}"
@@ -83,19 +83,19 @@ INSTALL_ONLY="${install_only:-false}"
 RUN_ONLY="${run_only:-false}"
 EXECUTOR="${executor:-singularity}"
 INSTALL_FROM_WHEELS="${install_from_wheels:-false}"
-#--------------[End of user editable section]------------------------- 
+#--------------[End of user editable section]-------------------------
 
 # AMQ
 SERVER=some-server.com
 PORT=12345
 TOPIC=/topic/my.topic
 
-HEPSCORE_VERSION="v1.5rc10"
+HEPSCORE_VERSION="v1.5"
 SUITE_VERSION="v2.2-rc6" # Use "latest" for the latest stable release
 
 WORKDIR=$(pwd)/workdir
 RUNDIR=$WORKDIR/suite_results
-MYENV="env_bmk"        # Define the name of the python environment.
+MYENV="env_bmk"        # Define the name of the python environment
 LOGFILE=$WORKDIR/output.txt
 SUITE_CONFIG_FILE=bmkrun_config.yml
 HEPSCORE_CONFIG_FILE=hepscore_config.yml
@@ -114,8 +114,8 @@ cd $( dirname $0)
 
 create_python_venv(){
     cd $WORKDIR
-    python3 -m venv $MYENV        # Create a directory with the virtual environment.
-    source $MYENV/bin/activate    # Activate the environment.
+    python3 -m venv $MYENV        # Create a directory with the virtual environment
+    source $MYENV/bin/activate    # Activate the environment
 }
 
 validate_params(){
@@ -178,7 +178,7 @@ activemq:
 global:
   benchmarks:
   - spec2017
-  mode: singularity
+  mode: $EXECUTOR
   publish: $PUBLISH
   rundir: /tmp/suite_results
   tags:
