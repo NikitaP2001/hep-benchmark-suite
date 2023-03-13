@@ -1,0 +1,35 @@
+build_wheels:
+  stage: deploy
+  image: gitlab-registry.cern.ch/linuxsupport/cs8-base
+  retry: 2
+  tags:
+    - $ARCH
+  variables:
+    WHEELS_PATH: suite_wheels
+  before_script:
+    - export PKG_NAME=hep-benchmark-suite-wheels-${PYTHON_VERSION/thon}-${ARCH}-${ID}.tar
+    - dnf install -y -q $PYTHON_VERSION git sshpass --setopt=install_weak_deps=True
+    - python3 -m pip install --upgrade setuptools wheel pip
+  script:
+    - python3 -m pip wheel -r requirements.txt --wheel-dir=$WHEELS_PATH .
+    - tar -cvf ${PKG_NAME} $WHEELS_PATH
+    - export PKG_HASH="$(sha256sum $PKG_NAME) $(date +%Y-%m-%d_%H%M) pipeline-${CI_PIPELINE_ID}"
+    - SSHPASS=${CI_CPUBMK} sshpass -v -e ssh -oStrictHostKeyChecking=no cpubmk@lxplus.cern.ch "[ -d ${FULL_RELEASE_PATH} ] || mkdir -p ${FULL_RELEASE_PATH}"
+    - SSHPASS=${CI_CPUBMK} sshpass -v -e ssh -oStrictHostKeyChecking=no cpubmk@lxplus.cern.ch "echo ${PKG_HASH} >> ${FULL_RELEASE_PATH}/sha256sum.txt"
+    - SSHPASS=${CI_CPUBMK} sshpass -v -e scp -v -oStrictHostKeyChecking=no -r ${PKG_NAME} cpubmk@lxplus.cern.ch:${FULL_RELEASE_PATH}
+  artifacts:
+    paths:
+      - $WHEELS_PATH
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v.*$/'
+      variables:
+        ID: $CI_COMMIT_TAG
+        FULL_RELEASE_PATH: $CI_EOS_RELEASES/$ID
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      variables:
+        ID: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+        FULL_RELEASE_PATH: $CI_EOS_RELEASES/dev/$ID
+  parallel:
+    matrix:
+      - ARCH: [x86_64, aarch64]
+        PYTHON_VERSION: [python36, python38, python39]

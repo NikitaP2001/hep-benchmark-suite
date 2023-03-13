@@ -4,8 +4,8 @@ stages:
   - test-components
   - test-apptainer
   - test-docker
-  - dev-image
   - deploy
+  - dev-image
   - build-examples
 
 # Auto-security testing - requires gitlab 13.3 (expected October 2020)
@@ -16,6 +16,14 @@ variables:
   GIT_DEPTH: "3"
   # perhaps SAST_EXCLUDED_PATHS from include works for Bandit?
   # SAST_BANDIT_EXCLUDED_PATHS: '*/tests/*'
+
+
+# Avoid duplicate pipelines on branches and merge requests
+workflow:
+  rules:
+    - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+      when: never
+    - when: always
 
 
 ############################################################
@@ -372,48 +380,14 @@ delete_dev_image:
     - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_MESSAGE =~ /^Merge branch '.*' into .*/
 
 ############################################################
-#####           BUILD & PUBLISH PACKAGE                #####
+#####                 BUILD WHEELS                     #####
 ############################################################
 
-.build_wheel_common:
-  script:
-    - python3 -m pip install --upgrade setuptools wheel pip
-    - python3 -m pip wheel -r requirements.txt --wheel-dir=suite_wheels .
-    - export PKG_NAME="hep-benchmark-suite-wheels-${PY_VERSION}-${ID}.tar"
-    - tar -cvf ${PKG_NAME} suite_wheels/
-    - export PKG_HASH="$(sha256sum ${PKG_NAME}) $(date +%Y-%m-%d_%H%M) pipeline-${CI_PIPELINE_ID}"
-    - SSHPASS=${CI_CPUBMK} sshpass -v -e ssh -oStrictHostKeyChecking=no cpubmk@lxplus.cern.ch "[ -d ${FULL_RELEASE_PATH} ] || mkdir ${FULL_RELEASE_PATH}"
-    - SSHPASS=${CI_CPUBMK} sshpass -v -e ssh -oStrictHostKeyChecking=no cpubmk@lxplus.cern.ch "echo ${PKG_HASH} >> ${FULL_RELEASE_PATH}/sha256sum.txt"
-    - SSHPASS=${CI_CPUBMK} sshpass -v -e scp -v -oStrictHostKeyChecking=no -r ${PKG_NAME} cpubmk@lxplus.cern.ch:${FULL_RELEASE_PATH}
-  artifacts:
-    paths:
-      - suite_wheels
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^v.*$/'
-      variables:
-        ID: $CI_COMMIT_TAG
-        FULL_RELEASE_PATH: $CI_EOS_RELEASES/$ID
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-      variables:
-        ID: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
-        FULL_RELEASE_PATH: $CI_EOS_RELEASES/dev/$ID
+include: /gitlab-ci/build_wheels.yml
 
-build_py38_wheels:
-  stage: deploy
-  image: gitlab-registry.cern.ch/linuxsupport/cs8-base
-  extends: .build_wheel_common
-  before_script:
-    - dnf install -y epel-release
-    - dnf install -y -q git python38 python38-pip sshpass
-    - export PY_VERSION="py38"
-
-build_py37_wheels:
-  stage: deploy
-  image: gitlab-registry.cern.ch/linuxsupport/cc7-base
-  extends: .build_wheel_common
-  before_script:
-    - yum install -y -q git python3-pip sshpass coreutils
-    - export PY_VERSION="py37"
+############################################################
+#####                PUBLISH PACKAGE                   #####
+############################################################
 
 update_release_info:
   stage: deploy
@@ -477,8 +451,7 @@ build_examples:
       variables:
         EXAMPLES_TO_BUILD: all_examples
     - changes:
-      - examples/example_generator/**/*.cfg
-      - examples/example_generator/*.cfg
+      - examples/example_generator/**.cfg
       variables:
         EXAMPLES_TO_BUILD: changed_examples
   artifacts:
