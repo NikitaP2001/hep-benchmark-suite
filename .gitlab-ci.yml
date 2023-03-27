@@ -163,7 +163,7 @@ db12_benchmark:
   stage: test-components
   dependencies: []
   script:
-    - yum install -y -q singularity python3-pip
+    - yum install -y -q apptainer python3-pip
     - python3 -m pip install --user --upgrade pip
     - python3 -m pip install --user .
     - python3 -m pip install -r requirements.txt
@@ -226,7 +226,7 @@ bats_test_docker_compose_qa:
     RESULTS_FILE: $CI_JOB_NAME.json
     SINGULARITY_CACHEDIR: $CI_PROJECT_DIR/singularity_cachedir
   script:
-    - yum install -y -q git singularity python3-pip
+    - yum install -y -q git apptainer python3-pip
     - python3 -m pip install -U pip wheel
     # Gitlab cannot modify $PATH in variables section
     #- export PATH=$PATH:$(pwd)/.local/bin
