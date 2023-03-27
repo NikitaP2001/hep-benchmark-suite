@@ -1,27 +1,25 @@
 #!/bin/bash
 
 #####################################################################
-# This script of example installs and runs the HEP-Benchmark-Suite
+# This example script installs and runs the HEP-Benchmark-Suite
+#
 # The Suite configuration file
 #       bmkrun_config.yml
 # is included in the script itself.
-# The configuration script enables the benchmarks to run
-# and defines some meta-parameters, including tags as the SITE name.
 #
-# In this example only the HEP-score benchmark is configured to run.
-# It runs with a slim configuration hepscore_slim.yml ideal to run
-# in grid jobs (average duration: 40 min)
+# The configuration script sets the benchmarks to run and
+# defines some meta-parameters, including tags as the SITE name.
 #
 # The only requirements to run are
 # git python3-pip singularity
 #####################################################################
 
 
-while getopts ':c:k:iprs:e:w' OPTION; do
+while getopts ':c:k:iprs:e:wd:' OPTION; do
 
   case "$OPTION" in
     c)
-      cert="$OPTARG"	  
+      cert="$OPTARG"
       echo "Setting Certificate to $cert"
       ;;
 
@@ -54,6 +52,10 @@ while getopts ':c:k:iprs:e:w' OPTION; do
       install_from_wheels=true
       echo "Installing the suite from wheels"
       ;;
+    d)
+      workdir="$(realpath $OPTARG)"
+      echo "Setting the working directory to $workdir"
+      ;;
 
     ?)
       echo "
@@ -83,25 +85,27 @@ INSTALL_ONLY="${install_only:-false}"
 RUN_ONLY="${run_only:-false}"
 EXECUTOR="${executor:-singularity}"
 INSTALL_FROM_WHEELS="${install_from_wheels:-false}"
+WORKDIR="${workdir:-$(pwd)/workdir}"
 #--------------[End of user editable section]-------------------------
 
 # AMQ
-SERVER=some-server.com
-PORT=12345
-TOPIC=/topic/my.topic
+SERVER=dashb-mb.cern.ch
+PORT=61123
+TOPIC=/topic/vm.spec
 
+SCRIPT_VERSION="1.2"
 HEPSCORE_VERSION="v1.5"
-SUITE_VERSION="v2.2-rc6" # Use "latest" for the latest stable release
+SUITE_VERSION="v2.2-rc7" # Use "latest" for the latest stable release
 
-WORKDIR=$(pwd)/workdir
 RUNDIR=$WORKDIR/suite_results
 MYENV="env_bmk"        # Define the name of the python environment
 LOGFILE=$WORKDIR/output.txt
 SUITE_CONFIG_FILE=bmkrun_config.yml
 HEPSCORE_CONFIG_FILE=hepscore_config.yml
+GiB_PER_CORE=1
 
-SUPPORTED_PY_VERSIONS=(py37 py38)
-DEFAULT_PY_VERSION="py37"
+SUPPORTED_PY_VERSIONS=(py36 py38 py39)
+DEFAULT_PY_VERSION="py36"
 
 # Colors
 GREEN='\033[0;32m'
@@ -109,7 +113,7 @@ CYAN='\033[0;36m'
 ORANGE='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo "Running script: $0"
+echo "Running script: $0 - version: $SCRIPT_VERSION"
 cd $( dirname $0)
 
 create_python_venv(){
@@ -146,11 +150,13 @@ validate_publish(){
 }
 
 validate_container_executor(){
-    declare -A executors=( ["singularity"]="hep-workloads-sif" ["docker"]="hep-workloads")
-    REPOSITORY="${executors[$EXECUTOR]}"
+    declare -A registries=( ["singularity"]="oras" ["docker"]="docker" )
+    declare -A registry_suffixes=( ["singularity"]="-sif" ["docker"]="" )
+    REGISTRY="${registries[$EXECUTOR]}"
+    REGISTRY_SUFFIX="${registry_suffixes[$EXECUTOR]}"
     
-    if [ -z "${REPOSITORY}" ]; then
-        echo "The executor has got to be one of: ${!executors[@]}. Wrong input value: $executor"
+    if [ -z "${REGISTRY}" ]; then
+        echo "The executor has got to be one of: ${!registries[@]}. Wrong input value: $executor"
         exit 1
     fi
 }
@@ -268,8 +274,8 @@ create_tarball() {
 print_amq_send_command() {
     # Print command to send results if they were produced but not sent
     if [ $RESULTS ] && { [ $PUBLISH == false ] || [ $AMQ_SUCCESSFUL -ne 0 ] ; }; then
-        echo -e "${GREEN}\nThe results were not sent to AMQ. In order to send them, you can run:"
-        echo -e "${WORKDIR}/${MYENV}/bin/python3 ${WORKDIR}/${MYENV}/lib/python3.6/site-packages/hepbenchmarksuite/plugins/send_queue.py --port=$PORT --server=$SERVER --topic $TOPIC --key $CERTIFKEY --cert $CERTIFCRT --file $RESULTS ${NC}"
+        echo -e "${GREEN}\nThe results were not sent to AMQ. In order to send them, you can run (--dryrun option available):"
+        echo -e "${WORKDIR}/${MYENV}/bin/bmksend -c ${WORKDIR}/${SUITE_CONFIG_FILE} ${RUNDIR} ${NC}"
     fi
 }
 
@@ -277,7 +283,17 @@ check_memory_difference() {
     # Print warning message in case of memory increase
     MEM_DIFF=$(($MEM_AFTER - $MEM_BEFORE))
     if (( MEM_DIFF > 1048576 )); then
-      echo -e "${ORANGE}The memory usage has increased by more than 1 GB since the start of the script. Please check there are no zombie processes in the machine before running the script again.${NC}"
+      echo -e "${ORANGE}The memory usage has increased by more than 1 GiB since the start of the script. Please check there are no zombie processes in the machine before running the script again.${NC}"
+    fi
+}
+
+check_workdir_space() {
+    # Check if there is enough space in the workdir
+    workdir_space=$(df -k $WORKDIR | awk 'NR==2 {print $4}')
+    minimum_space=$((GiB_PER_CORE * 1024 * 1024 * $(nproc)))
+    if (( workdir_space < minimum_space )); then
+        echo -e "${ORANGE}There is less than $((minimum_space/1024/1024))GiB of space left in the workdir ($((workdir_space/1024/1024))GiB). Please free some space before running the script again.${NC}"
+        exit 1
     fi
 }
 
@@ -290,6 +306,7 @@ hepscore_run(){
     fi
 
     ensure_suite_is_not_running
+    check_workdir_space
 
     MEM_BEFORE=$(awk '/MemAvailable/ {print $2}' /proc/meminfo)
     bmkrun -c $SUITE_CONFIG_FILE | tee -i $LOGFILE
