@@ -150,8 +150,8 @@ class Extractor():
         """Collect all CPU data from lscpu."""
         parser_lscpu = self.get_parser(cmd_output, "lscpu")
 
-        conv = lambda req,req_typ : self.format_converter(req,req_typ)
-        
+        conv = lambda req,req_typ : self.format_converter(req, req_typ)
+
         cpu = {
             'Architecture'     : conv(parser_lscpu("Architecture"),str),
             'CPU_Model'        : conv(parser_lscpu("Model name"),str),
@@ -171,11 +171,14 @@ class Extractor():
             'L3_cache'         : conv(parser_lscpu("L3 cache"),str),
             'NUMA_nodes'       : conv(parser_lscpu(r"NUMA node\(s\)"), int),
         }
-        
-        # for ARM the L2 cache in lscpu is reported as L2:
+
+        # ARM-specific logic
         if cpu['Architecture'] == 'aarch64':
-            cpu['L2_cache']=conv(parser_lscpu("L2"),str)
-        
+            if cpu['L2_cache'] == 'not_available':
+                cpu['L2_cache'] = conv(parser_lscpu("L2"), str)
+            if self._permission:
+                cpu['CPU_Model'] = cpu['CPU_Model'] + " - " + conv(parser_lscpu("BIOS Model name"),str)
+
         # Populate NUMA nodes
         try:
             for i in range(0, int(cpu['NUMA_nodes'])):

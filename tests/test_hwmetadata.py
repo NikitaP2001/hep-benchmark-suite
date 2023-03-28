@@ -153,7 +153,7 @@ class TestHWExtractor(unittest.TestCase):
         """
         CPU_OK = {
             "Architecture": "aarch64",
-            "CPU_Model": "Neoverse-N1",
+            "CPU_Model": "Neoverse-N1 - Ampere(R) Altra(R) Processor",
             "CPU_Family": "not_available",
             "CPU_num": 160,
             "Online_CPUs_list": "0-159",
