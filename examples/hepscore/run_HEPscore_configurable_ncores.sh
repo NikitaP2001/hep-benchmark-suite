@@ -273,6 +273,7 @@ global:
   show: true
   tags:
     site: $SITE
+    ncores: $NCORES
 
 hepscore:
   version: $HEPSCORE_VERSION
