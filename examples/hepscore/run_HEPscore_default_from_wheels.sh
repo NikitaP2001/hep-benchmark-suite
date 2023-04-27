@@ -49,7 +49,7 @@ global:
     site: $SITE
 
 hepscore:
-  version: v1.0
+  version: v1.5
   config: default
   options:
       userns: True
