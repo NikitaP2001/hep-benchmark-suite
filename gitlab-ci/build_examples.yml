@@ -1,0 +1,51 @@
+build_examples:
+  stage: build-examples
+  needs: []
+  image: gitlab-registry.cern.ch/linuxsupport/cs8-base
+  variables:
+    TEMPLATE: examples/example_generator/example_template.sh
+    USE_CASE_DIR: examples/example_generator/use_cases
+  before_script:
+    - yum install -y git
+    # Set the list of examples to build
+    - if [[ "$EXAMPLES_TO_BUILD" == "all_examples" ]]; then export EXAMPLES=$(find -L examples/example_generator | grep "\.cfg"); fi
+    - if [[ "$EXAMPLES_TO_BUILD" == "changed_examples" ]]; then export EXAMPLES=$(git diff --diff-filter=d --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA | grep "\.cfg"); fi
+    # Set the branch name
+    - if [[ "$CI_PIPELINE_SOURCE" == "merge_request_event" ]]; then export BRANCH=$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME; else export BRANCH=$CI_COMMIT_BRANCH; fi
+    # Setup git
+    - git config user.email "benchmark-suite-wg@cern.ch"
+    - git config user.name "HEP Suite Gitlab CI"
+    - git remote add gitlab_origin https://oauth2:$CI_API_TOKEN@gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite.git
+    # Pretty array prints
+    - IFS=$'\n'
+  script:
+    - if [[ -z $EXAMPLES ]]; then echo "No examples to build"; exit 0; else echo -e "Examples to build:\n${EXAMPLES[*]}"; fi
+    - declare -a built_examples=()
+    - |
+      for file in $EXAMPLES; do
+        echo "Building example: $file"
+        config_file=$(realpath --relative-to=$USE_CASE_DIR $file)
+        out_file=$(dirname $config_file)/$(basename -- $config_file .cfg).sh
+        mkdir -p $(dirname examples/$out_file)
+        sed "/CONFIG_FILE_CREATION/ r $file" $TEMPLATE > examples/$out_file
+        built_examples+=($out_file)
+      done
+    - git add examples
+    - description=$(echo "${built_examples[*]}")
+    - FILES_CHANGED=$(git commit -m "Update examples" -m "Examples updated:" -m "$description" 1>&2; echo $?)
+    - if [[ $FILES_CHANGED -eq 0 ]]; then git push gitlab_origin HEAD:$BRANCH -o ci.skip; fi
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /^(qa|master)$/ || $CI_COMMIT_TAG
+      when: never
+    - changes:
+      - $TEMPLATE
+      variables:
+        EXAMPLES_TO_BUILD: all_examples
+    - changes:
+      - examples/example_generator/**.cfg
+      variables:
+        EXAMPLES_TO_BUILD: changed_examples
+  artifacts:
+    paths:
+      - examples
+    expire_in: 1 day
