@@ -38,23 +38,23 @@ class TestHWExtractor(unittest.TestCase):
 
         hw = Extractor(extra={})
         result = hw.exec_cmd("echofail 1")
-        self.assertEqual(result, "extractor_exec_cmd_fail")
+        self.assertEqual(result, "not_available")
         
     def test_command_success_with_grep(self):
         """
         Test if the execution of a command fails.
         """
 
+        # || and && are NOT supported without the unsafe shell=True
         hw = Extractor(extra={})
-        result = hw.exec_cmd("(echo abc | grep -c 'abc') || [[ $? -le 1 ]] ;")
+        result = hw.exec_cmd("echo abc | grep -c 'abc'")
         self.assertEqual(result, "1")
-        result = hw.exec_cmd("(echo abc | grep -c 'def') || [[ $? -le 1 ]] ;")
-        self.assertEqual(result, "0")
-        result = hw.exec_cmd("(grep 'def' nofile)|| [[ $? -le 1 ]] ;")
-        self.assertEqual(result, "extractor_exec_cmd_fail")
-        result = hw.exec_cmd("grep -c hypervisor /proc/cpuinfo || [[ $? -le 1 ]] ")
+        result = hw.exec_cmd("echo abc | grep -c 'def'")
+        self.assertEqual(result, "not_available")
+        result = hw.exec_cmd("grep 'def' nofile")
+        self.assertEqual(result, "not_available")
+        result = hw.exec_cmd("grep -c hypervisor /proc/cpuinfo")
         self.assertGreater(int(result), 0)
-
 
     def test_parser_bios(self):
         """
@@ -75,7 +75,6 @@ class TestHWExtractor(unittest.TestCase):
         )
         self.assertEqual(parser("Vendor"), "Intel Corp.", "BIOS parser mismatch!")
         self.assertEqual(parser("Release Date"), "08/22/2013", "BIOS parser mismatch!")
-
 
     def base_parser_cpu(self, input_to_parse, expected_output):
         hw = Extractor(extra={})

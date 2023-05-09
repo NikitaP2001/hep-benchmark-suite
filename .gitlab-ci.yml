@@ -144,10 +144,11 @@ coverage:
 
 Security:
   stage: test-components
+  image: gitlab-registry.cern.ch/linuxsupport/cs8-base
   dependencies: []
   allow_failure: true
   script:
-    - yum install -y -q python3-pip
+    - dnf install -y -q python3.11 python3.11-pip git
     - python3 -m pip install -U pip tox
     - tox -e bandit
   rules:

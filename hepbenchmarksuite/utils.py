@@ -9,14 +9,14 @@
 import json
 import logging
 import os
+import shlex
 import socket
 import subprocess
 import sys
 import tarfile
 import uuid
-import urllib.request
-from urllib.error import HTTPError, URLError
-
+import requests
+from requests import RequestException
 from hepbenchmarksuite.plugins.extractor import Extractor
 from hepbenchmarksuite import __version__
 
@@ -38,12 +38,13 @@ def download_file(url, outfile):
 
     # Download the config file from url and save it locally
     try:
-        with urllib.request.urlopen(url) as response, open(outfile, 'wb') as fout:
-            fout.write(response.read())
+        resp = requests.get(url, timeout=10)
+        with open(outfile, 'wb') as fout:
+            fout.write(resp.content)
             _log.info("File saved: %s", fout.name)
             return 0
 
-    except (ValueError, HTTPError, URLError):
+    except (ValueError, RequestException):
         _log.error('Failed to download file from provided link: %s', url)
         return 1
 
@@ -84,7 +85,7 @@ def exec_wait_benchmark(cmd_str):
 
     _log.debug("Excuting command: %s", cmd_str)
 
-    cmd = subprocess.Popen(cmd_str, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    cmd = subprocess.Popen(cmd_str, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     # Output stdout from child process
     line = cmd.stdout.readline()
@@ -125,35 +126,65 @@ def get_tags_env():
 
     return tags
 
+def run_piped_commands(cmd_str):
+    """Exec a command chain"""
+
+    # Split the command string into a list of individual commands
+    commands = cmd_str.split("|")
+
+    # Use subprocess.run() to execute the piped commands
+    output = None
+    for cmd in commands:
+        # split command using shlex to handle cases like awk
+        cmd_split = shlex.split(cmd.strip())
+        _log.debug("Executing command: %s", cmd_split)
+        try:
+            if output:
+                out = output.stdout
+                _log.debug("Input: %s", out)
+                output = subprocess.run(cmd_split, input=out, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+            else:
+                _log.debug("No input")
+                output = subprocess.run(cmd_split, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        except FileNotFoundError as e:
+            _log.error("Command not found: %s", e.filename)
+            return None, None, f"Command not found: {e.filename}"
+        except subprocess.CalledProcessError as e:
+            _log.error("Error executing command: %s\nReturn code: %s\nOutput: %s", e.cmd, e.returncode, e.output.decode())
+            return e.returncode, e.output.decode(), e.stderr.decode()
+        except Exception as e:
+            _log.error("Error executing command: %s", str(e))
+            return e.returncode, e.output.decode(), e.stderr.decode() # pylint: disable=no-member
+
+    # Return the output, error, and returncode (if the command sequence was executed without errors)
+    if output:
+        return output.returncode, output.stdout.decode().rstrip(), output.stderr.decode()
+    else:
+        return None, None, None
 
 def exec_cmd(cmd_str):
-    """Execute a command string and returns its output.
+    """Execute a command string and return its output and return code.
 
     Args:
       cmd_str: A string with the command to execute.
 
     Returns:
-      A string with the output.
+      A string with the output and an integer with the return code.
     """
-    _log.debug("Excuting command: %s", cmd_str)
 
-    cmd = subprocess.Popen(cmd_str, shell=True, executable='/bin/bash', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    cmd_reply, cmd_error = cmd.communicate()
+    _log.debug("Excuting command: %s", cmd_str)
+    return_code, reply, error = run_piped_commands(cmd_str)
 
     # Check for errors
-    if cmd.returncode != 0:
-        cmd_reply = "not_available"
-        _log.error(cmd_error.decode('utf-8').rstrip())
+    if return_code != 0:
+        reply = "not_available"
+        _log.error(error)
+    # Force not_available when command return is empty
+    elif len(reply) == 0:
+        _log.debug('Result is empty: %s', reply)
+        reply = "not_available"
 
-    else:
-        # Convert bytes to text and remove \n
-        try:
-            cmd_reply = cmd_reply.decode('utf-8').rstrip()
-        except UnicodeDecodeError:
-            _log.error("Failed to decode to utf-8.")
-
-    return cmd_reply, cmd.returncode
-
+    return reply, return_code
 
 def get_host_ips():
     """Get external facing system IP from default route, do not rely on hostname.

@@ -11,10 +11,11 @@ import logging
 import os
 import platform
 import re
-from subprocess import Popen, PIPE
 import socket
 import sys
 import shutil
+
+from hepbenchmarksuite import utils
 
 _log = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ class Extractor():
         # If the tools are not present, the output will be limited on certain fields.
         # The dict self.pkg enforces the switching of outputs.
 
-        req_packages = ('lshw', 'ipmitool', 'dmidecode')
+        req_packages = ('lshw', 'ipmitool', 'dmidecode', 'facter')
 
         for pkg_name in req_packages:
 
@@ -64,35 +65,12 @@ class Extractor():
         _log.debug("Installed packages: %s", self.pkg)
 
     def exec_cmd(self, cmd_str):
-        """Accept command string and returns output."""
-        _log.debug("Excuting command: %s", cmd_str)
-
-        cmd = Popen(cmd_str, shell=True, executable='/bin/bash',  stdout=PIPE, stderr=PIPE)
-        cmd_reply, cmd_error = cmd.communicate()
-
-        # Check for errors
-        if cmd.returncode != 0:
-            cmd_reply = "extractor_exec_cmd_fail"
-            _log.error(cmd_error)
-
-        # Force not_available when command return is empty
-        elif len(cmd_reply) == 0 and cmd.returncode == 0:
-            _log.debug('Result is empty: %s', cmd_reply)
-            cmd_reply = "not_available"
-
-        else:
-            # Convert bytes to text and remove \n
-            try:
-                cmd_reply = cmd_reply.decode('utf-8').rstrip()
-            except UnicodeDecodeError:
-                _log.error("Failed to decode to utf-8: %s", cmd_reply)
-                cmd_reply = "not_available"
-
-        return cmd_reply
+        """Execute a command string and return its output."""
+        reply, _ = utils.exec_cmd(cmd_str)
+        return reply
 
     def collect_sw(self):
         """Collect Software specific metadata."""
-        # FIXME not tested
         _log.info("Collecting SW information.")
 
 
@@ -133,62 +111,59 @@ class Extractor():
 
         return cpu
 
-    def format_converter(self, req, req_typ):
-        """Convert data to specified type."""
-
-        if req == 'not_available' and (req_typ in (float, int)):
-            return req_typ(-1)
-        else:
-            try:
-                return req_typ(req)
-            except ValueError:
-                _log.error('Failed to cast %s to %s.'%(req, req_typ))
-                return req
-
-    # TESTED
     def get_cpu_parser(self, cmd_output):
         """Collect all CPU data from lscpu."""
-        parser_lscpu = self.get_parser(cmd_output, "lscpu")
+        parse_lscpu = self.get_parser(cmd_output, "lscpu")
 
-        conv = lambda req,req_typ : self.format_converter(req, req_typ)
+        def conv(arg, req_typ=str):
+            """Convert data to specified type."""
+
+            res = parse_lscpu(arg)
+
+            if res == 'not_available' and (req_typ in (float, int)):
+                return req_typ(-1)
+            else:
+                try:
+                    return req_typ(res)
+                except ValueError:
+                    return res
 
         cpu = {
-            'Architecture'     : conv(parser_lscpu("Architecture"),str),
-            'CPU_Model'        : conv(parser_lscpu("Model name"),str),
-            'CPU_Family'       : conv(parser_lscpu("CPU family"),str),
-            'CPU_num'          : conv(parser_lscpu(r"CPU\(s\)"), int),
-            'Online_CPUs_list' : conv(parser_lscpu(r"On-line CPU\(s\) list"),str),
-            'Threads_per_core' : conv(parser_lscpu(r"Thread\(s\) per core"), int),
-            'Cores_per_socket' : conv(parser_lscpu(r"Core\(s\) per socket"), int),
-            'Sockets'          : conv(parser_lscpu(r"Socket\(s\)"), int),
-            'Vendor_ID'        : conv(parser_lscpu("Vendor ID"),str),
-            'Stepping'         : conv(parser_lscpu("Stepping"),str),
-            'CPU_MHz'          : conv(parser_lscpu("CPU MHz"), float),
-            'CPU_Max_Speed_MHz': conv(parser_lscpu("CPU max MHz"), float),
-            'CPU_Min_Speed_MHz': conv(parser_lscpu("CPU min MHz"), float),
-            'BogoMIPS'         : conv(parser_lscpu("BogoMIPS"), float),
-            'L2_cache'         : conv(parser_lscpu("L2 cache"),str),
-            'L3_cache'         : conv(parser_lscpu("L3 cache"),str),
-            'NUMA_nodes'       : conv(parser_lscpu(r"NUMA node\(s\)"), int),
+            'Architecture'     : conv("Architecture"),
+            'CPU_Model'        : conv("Model name"),
+            'CPU_Family'       : conv("CPU family"),
+            'CPU_num'          : conv(r"CPU\(s\)", int),
+            'Online_CPUs_list' : conv(r"On-line CPU\(s\) list"),
+            'Threads_per_core' : conv(r"Thread\(s\) per core", int),
+            'Cores_per_socket' : conv(r"Core\(s\) per socket", int),
+            'Sockets'          : conv(r"Socket\(s\)", int),
+            'Vendor_ID'        : conv("Vendor ID"),
+            'Stepping'         : conv("Stepping"),
+            'CPU_MHz'          : conv("CPU MHz", float),
+            'CPU_Max_Speed_MHz': conv("CPU max MHz", float),
+            'CPU_Min_Speed_MHz': conv("CPU min MHz", float),
+            'BogoMIPS'         : conv("BogoMIPS", float),
+            'L2_cache'         : conv("L2 cache"),
+            'L3_cache'         : conv("L3 cache"),
+            'NUMA_nodes'       : conv(r"NUMA node\(s\)", int),
         }
 
         # ARM-specific logic
         if cpu['Architecture'] == 'aarch64':
             if cpu['L2_cache'] == 'not_available':
-                cpu['L2_cache'] = conv(parser_lscpu("L2"), str)
+                cpu['L2_cache'] = conv("L2")
             if self._permission:
-                cpu['CPU_Model'] = cpu['CPU_Model'] + " - " + conv(parser_lscpu("BIOS Model name"),str)
+                cpu['CPU_Model'] = cpu['CPU_Model'] + " - " + conv("BIOS Model name")
 
         # Populate NUMA nodes
         try:
             for i in range(0, int(cpu['NUMA_nodes'])):
-                cpu['NUMA_node{}_CPUs'.format(i)] = conv(parser_lscpu(r"NUMA node{} CPU\(s\)".format(i)),str)
+                cpu['NUMA_node{}_CPUs'.format(i)] = parse_lscpu(r"NUMA node{} CPU\(s\)".format(i))
         except ValueError:
             _log.warning('Failed to parse or NUMA nodes not existent.')
 
         return cpu
 
-    # TESTED
     def collect_bios(self):
         """Collect all relevant BIOS information."""
         _log.info("Collecting BIOS information.")
@@ -222,7 +197,10 @@ class Extractor():
         else:
             parse_bmc_fru = lambda x: "not_available"
 
-        is_virtual = (int(self.exec_cmd("grep -c hypervisor /proc/cpuinfo || [[ $? -le 1 ]] ")) >= 1)
+        if self.pkg['facter']:
+            is_virtual = self.exec_cmd("facter is_virtual").casefold() == 'true'
+        else:
+            is_virtual = self.exec_cmd("grep hypervisor /proc/cpuinfo") != "not_available"
 
         system = {
             'Manufacturer'     : parse_system("Manufacturer"),
@@ -257,11 +235,9 @@ class Extractor():
 
         return mem
 
-    # TESTED
     @staticmethod
     def get_mem_parser(cmd_output):
         """Memory parser for dmidecode."""
-        
         # Regex for matches
         reg_size = re.compile(r'(?P<Field>Size:\s*\s)(?P<value>(?!No Module Installed).*\S)')
         reg_part = re.compile(r'(?P<Field>Part Number:\s*\s)(?P<value>(?!NO DIMM).*\S)')
@@ -303,11 +279,9 @@ class Extractor():
 
         return storage
 
-    # TESTED
     @staticmethod
     def get_storage_parser(cmd_output):
         """Storage parser for lshw -c disk."""
-        
         # Regex for matches
         reg_logic   = re.compile(r'(?P<Field>logical name:\s*\s)(?P<value>.*)')
         reg_product = re.compile(r'(?P<Field>product:\s*\s)(?P<value>.*)')
@@ -334,12 +308,12 @@ class Extractor():
             """Parser function."""
             # Different regex for parsing different outputs
             if reg == "BMC":
-                expr = r'(?P<Field>{}\s*:\s)(?P<Value>.*)'.format(pattern)
+                exp = r'(?P<Field>{}\s*:\s)(?P<Value>.*)'.format(pattern)
             else:
-                expr = r'(?P<Field>{}:\s*\s)(?P<Value>.*)'.format(pattern)
+                exp = r'(?P<Field>{}:\s*\s)(?P<Value>.*)'.format(pattern)
 
             # Search pattern in output
-            result = re.search(expr, cmd_output)
+            result = re.search(exp, cmd_output)
             try:
                 _log.debug("Parsing = %s | Field = %s | Value = %s", reg,
                                                                      pattern,
@@ -352,7 +326,6 @@ class Extractor():
 
         return parser
 
-    # TESTED
     def collect(self):
         """Collect all metadata."""
         _log.info("Collecting the full metadata information.")
@@ -390,13 +363,6 @@ class Extractor():
         """Export collected data as a dict."""
         return self.data
 
-    def _extract(self, cmd_dict):
-        """Extract the data given a dict with commands."""
-        data = {}
-        for key, val in cmd_dict.items():
-            self.data[key] = self.exec_cmd(val)
-
-        return data
 
     def _save(self, tag, new_data):
         """Save a given dict to the final data dict."""
