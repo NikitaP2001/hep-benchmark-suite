@@ -89,12 +89,12 @@ def download_ca_certificates():
         makedirs(CA_DIR)
 
     # Download ca-policy-egi-core compressed CA certificates
-    data = requests.get(CA_URL, timeout=10)
+    data = requests.get(CA_URL, timeout=60)
     html = BeautifulSoup(data.text, "html.parser")
 
     for link in html.find_all("a"):
         if link.get("href").endswith(".tar.gz"):
-            data = requests.get(CA_URL + link["href"], timeout=10)
+            data = requests.get(CA_URL + link["href"], timeout=60)
 
             with open(join(CA_DIR, link["href"]), "wb") as f:
                 f.write(data.content)
@@ -113,7 +113,7 @@ def download_ca_certificates():
 
     # Download extra CAs
     for name, url in CA_EXTRA.items():
-        data = requests.get(url, timeout=10)
+        data = requests.get(url, timeout=60)
         with open(join(CA_DIR, name), "wb") as f:
             f.write(data.content)
 

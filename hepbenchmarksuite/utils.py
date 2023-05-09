@@ -38,7 +38,7 @@ def download_file(url, outfile):
 
     # Download the config file from url and save it locally
     try:
-        resp = requests.get(url, timeout=10)
+        resp = requests.get(url, timeout=60)
         with open(outfile, 'wb') as fout:
             fout.write(resp.content)
             _log.info("File saved: %s", fout.name)
