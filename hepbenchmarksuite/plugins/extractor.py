@@ -239,10 +239,10 @@ class Extractor():
     def get_mem_parser(cmd_output):
         """Memory parser for dmidecode."""
         # Regex for matches
-        reg_size = re.compile(r'(?P<Field>Size:\s*\s)(?P<value>(?!No Module Installed).*\S)')
-        reg_part = re.compile(r'(?P<Field>Part Number:\s*\s)(?P<value>(?!NO DIMM).*\S)')
-        reg_man  = re.compile(r'(?P<Field>Manufacturer:\s*\s)(?P<value>(?!NO DIMM).*\S)')
-        reg_type = re.compile(r'(?P<Field>Type:\s*\s)(?P<value>(?!Unknown).*\S)')
+        reg_size = re.compile(r'\n\s*(?P<Field>Size:\s*\s)(?P<value>(?!No Module Installed).*\S)')
+        reg_part = re.compile(r'\n\s*(?P<Field>Part Number:\s*\s)(?P<value>(?!NO DIMM).*\S)')
+        reg_man  = re.compile(r'\n\s*(?P<Field>Manufacturer:\s*\s)(?P<value>(?!NO DIMM).*\S)')
+        reg_type = re.compile(r'\n\s*(?P<Field>Type:\s*\s)(?P<value>(?!Unknown).*\S)')
 
         # Return iterators containing matches
         result_size = re.finditer(reg_size, cmd_output)
@@ -283,9 +283,9 @@ class Extractor():
     def get_storage_parser(cmd_output):
         """Storage parser for lshw -c disk."""
         # Regex for matches
-        reg_logic   = re.compile(r'(?P<Field>logical name:\s*\s)(?P<value>.*)')
-        reg_product = re.compile(r'(?P<Field>product:\s*\s)(?P<value>.*)')
-        reg_size    = re.compile(r'(?P<Field>size:\s*\s)(?P<value>.*)')
+        reg_logic   = re.compile(r'\n\s*(?P<Field>logical name:\s*\s)(?P<value>.*)')
+        reg_product = re.compile(r'\n\s*(?P<Field>product:\s*\s)(?P<value>.*)')
+        reg_size    = re.compile(r'\n\s*(?P<Field>size:\s*\s)(?P<value>.*)')
 
         # Return iterators containing matches
         result_logic   = re.finditer(reg_logic,   cmd_output)

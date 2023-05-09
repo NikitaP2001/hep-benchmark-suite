@@ -27,6 +27,7 @@
        bus info: scsi@0:0.2.0
        logical name: /dev/sdc
        version: 400i
+       test field size: test-value
        serial: CVCV2125008V240CGN
        size: 223GiB (240GB)
        capabilities: partitioned partitioned:dos

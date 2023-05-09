@@ -198,6 +198,43 @@ class TestHWExtractor(unittest.TestCase):
 
         self.assertEqual(mem_output, MEM_OK, "Memory parser mismatch!")
 
+    def test_parser_memory__shouldnt_match_substrings(self):
+        """
+        Test the parser for a memory output where the output contains
+        attributes of a similar name as a part of others, which
+        should not be selected.
+
+        E.g. The value of the `Size` attribute should not be extracted from the
+        following line: `	Cache Size: None`.
+        """
+        hw = Extractor(extra={})
+
+        with open("tests/data/MEM.sample.2", "r") as mem_file:
+            mem_text = mem_file.read()
+
+        mem_output = hw.get_mem_parser(mem_text)
+
+        MEM_OK = {
+            "dimm1": "16384 MB DDR4 | SK Hynix | HMA82GR7DJR8N-XN",
+            "dimm2": "16384 MB DDR4 | SK Hynix | HMA82GR7DJR8N-XN",
+            "dimm3": "16384 MB DDR4 | SK Hynix | HMA82GR7DJR8N-XN",
+            "dimm4": "16384 MB DDR4 | SK Hynix | HMA82GR7DJR8N-XN",
+            "dimm5": "16384 MB DDR4 | SK Hynix | HMA82GR7DJR8N-XN",
+            "dimm6": "16384 MB DDR4 | SK Hynix | HMA82GR7DJR8N-XN",
+            "dimm7": "16384 MB DDR4 | SK Hynix | HMA82GR7DJR8N-XN",
+            "dimm8": "16384 MB DDR4 | SK Hynix | HMA82GR7DJR8N-XN",
+            "dimm9": "16384 MB DDR4 | SK Hynix | HMA82GR7DJR8N-XN",
+            "dimm10": "16384 MB DDR4 | SK Hynix | HMA82GR7DJR8N-XN",
+            "dimm11": "16384 MB DDR4 | SK Hynix | HMA82GR7DJR8N-XN",
+            "dimm12": "16384 MB DDR4 | SK Hynix | HMA82GR7DJR8N-XN",
+            "dimm13": "16384 MB DDR4 | SK Hynix | HMA82GR7DJR8N-XN",
+            "dimm14": "16384 MB DDR4 | SK Hynix | HMA82GR7DJR8N-XN",
+            "dimm15": "16384 MB DDR4 | SK Hynix | HMA82GR7DJR8N-XN",
+            "dimm16": "16384 MB DDR4 | SK Hynix | HMA82GR7DJR8N-XN",
+        }
+
+        self.assertEqual(mem_output, MEM_OK, "Memory parser mismatch!")
+
     def test_parser_storage(self):
         """
         Test the parser for a storage output.
