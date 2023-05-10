@@ -21,7 +21,7 @@ build_wheels:
     paths:
       - $WHEELS_PATH
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^v.*$/'
+    - if: $CI_COMMIT_TAG =~ $PEP440_VERSION_REGEX
       variables:
         ID: $CI_COMMIT_TAG
         FULL_RELEASE_PATH: $CI_EOS_RELEASES/$ID
@@ -33,3 +33,21 @@ build_wheels:
     matrix:
       - ARCH: [x86_64, aarch64]
         PYTHON_VERSION: [python36, python38, python39]
+
+delete_dev_wheels:
+  stage: deploy
+  image: gitlab-registry.cern.ch/linuxsupport/cc7-base
+  variables:
+    merge_commit: "^Merge branch '(.*)' into .*$"
+    allowed_branch_names: ^[a-zA-Z0-9_-]+$
+  before_script:
+    - yum install -y git sshpass
+  script:
+    - if [[ $CI_COMMIT_MESSAGE =~ $merge_commit ]]; then branch=${BASH_REMATCH[1]}; fi
+    - |
+      if [ -n "$branch" ] && [[ $branch =~ $allowed_branch_names ]]; then
+        FULL_RELEASE_PATH=$CI_EOS_RELEASES/dev/$branch; \
+        SSHPASS=${CI_CPUBMK} sshpass -v -e ssh -oStrictHostKeyChecking=no cpubmk@lxplus.cern.ch "rm -rf ${FULL_RELEASE_PATH}"; \
+      fi
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_MESSAGE =~ $merge_commit
