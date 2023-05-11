@@ -6,6 +6,7 @@
 ###############################################################################
 """
 
+from glob import glob
 import json
 import logging
 import os
@@ -101,11 +102,15 @@ class Extractor():
         # Get the parsing result from lscpu
         cpu = self.get_cpu_parser(self.exec_cmd("lscpu"))
 
+        # Expand paths
+        scaling_governors = ' '.join(glob('/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor'))
+        scaling_drivers = ' '.join(glob('/sys/devices/system/cpu/cpu*/cpufreq/scaling_driver'))
+
         # Update with additional data
         cpu.update({
-            'Power_Policy': self.exec_cmd("cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor | sort | uniq"),
-            'Power_Driver': self.exec_cmd("cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_driver   | sort | uniq"),
-            'Microcode'   : self.exec_cmd("grep microcode /proc/cpuinfo | uniq | awk 'NR==1{print $3}'"),
+            'Power_Policy': self.exec_cmd(f"cat {scaling_governors} | sort | uniq"),
+            'Power_Driver': self.exec_cmd(f"cat {scaling_drivers} | sort | uniq"),
+            'Microcode'   : self.exec_cmd("awk '/microcode/ {print $3}' /proc/cpuinfo | uniq"),
             'SMT_Enabled' : self.exec_cmd("cat /sys/devices/system/cpu/smt/active")
         })
 
