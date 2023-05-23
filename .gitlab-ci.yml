@@ -89,14 +89,19 @@ build_suite_prior_image:
 
 code_quality:
   stage: test-components
-  script:
+  image: gitlab-registry.cern.ch/linuxsupport/cs8-base
+  dependencies: []
+  before_script:
+    - dnf install -y -q python3.11 python3.11-pip git
+    - python3 -m pip install -U pip tox pylint_gitlab
     - mkdir -p public/badges public/lint
     - echo undefined > public/badges/$CI_JOB_NAME.score
-    - yum install -y -q python3-pip
-    - python3 -m pip install -U pip tox pylint_gitlab
+  script:
     - tox -e pylint | tee /tmp/pylint.txt
     - sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' /tmp/pylint.txt > public/badges/$CI_JOB_NAME.score
-    - pylint -j 0 --exit-zero --output-format=pylint_gitlab.GitlabCodeClimateReporter $(find . \( -path ./.tox -o -path ./tests \) -prune -false -o -name "*.py") bin/bmkrun bin/bmk_show_metadata > codeclimate.json
+    - PYLINT_EXIT_CODE=$(pylint -j 0 --output-format=pylint_gitlab.GitlabCodeClimateReporter $(find . \( -path ./.tox -o -path ./tests \) -prune -false -o -name "*.py") bin/bmkrun bin/bmk_show_metadata > codeclimate.json; echo $?)
+    # Only fail in case of fatal errors
+    - if [[ $((PYLINT_EXIT_CODE%2)) -eq 1 ]]; then exit 1; fi
   after_script:
     - anybadge --overwrite --label "code quality" --value=$(cat public/badges/$CI_JOB_NAME.score) --file=public/badges/$CI_JOB_NAME.svg 4=red 6=orange 8=yellow 10=green
     - echo "Your score is $(cat public/badges/$CI_JOB_NAME.score)"
@@ -106,7 +111,6 @@ code_quality:
     reports:
       codequality: codeclimate.json
     when: always
-  dependencies: []
   rules:
     - if: '$CODE_QUALITY_DISABLED'
       when: never
