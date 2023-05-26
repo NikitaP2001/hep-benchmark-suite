@@ -231,7 +231,6 @@ global:
   show: true
   tags:
     site: $SITE
-    purpose: "TF measurements"
 hepscore:
   config: $WORKDIR/$HEPSCORE_CONFIG_FILE
   version: v1.5

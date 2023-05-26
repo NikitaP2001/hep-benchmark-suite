@@ -172,47 +172,6 @@ hepscore_install(){
     install_suite
 
     # CONFIG_FILE_CREATION
-    cat > $WORKDIR/$HEPSCORE_CONFIG_FILE <<EOF
-hepscore_benchmark:
-  benchmarks:
-    atlas-gen_sherpa-bmk:
-      results_file: atlas-gen_sherpa_summary.json
-      ref_scores:
-        gen: 1
-      weight: 1.0
-      version: ci-v0.1
-      args:
-        threads: 1
-        events: 200
-    atlas-sim_mt-bmk:
-      results_file: atlas-sim_mt_summary.json
-      ref_scores:
-        sim: 1
-      weight: 1.0
-      version: v0.2
-      args:
-        threads: 4
-        events: 5
-    atlas-reco_mt-bmk:
-      results_file: atlas-reco_mt_summary.json
-      ref_scores:
-        reco: 1
-      weight: 1.0
-      version: v0.1
-      args:
-        threads: 4
-        events: 100
-  settings:
-    name: HEPscore20POC
-    reference_machine: "CPU Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz"
-    registry: $REGISTRY://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads$REGISTRY_SUFFIX
-    method: geometric_mean
-    repetitions: 3
-    retries: 1
-    scaling: 0
-    container_exec: $EXECUTOR
-EOF
-
     cat > $WORKDIR/$SUITE_CONFIG_FILE <<EOF2
 activemq:
   server: $SERVER
@@ -224,19 +183,13 @@ activemq:
 
 global:
   benchmarks:
-  - hepscore
+  - db12
   mode: $EXECUTOR
   publish: $PUBLISH
   rundir: $RUNDIR
   show: true
   tags:
     site: $SITE
-hepscore:
-  config: $WORKDIR/$HEPSCORE_CONFIG_FILE
-  version: v1.5
-  options:
-      userns: True
-      clean: True
 EOF2
 
     if [ -f $WORKDIR/$HEPSCORE_CONFIG_FILE ]; then

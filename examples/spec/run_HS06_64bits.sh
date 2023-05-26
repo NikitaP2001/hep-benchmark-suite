@@ -190,7 +190,6 @@ global:
   show: true
   tags:
     site: $SITE
-    purpose: "$PURPOSE"
 
 hepspec06:
   # Use the docker registry
