@@ -25,7 +25,7 @@ while getopts ':c:k:iprs:wd:' OPTION; do
 
     k)
       key="$OPTARG"
-      echo "Option b used with: $key"
+      echo "Setting key to $key"
       ;;
 
     i)
@@ -38,7 +38,7 @@ while getopts ':c:k:iprs:wd:' OPTION; do
       ;;
     p)
       publish=true
-      echo "Publish results?"
+      echo "Results will be published"
       ;;
     s)
       site="$OPTARG"
