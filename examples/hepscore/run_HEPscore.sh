@@ -199,7 +199,7 @@ install_suite(){
 }
 
 install_suite_from_repo(){
-    pip3 install --upgrade pip
+    pip3 install --disable-pip-version-check --upgrade pip
     pip3 install git+https://gitlab.cern.ch/hep-benchmarks/hep-score.git@$HEPSCORE_VERSION
     pip3 install git+https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite.git@$SUITE_VERSION
 }
