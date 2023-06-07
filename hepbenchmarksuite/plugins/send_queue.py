@@ -17,7 +17,7 @@ import tarfile
 
 import os
 from os import listdir, makedirs
-from os.path import join, isfile, dirname, realpath, exists, normpath
+from os.path import join, isfile, dirname, realpath, exists
 
 import subprocess
 from subprocess import DEVNULL, STDOUT
@@ -162,10 +162,6 @@ def _load_cert_and_key(connection):
 
 
 def is_key_password_protected(key):
-    # If the path is not absolute, make it absolute relative to the parent dir
-    if not os.path.isabs(key):
-        key = normpath(join(dirname(os.getcwd()), key))
-
     os.chmod(key, 0o600)
     return_code = subprocess.run(["ssh-keygen", "-y", "-P", "''", "-f", key], stdout=DEVNULL, stderr=STDOUT).returncode
     return return_code != 0
