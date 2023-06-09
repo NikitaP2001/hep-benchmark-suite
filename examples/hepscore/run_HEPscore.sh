@@ -171,6 +171,7 @@ global:
   show: true
   tags:
     site: $SITE
+    purpose: "Official measurement"
 
 hepscore:
   version: $HEPSCORE_VERSION
