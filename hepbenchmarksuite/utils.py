@@ -49,6 +49,30 @@ def download_file(url, outfile):
         return 1
 
 
+def get_tags_env():
+    """Get tags from user environment variables.
+
+    Returns:
+      A dict containing the tags.
+    """
+
+    tags = {}
+
+    # Get ENV variables that start with BMKSUITE_TAG_[user-tag]
+    # returns json with user-tag in lower case
+    PREFIX = "BMKSUITE_TAG_"
+
+    for key, val in os.environ.items():
+        if PREFIX in key:
+            _log.debug("Found tag in ENV: %s=%s", key, val)
+
+            tag_key = key.replace(PREFIX, '').lower()
+
+            tags[tag_key] = str(val)
+
+    return tags
+
+
 def export(result_dir, outfile):
     """Export all json and log files from a given dir.
 
@@ -73,8 +97,10 @@ def export(result_dir, outfile):
     return 0
 
 
-def exec_wait_benchmark(cmd_str):
-    """Accept command string to execute and waits for process to finish.
+def exec_live_output(cmd_str, env=None):
+    """
+    Execute a command as a subprocess and wait for it to finish.
+    Its standard output and error are written to stdout in real time.
 
     Args:
       cmd_str: Command to execute.
@@ -83,9 +109,11 @@ def exec_wait_benchmark(cmd_str):
       An POSIX exit code (0 through 255)
     """
 
-    _log.debug("Excuting command: %s", cmd_str)
-
-    cmd = subprocess.Popen(cmd_str, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    cmd_split = shlex.split(cmd_str.strip())
+    _log.debug("Executing command: %s, with environment: %s",
+                   cmd_split, "default" if env is None else env)
+    
+    cmd = subprocess.Popen(cmd_split, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
 
     # Output stdout from child process
     line = cmd.stdout.readline()
@@ -93,40 +121,38 @@ def exec_wait_benchmark(cmd_str):
         sys.stdout.write(line.decode('utf-8'))
         line = cmd.stdout.readline()
 
-    # Wait until process is complete
     cmd.wait()
-
-    # Check for errors
-    if cmd.returncode != 0:
-        _log.error("Benchmark execution failed; returncode = %s.", cmd.returncode)
-
+ 
     return cmd.returncode
 
 
-def get_tags_env():
-    """Get tags from user environment variables.
+def exec_cmd(cmd_str, env=None):
+    """Execute a command string and return its output and return code.
+
+    Args:
+      cmd_str: A string with the command to execute.
 
     Returns:
-      A dict containing the tags.
+      A string with the output and an integer with the return code.
     """
 
-    tags = {}
+    _log.debug("Executing command: %s, with environment: %s",
+                cmd_str, "default" if env is None else env)
+    return_code, reply, error = run_piped_commands(cmd_str, env)
 
-    # Get ENV variables that start with BMKSUITE_TAG_[user-tag]
-    # returns json with user-tag in lower case
-    PREFIX = "BMKSUITE_TAG_"
+    # Check for errors
+    if return_code != 0:
+        reply = "not_available"
+        _log.error(error)
+    # Force not_available when command return is empty
+    elif len(reply) == 0:
+        _log.debug('Result is empty: %s', reply)
+        reply = "not_available"
 
-    for key, val in os.environ.items():
-        if PREFIX in key:
-            _log.debug("Found tag in ENV: %s=%s", key, val)
+    return reply, return_code
 
-            tag_key = key.replace(PREFIX, '').lower()
 
-            tags[tag_key] = str(val)
-
-    return tags
-
-def run_piped_commands(cmd_str):
+def run_piped_commands(cmd_str, env=None):
     """Exec a command chain"""
 
     # Split the command string into a list of individual commands
@@ -137,15 +163,16 @@ def run_piped_commands(cmd_str):
     for cmd in commands:
         # split command using shlex to handle cases like awk
         cmd_split = shlex.split(cmd.strip())
-        _log.debug("Executing command: %s", cmd_split)
+        _log.debug("Executing command: %s, with environment: %s",
+                   cmd_split, "default" if env is None else env)
         try:
             if output:
                 out = output.stdout
                 _log.debug("Input: %s", out)
-                output = subprocess.run(cmd_split, input=out, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                output = subprocess.run(cmd_split, input=out, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, env=env)
             else:
                 _log.debug("No input")
-                output = subprocess.run(cmd_split, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                output = subprocess.run(cmd_split, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, env=env)
         except FileNotFoundError as e:
             _log.error("Command not found: %s", e.filename)
             return None, None, f"Command not found: {e.filename}"
@@ -162,29 +189,6 @@ def run_piped_commands(cmd_str):
     else:
         return None, None, None
 
-def exec_cmd(cmd_str):
-    """Execute a command string and return its output and return code.
-
-    Args:
-      cmd_str: A string with the command to execute.
-
-    Returns:
-      A string with the output and an integer with the return code.
-    """
-
-    _log.debug("Excuting command: %s", cmd_str)
-    return_code, reply, error = run_piped_commands(cmd_str)
-
-    # Check for errors
-    if return_code != 0:
-        reply = "not_available"
-        _log.error(error)
-    # Force not_available when command return is empty
-    elif len(reply) == 0:
-        _log.debug('Result is empty: %s', reply)
-        reply = "not_available"
-
-    return reply, return_code
 
 def get_host_ips():
     """Get external facing system IP from default route, do not rely on hostname.

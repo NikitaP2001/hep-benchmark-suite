@@ -59,8 +59,8 @@ class TestHepscore(unittest.TestCase):
 #-------------------------------------------------------------------------------------------------------------
 
 
-def alternate_exec(arg):
-    """ Custom function to mock utils.exec_wait_benchmark. """
+def alternate_exec(arg, env=None):
+    """ Custom function to mock utils.exec_live_output """
     return arg
 
 
@@ -91,7 +91,7 @@ class TestSpec:
 
     @pytest.mark.parametrize('bench', ["spec2017", "hs06"])
     @pytest.mark.parametrize('mode', ["docker", "singularity"])
-    @patch.object(utils, 'exec_wait_benchmark', side_effect=alternate_exec)
+    @patch.object(utils, 'exec_live_output', side_effect=alternate_exec)
     def test_cli_interface(self, mock,  mode, bench):
         """ Test interface to run hepspec06 and spec2017 """
 
@@ -115,7 +115,7 @@ class TestSpec:
                    f'-s {bmkset}']
 
         if mode == 'singularity':
-            command_start = 'SINGULARITY_CACHEDIR=./singularity_cachedir singularity run'
+            command_start = 'singularity run'
             params.extend(['-B /tmp/hep-spec_wd3:/tmp/hep-spec_wd3',
                            '-B /tmp/SPEC:/tmp/SPEC',
                            'docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:qa'])

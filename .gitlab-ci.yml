@@ -52,7 +52,7 @@ build_logstash_image:
       - export DESTINATIONS="--destination $CI_REGISTRY_IMAGE/logstash:${CI_COMMIT_BRANCH} --destination $CI_REGISTRY_IMAGE/logstash:ci-${CI_COMMIT_SHA:0:8}"
   extends: .template_build_image
   rules:
-    - if: '$CI_COMMIT_BRANCH =~ /^qa.*$/'
+    - if: $CI_COMMIT_BRANCH =~ /^qa.*$/ || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/
       changes:
         - docker-images/logstash/*
 
@@ -64,7 +64,7 @@ build_elasticsearch_image:
       - export DESTINATIONS="--destination $CI_REGISTRY_IMAGE/es-extractor:${CI_COMMIT_BRANCH} --destination $CI_REGISTRY_IMAGE/es-extractor:ci-${CI_COMMIT_SHA:0:8} --destination $CI_REGISTRY_IMAGE/es-extractor:latest"
   extends: .template_build_image
   rules:
-    - if: '$CI_COMMIT_BRANCH =~ /^qa.*$/'
+    - if: $CI_COMMIT_BRANCH =~ /^qa.*$/ || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/
       changes:
         - docker-images/es-extractor/*
 
@@ -79,7 +79,7 @@ build_elasticsearch_image:
 build_suite_prior_image:
   extends: .build_suite_image
   rules:
-    - if: $CI_COMMIT_BRANCH =~ /^qa.*$/ || $CI_COMMIT_TAG =~ $PEP440_VERSION_REGEX
+    - if: $CI_COMMIT_BRANCH =~ /^qa.*$/ || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/ || $CI_COMMIT_TAG =~ $PEP440_VERSION_REGEX
       changes:
         - docker-images/hep-benchmark-suite/Dockerfile-cc7
 
@@ -157,7 +157,11 @@ Security:
     - python3 -m pip install -U pip tox
     - tox -e bandit
   rules:
-    - if: $CI_COMMIT_BRANCH =~ /^qa-.*$/ || $CI_COMMIT_BRANCH == "master" || $CI_COMMIT_TAG =~ $PEP440_VERSION_REGEX
+    - if: $CI_COMMIT_BRANCH =~ /^qa-.*$/ || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa-.*$/
+      when: never
+    - if: $CI_COMMIT_BRANCH == "master" || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "master"
+      when: never
+    - if: $CI_COMMIT_TAG =~ $PEP440_VERSION_REGEX
       when: never
     - when: always
 
@@ -168,7 +172,9 @@ YAML_lint:
     - yum install -y -q yamllint
     - yamllint -c tests/ci/yamllint_conf.yml hepbenchmarksuite/config/benchmarks.yml
   rules:
-    - if: '$CI_COMMIT_BRANCH == "qa" || $CI_COMMIT_BRANCH == "master"'
+    - if: $CI_COMMIT_BRANCH == "qa" || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "qa"
+      when: never
+    - if: $CI_COMMIT_BRANCH == "master" || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "master"
       when: never
     - changes:
       - "**/*.yaml"
@@ -191,7 +197,9 @@ db12_benchmark:
     expire_in: 1 week
     when: always
   rules:
-    - if: '$CI_COMMIT_BRANCH == "qa" || $CI_COMMIT_BRANCH == "master"'
+    - if: $CI_COMMIT_BRANCH == "qa" || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "qa"
+      when: never
+    - if: $CI_COMMIT_BRANCH == "master" || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "master"
       when: never
     - when: always
 
@@ -208,7 +216,7 @@ bats_test_docker_compose_qa:
   tags:
     -  hep-benchmark-suite-docker-runner
   rules:
-   - if: '$CI_COMMIT_BRANCH =~ /^qa.*$/'
+    - if: $CI_COMMIT_BRANCH =~ /^qa.*$/ || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/
   script:
     - . $CI_PROJECT_DIR/tests/docker_compose_amq_to_es/ci_run_script.sh
     - ci_run_script
@@ -258,7 +266,7 @@ bats_test_docker_compose_qa:
     - mv $BMK_VOLUME/run_*/bmkrun_report.json $CI_PROJECT_DIR
     - rm -rf $BMK_VOLUME
   rules:
-    - if: '$CI_COMMIT_BRANCH =~ /^qa.*$/'
+    - if: $CI_COMMIT_BRANCH =~ /^qa.*$/ || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/
   cache:
     key: "$CI_JOB_STAGE-$CI_COMMIT_REF_SLUG"
     paths:
@@ -329,7 +337,7 @@ sing_spec2017:
     - mv $BMK_VOLUME/run_*/bmkrun_report.json .
     - rm -rf $BMK_VOLUME
   rules:
-    - if: '$CI_COMMIT_BRANCH =~ /^qa.*$/'
+    - if: $CI_COMMIT_BRANCH =~ /^qa.*$/ || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/
   artifacts:
     paths:
       - ./*.json

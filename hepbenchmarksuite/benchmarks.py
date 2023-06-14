@@ -281,6 +281,11 @@ def run_hepspec(conf, bench):
         else:
             _log.error("Invalid docker image specified. Image should start with docker://")
             return 1
+        
+    # Set singularity cache dir
+    env = os.environ.copy()
+    if run_mode == "singularity":
+        env["SINGULARITY_CACHEDIR"] = f"{conf['global']['parent_dir']}/singularity_cachedir"
 
     # Create the set of volumes to be mounted
     volumes = {conf['global']['rundir'], spec['hepspec_volume']}
@@ -293,17 +298,21 @@ def run_hepspec(conf, bench):
             .format(format_volume_string('docker', volumes),
                     docker_image,
                     _run_args),
-        'singularity': "SINGULARITY_CACHEDIR={0}/singularity_cachedir singularity run {1} {2} {3}"
-            .format(conf['global']['parent_dir'],
-                    format_volume_string('singularity', volumes),
+        'singularity': "singularity run {0} {1} {2}"
+            .format(format_volume_string('singularity', volumes),
                     spec['image'],
                     _run_args)
     }
 
     # Start benchmark
     _log.debug(cmd[run_mode])
-    returncode = utils.exec_wait_benchmark(cmd[run_mode])
-    return returncode
+    return_code = utils.exec_live_output(cmd[run_mode], env)
+
+    # Check for errors
+    if return_code != 0:
+        _log.error("Benchmark execution failed; returncode = %s", return_code)
+
+    return return_code
 
 
 def format_volume_string(platform, volumes):
