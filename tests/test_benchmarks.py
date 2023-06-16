@@ -109,7 +109,7 @@ class TestSpec:
         params = [f'-b {bench}',
                    '-w /tmp/hep-spec_wd3',
                    '-n None',
-                   '-u https://www.example.com/',
+                   f'-u ${str(bench).upper()}URL',
                    '-p /tmp/SPEC',
                    '-i 1',
                    f'-s {bmkset}']

@@ -14,7 +14,7 @@ global:
 
 hepspec06:
   image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:qa"
-  url_tarball: "https://www.example.com/"
+  url_tarball: $HS06URL
   # Define writeable directory for SPEC install in unpriveliged containers
   hepspec_volume: "/tmp/SPEC"
   iterations: 1
@@ -23,7 +23,7 @@ hepspec06:
 spec2017:
   image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:qa"
   # URL to fetch the spec2017. It will only be used if the software is not found under hepspec_volume.
-  url_tarball: "https://www.example.com/"
+  url_tarball: $SPEC2017URL
   # Define the location on where spec2017 should be found
   # If spec2017 is not present, the directory should be writeable to allow the installation
   hepspec_volume: "/tmp/SPEC"
@@ -33,5 +33,5 @@ spec2017:
   bmk_set: '508.namd_r'
 
 hepscore:
-  version: "v1.2"
+  version: "v1.5"
   config: "tests/ci/hepscore.yaml"

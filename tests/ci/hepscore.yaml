@@ -4,8 +4,8 @@ hepscore_benchmark:
     reference_machine: 'Unknown'
     registry: docker://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
     scaling: 10
-    repetitions: 1  #number of repetitions of the same benchmark
-    method: geometric_mean #or any other algorithm
+    repetitions: 1  # number of repetitions of the same benchmark
+    method: geometric_mean # or any other algorithm
   benchmarks:
     atlas-kv-bmk:
       results_file: atlas-kv_summary.json
