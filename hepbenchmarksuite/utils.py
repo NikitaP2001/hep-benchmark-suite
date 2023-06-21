@@ -270,7 +270,7 @@ def prepare_metadata(full_conf, extra):
 
     # Hep-benchmark-suite flags
     flags = {
-        'mp_num'  : params['mp_num'],
+        'ncores'  : params['ncores'],
         'run_mode': params['mode'],
     }
 

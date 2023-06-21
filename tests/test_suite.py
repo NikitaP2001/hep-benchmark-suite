@@ -93,7 +93,7 @@ class TestSuite(unittest.TestCase):
         """ Test if suite cleanup raises exceptions on failed benchmarks. """
 
         sample_config = self.config_file.copy()
-        sample_config['global']['mp_num']=2
+        sample_config['global']['ncores']=2
         mock_data={'data':1}
 
         suite = HepBenchmarkSuite(sample_config)

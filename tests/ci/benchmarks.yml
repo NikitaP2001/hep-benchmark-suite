@@ -2,7 +2,7 @@
 global:
   mode: "singularity"
   rundir: "/tmp/hep-spec_wd3"
-  # mp_num: "48"
+  # ncores: "48"
   benchmarks:
     - "db12"
     - "hs06_32"

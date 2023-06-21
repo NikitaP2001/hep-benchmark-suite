@@ -7,7 +7,7 @@ global:
   rundir: "/tmp/hep-benchmark-suite"
   # Specify the number of cores available for benchmark
   # Default will fetch all available CPUs
-  # mp_num: "48"
+  # ncores: "48"
   # Specify the list of benchmarks to run
   benchmarks:
     - "hepscore"

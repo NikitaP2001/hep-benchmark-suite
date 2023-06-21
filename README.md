@@ -282,7 +282,7 @@ optional arguments:
                         compresses them.
   -m, --mode [{singularity,docker}]
                         Run benchmarks in singularity or docker containers.
-  -n, --mp_num [MP_NUM] Number of cpus to run the benchmarks.
+  -n, --ncores [NCORES] Number of cpus to run the benchmarks.
   -t, --tags            Enable reading of user tags from ENV variables
                         (BMKSUITE_TAG_{TAG}). Tags specified in configuration
                         file are ignored.

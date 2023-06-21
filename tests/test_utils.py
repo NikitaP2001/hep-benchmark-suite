@@ -32,8 +32,8 @@ def test_prepare_metadata():
         print("Failed to load configuration file.")
         sys.exit(1)
 
-    # Set mp_num since by default is commented
-    sample_config["global"]["mp_num"] = 2
+    # Set ncores since by default is commented
+    sample_config["global"]["ncores"] = 2
 
     extra = {
         "start_time": "",
@@ -56,7 +56,7 @@ def test_prepare_metadata():
             "suite": {
                 str: str,
                 "benchmark_version": {str: str},
-                "flags": {str: str, "mp_num": int},
+                "flags": {str: str, "ncores": int},
             },
             "host": {
                 str: str,

@@ -9,7 +9,7 @@
             "other_tag": "CI"
         },
         "FLAGS": {
-            "mp_num": 48
+            "ncores": 48
         },
         "SW": {
             "python_version": "3.7.3",

@@ -252,7 +252,7 @@ def run_hepspec(conf, bench):
     # Populate CLI from the global configuration section
     _run_args = f" -b {bench}" \
                 f" -w {conf['global'].get('rundir')}" \
-                f" -n {conf['global'].get('mp_num')}"
+                f" -n {conf['global'].get('ncores')}"
 
     # Populate CLI from the [hep]spec configuration section
     # Removing image key from this population since its specified bellow at command level

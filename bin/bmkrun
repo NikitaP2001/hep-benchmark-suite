@@ -87,7 +87,7 @@ def main():
                         help="Run benchmarks in singularity or docker containers.",
                         default=None)
 
-    parser.add_argument("-n", "--mp_num",
+    parser.add_argument("-n", "--ncores",
                         nargs='?',
                         type=int,
                         help="Number of cpus to run the benchmarks.",
@@ -180,14 +180,14 @@ def main():
             sys.exit(1)
 
     # use all CPUs found if invalid parameter provided
-    if ('mp_num' not in active_config['global'].keys()
-            or active_config['global']['mp_num'] is None
-            or int(active_config['global']['mp_num']) > os.cpu_count()):
-        active_config['global']['mp_num'] = os.cpu_count()
+    if ('ncores' not in active_config['global'].keys()
+            or active_config['global']['ncores'] is None
+            or int(active_config['global']['ncores']) > os.cpu_count()):
+        active_config['global']['ncores'] = os.cpu_count()
 
     # Check if cpu count in config is integer
-    if not isinstance(active_config['global']['mp_num'], int):
-        print("{}CPU number (mp_num) is not an integer.{}".format(Color.RED, Color.END))
+    if not isinstance(active_config['global']['ncores'], int):
+        print("{}CPU number (ncores) is not an integer.{}".format(Color.RED, Color.END))
         sys.exit(1)
 
     print("# The following configuration was loaded: {}".format(load_config))

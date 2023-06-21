@@ -62,7 +62,7 @@
     "suite": {
         "version": "2.0.rc0",
         "flags": {
-            "mp_num": 48,
+            "ncores": 48,
             "run_mode": "singularity"
         },
         "benchmark_version": {
