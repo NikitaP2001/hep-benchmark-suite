@@ -1,0 +1,132 @@
+""" Preflight checks """
+
+import logging
+import shutil
+
+from os import makedirs, path
+from hepbenchmarksuite import benchmarks, utils
+from hepbenchmarksuite.plugins.send_queue import is_key_password_protected
+
+_log = logging.getLogger(__name__)
+
+# Required disk space (in GB) for all benchmarks
+DISK_THRESHOLD = 20.0
+
+class Preflight:
+    """ Contains several suite-requirement checks that are performed over a given config """
+
+    def __init__(self, config):
+        self.benchmarks_to_run = config['global']['benchmarks']
+        self.global_config       = config['global']
+        self.full_config         = config
+        self.checks              = []
+
+    def check(self):
+        """Perform pre-flight checks."""
+
+        _log.info("Running pre-flight checks")
+
+        self.check_deprecation()
+        self.check_run_mode()
+        self.check_working_directories()
+        self.validate_spec_config()
+        self.check_disk_space()
+
+        # Check if any pre-flight check failed
+        if any(self.checks):
+            return False
+        else:
+            return True
+
+    def check_deprecation(self):
+        """ Warn the user if any deprecated option has been used.
+            The execution will continue whenever possible.
+        """
+
+        if 'hs06' in self.benchmarks_to_run:
+            if 'hepspec06' in self.full_config:
+                _log.warning("Your 'hs06' configuration is under the legacy key 'hepspec06'. "
+                             "Please change it to 'hs06'.")
+                self.full_config['hs06'] = self.full_config['hepspec06']
+
+
+    def validate_amq_config(self):
+        """ Check if the private key used for AMQ is password protected and warn the user if so """
+        if self.global_config.get('publish') and 'activemq' in self.full_config:
+            _log.info(" - Checking AMQ configuration for key protection")
+            amq_cfg = self.full_config['activemq']
+            if "key" in amq_cfg and is_key_password_protected(amq_cfg['key']):
+                _log.warning("The private key is password protected. After the benchmark execution "
+                             "the execution will stall until the password is introduced.")
+                _log.warning("Alternatively, you may set the publish variable to false and send "
+                             "the results afterwards using bmksend, which is included in the suite")
+
+    def check_disk_space(self):
+        """ Check if the rundir has enough free space """
+        _log.info(" - Checking if rundir has enough space...")
+
+        disk_stats    = shutil.disk_usage(self.global_config['rundir'])
+        disk_space_gb = round(disk_stats.free * (10 ** -9), 2)
+        _log.debug("Calculated disk space: %s GB", disk_space_gb)
+
+        running_only_db12 = len(self.benchmarks_to_run) == 1 and 'db12' in self.benchmarks_to_run
+        if disk_space_gb <= DISK_THRESHOLD and not running_only_db12:
+            _log.error("Not enough disk space on %s, free: %s GB, required: %s GB",
+                       self.global_config['rundir'], disk_space_gb, DISK_THRESHOLD)
+
+            # Flag for a failed check
+            self.checks.append(1)
+
+    def validate_spec_config(self):
+        """ Validate [HEP]Spec configuration """
+        _log.info(" - Checking for a valid configuration...")
+        for bench in self.benchmarks_to_run:
+            if bench in ('hs06', 'spec2017'):
+                self.checks.append(benchmarks.validate_spec(self.full_config, bench))
+
+    def check_working_directories(self):
+        """ Ensure the specified working directories exist """
+
+        _log.info(" - Checking provided work dirs exist...")
+        makedirs(self.global_config['rundir'], exist_ok=True)
+
+        if 'hs06' in self.benchmarks_to_run:
+            makedirs(self.full_config['hs06']['hepspec_volume'], exist_ok=True)
+
+        if 'spec2017' in self.benchmarks_to_run:
+            makedirs(self.full_config['spec2017']['hepspec_volume'], exist_ok=True)
+
+        if 'hepscore' in self.benchmarks_to_run:
+            makedirs(path.join(self.global_config['rundir'], "HEPSCORE"), exist_ok=True)
+
+    def check_run_mode(self):
+        """ Check whether the selected executor is installed in the system """
+
+        _log.info(" - Checking if selected run mode exists...")
+        mode = self.global_config['mode']
+
+        # Avoid executing commands if they are not valid run modes.
+        # This avoids injections through the configuration file.
+        if mode in ('docker', 'singularity'):
+            # Search if run mode is installed
+            system_run_mode = shutil.which(mode)
+
+            if system_run_mode is not None:
+                _log.info("   - %s executable found: %s.", mode, system_run_mode)
+
+                # TODO: change to match/case when moving to Python3.10
+                if mode == 'docker':
+                    version, _ = utils.exec_cmd("docker version --format '{{.Server.Version}}'")
+
+                elif mode == 'singularity':
+                    version, _ = utils.exec_cmd('singularity version')
+
+                _log.info("   - %s version: %s.", mode, version)
+
+            else:
+                _log.error("   - %s is not installed in the system.", mode)
+                self.checks.append(1)
+
+        else:
+            _log.error("Invalid run mode specified: %s.", mode)
+            self.checks.append(1)

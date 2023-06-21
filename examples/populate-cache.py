@@ -56,7 +56,10 @@ with configfile.open(encoding="utf-8") as stream:
 if 'global' in config:
     pull_exec = config['global']['mode']
     if 'hepspec06' in config:
-        hs06_image = config['hepspec06']['image'].split('//')[1]
+        print("'hepspec06' configuration key has been deprecated; please replace it by 'hs06'")
+        config['hs06'] = config['hepspec06']
+    if 'hs06' in config:
+        hs06_image = config['hs06']['image'].split('//')[1]
     if 'hepscore' in config:
         # try and use the config already present if installed, otherwise get from remote
         hsconfig_file = config['hepscore']['config']

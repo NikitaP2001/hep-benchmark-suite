@@ -216,7 +216,7 @@ def bench_versions(conf):
     for bench in conf['global']['benchmarks']:
 
         if bench == 'hs06':
-            bench_versions[bench] = conf['hepspec06']['image'].split(":")[-1]
+            bench_versions[bench] = conf['hs06']['image'].split(":")[-1]
 
         elif bench == 'db12':
             bench_versions[bench] = "v0.1"

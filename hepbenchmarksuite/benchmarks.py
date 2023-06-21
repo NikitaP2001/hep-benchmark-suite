@@ -22,7 +22,7 @@ _log = logging.getLogger(__name__)
 
 
 def validate_spec(conf, bench):
-    """Check if the configuration is valid for hepspec06.
+    """Check if the configuration is valid for [hep]spec.
 
     Args:
       conf:  A dict containing configuration.
@@ -33,17 +33,14 @@ def validate_spec(conf, bench):
     _log.debug("Configuration to apply validation: %s", conf)
 
     # Config section to use
-    if bench in 'hs06':
-        spec = conf['hepspec06']
+    if bench in ('hs06', 'spec2017'):
+        spec = conf[bench]
 
-    elif bench in 'spec2017':
-        spec = conf['spec2017']
-
-    # Required params to perform an HS06 benchmark
+    # Required params to perform an [hep]spec benchmark
     SPEC_REQ = ['image', 'hepspec_volume']
 
     try:
-        # Check what is missing from the config file in the hepspec06 category
+        # Check what is missing from the config file in the [hep]spec category
         missing_params = list(filter(lambda x: spec.get(x) is None, SPEC_REQ))
 
         if len(missing_params) >= 1:
@@ -51,7 +48,7 @@ def validate_spec(conf, bench):
             return 1
 
     except KeyError:
-        _log.error("Not configuration found for HS06")
+        _log.error("No configuration found for %s", bench)
         return 1
 
     return 0
@@ -223,7 +220,7 @@ def run_hepscore(suite_conf):
 
 
 def run_hepspec(conf, bench):
-    """Run HEPSpec benchmark.
+    """Run [HEP]Spec benchmark.
 
     Args:
       conf:  A dict containing configuration.
@@ -235,23 +232,20 @@ def run_hepspec(conf, bench):
     _log.debug("Configuration in use for benchmark %s: %s", bench, conf)
 
     # Config section to use
-    if bench == 'hs06':
-        spec = conf['hepspec06']
-
-    elif bench == 'spec2017':
-        spec = conf['spec2017']
+    if bench in ('hs06', 'spec2017'):
+        spec = conf[bench]
 
     # Select run mode: docker, singularity, podman, etc
     run_mode = conf['global']['mode']
 
-    # Possible hepspec06 arguments
+    # Possible [hep]spec arguments
     spec_args = {
-        'iterations'    : ' -i {}'.format(spec.get('iterations')),
-        'hepspec_volume': ' -p {}'.format(spec.get('hepspec_volume')),
-        'bmk_set'       : ' -s {}'.format(spec.get('bmk_set')),
-        'mode'          : ' -m {}'.format(spec.get('mode')),
-        'url_tarball'   : ' -u {}'.format(spec.get('url_tarball')),
-        'config'        : ' -c {}'.format(spec.get('config'))
+        'iterations'    : f" -i {spec.get('iterations')}",
+        'hepspec_volume': f" -p {spec.get('hepspec_volume')}",
+        'bmk_set'       : f" -s {spec.get('bmk_set')}",
+        'mode'          : f" -m {spec.get('mode')}",
+        'url_tarball'   : f" -u {spec.get('url_tarball')}",
+        'config'        : f" -c {spec.get('config')}"
     }
     _log.debug("spec arguments: %s", spec_args)
 
@@ -260,7 +254,7 @@ def run_hepspec(conf, bench):
                 f" -w {conf['global'].get('rundir')}" \
                 f" -n {conf['global'].get('mp_num')}"
 
-    # Populate CLI from the hepspec06 configuration section
+    # Populate CLI from the [hep]spec configuration section
     # Removing image key from this population since its specified bellow at command level
     populate_keys = [*spec.keys()]
     populate_keys.remove('image')

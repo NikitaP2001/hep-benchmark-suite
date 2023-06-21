@@ -187,7 +187,7 @@ Points of attention:
 
 - Benchmarks are executed in sequence.
 
-- The following benchmarks: `hepscore`, `hepspec06`, `spec2017` are configured in their appropriate configuration sections.
+- The following benchmarks: `hepscore`, `hs06`, `spec2017` are configured in their appropriate configuration sections.
 
 - In the case of running HS06, and/or SPEC CPU2017, the benchmark will look for the installation at the specified `hepspec_volume:`, and if it does not exist, it will attempt to install it via tarball argument `url_tarball:`, as defined in the [`benchmarks.yml`](hepbenchmarksuite/config/benchmarks.yml)).
 

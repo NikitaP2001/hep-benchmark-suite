@@ -40,7 +40,7 @@ activemq:
   #cert: 'cert-file.pem'
 
 # Section to configure HEPSpec06 benchmark
-hepspec06:
+hs06:
   # Use the docker registry
   image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.1"
   # Use the CVMFS registry (only available in Singularity)

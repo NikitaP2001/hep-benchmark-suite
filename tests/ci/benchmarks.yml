@@ -12,7 +12,7 @@ global:
     vo: "Some VM"
     other_tag: "Some text"
 
-hepspec06:
+hs06:
   image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:qa"
   url_tarball: $HS06URL
   # Define writeable directory for SPEC install in unpriveliged containers

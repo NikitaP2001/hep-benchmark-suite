@@ -15,10 +15,10 @@ import shutil
 from hepbenchmarksuite import db12
 from hepbenchmarksuite import utils
 from hepbenchmarksuite import benchmarks
+from hepbenchmarksuite.preflight import Preflight
 from hepbenchmarksuite.exceptions import PreFlightError
 from hepbenchmarksuite.exceptions import BenchmarkFailure
 from hepbenchmarksuite.exceptions import BenchmarkFullFailure
-from hepbenchmarksuite.plugins.send_queue import is_key_password_protected
 
 _log = logging.getLogger(__name__)
 
@@ -35,9 +35,6 @@ class HepBenchmarkSuite:
         'db12'    : 'db12_result.json',
     }
 
-    # Required disk space (in GB) for all benchmarks
-    DISK_THRESHOLD = 20.0
-
     def __init__(self, config=None):
         """Initialize setup"""
         self._bench_queue        = config['global']['benchmarks'].copy()
@@ -47,6 +44,7 @@ class HepBenchmarkSuite:
         self._extra              = {}
         self._result             = {}
         self.failures            = []
+        self.preflight           = Preflight(config)
 
     def start(self):
         """Entrypoint for suite."""
@@ -54,90 +52,12 @@ class HepBenchmarkSuite:
 
         self._extra['start_time'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
 
-        if self.preflight():
+        if self.preflight.check():
             _log.info("Pre-flight checks passed successfully.")
             self.run()
         else:
             _log.error("Pre-flight checks failed.")
             raise PreFlightError
-
-    def preflight(self):
-        """Perform pre-flight checks."""
-
-        _log.info("Running pre-flight checks")
-        checks = []
-
-        _log.info(" - Checking if selected run mode exists...")
-
-        # Avoid executing commands if they are not valid run modes.
-        # This avoids injections through the configuration file.
-        if self._config['mode'] in ('docker', 'singularity'):
-
-            # Search if run mode is installed
-            system_runmode = shutil.which(self._config['mode'])
-
-            if system_runmode is not None:
-                _log.info("   - %s executable found: %s.", self._config['mode'], system_runmode)
-
-                if self._config['mode'] == 'docker':
-                    version, _ = utils.exec_cmd("docker version --format '{{.Server.Version}}'")
-
-                elif self._config['mode'] == 'singularity':
-                    version, _ = utils.exec_cmd('singularity version')
-
-                _log.info("   - %s version: %s.", self._config['mode'], version)
-
-            else:
-                _log.error("   - %s is not installed in the system.", self._config['mode'])
-                checks.append(1)
-
-        else:
-            _log.error("Invalid run mode specified: %s.", self._config['mode'])
-            checks.append(1)
-
-        _log.info(" - Checking provided work dirs exist...")
-        os.makedirs(self._config['rundir'], exist_ok=True)
-
-        if 'hs06' in self.selected_benchmarks:
-            os.makedirs(self._config_full['hepspec06']['hepspec_volume'], exist_ok=True)
-
-        if 'spec2017' in self.selected_benchmarks:
-            os.makedirs(self._config_full['spec2017']['hepspec_volume'], exist_ok=True)
-
-        if 'hepscore' in self.selected_benchmarks:
-            os.makedirs(os.path.join(self._config['rundir'], "HEPSCORE"), exist_ok=True)
-
-        _log.info(" - Checking for a valid configuration...")
-        for bench in self.selected_benchmarks:
-            if bench in ('hs06', 'spec2017'):
-                checks.append(benchmarks.validate_spec(self._config_full, bench))
-
-        _log.info(" - Checking if rundir has enough space...")
-        disk_stats    = shutil.disk_usage(self._config['rundir'])
-        disk_space_gb = round(disk_stats.free * (10 ** -9), 2)
-
-        _log.debug("Calculated disk space: %s GB", disk_space_gb)
-        if disk_space_gb <= self.DISK_THRESHOLD and not (len(self.selected_benchmarks) == 1 and 'db12' in self.selected_benchmarks):
-            _log.error("Not enough disk space on %s, free: %s GB, required: %s GB", self._config['rundir'], disk_space_gb, self.DISK_THRESHOLD)
-
-            # Flag for a failed check
-            checks.append(1)
-
-        # Checking if private key for AMQ is password protected
-        if self._config.get('publish') and 'activemq' in self._config_full:
-            _log.info(" - Checking AMQ configuration for key protection")
-            amq_cfg = self._config_full['activemq']
-            if "key" in amq_cfg and is_key_password_protected(amq_cfg['key']):
-                _log.warning("The private key is password protected. After the configured benchmark(s) have run, you "
-                             "will need to input the password or the execution will stall")
-                _log.warning("Otherwise, you may set the publish variable to false and send the results afterwards "
-                             "using bmksend, which is included in the suite")
-
-        # Check if any pre-flight check failed
-        if any(checks):
-            return False
-        else:
-            return True
 
     def run(self):
         """Run the benchmark at the head of _bench_queue and recurse"""

@@ -8,15 +8,19 @@
 """
 
 import unittest
-from hepbenchmarksuite.hepbenchmarksuite import HepBenchmarkSuite
-from hepbenchmarksuite.exceptions import PreFlightError, BenchmarkFailure, BenchmarkFullFailure
-from hepbenchmarksuite import benchmarks
-from hepbenchmarksuite import utils
-import yaml
-from unittest.mock import patch, mock_open, MagicMock
 import os
 import shutil
 import time
+import yaml
+
+from hepbenchmarksuite import benchmarks
+from hepbenchmarksuite import utils
+from hepbenchmarksuite.exceptions import PreFlightError, BenchmarkFailure, BenchmarkFullFailure
+from hepbenchmarksuite.preflight import Preflight
+from hepbenchmarksuite.hepbenchmarksuite import HepBenchmarkSuite
+
+from unittest.mock import patch, mock_open
+
 
 class TestSuite(unittest.TestCase):
     """ Test the HepBenchmarkSuite """
@@ -47,12 +51,15 @@ class TestSuite(unittest.TestCase):
             self.assertIn('ERROR:hepbenchmarksuite.hepbenchmarksuite:Pre-flight checks failed.', " ".join(log.output))
 
         # Preflight check should not pass
-        with self.assertLogs('hepbenchmarksuite.hepbenchmarksuite', level='INFO') as log:
-            assert suite.preflight() == False
-            self.assertIn('ERROR:hepbenchmarksuite.hepbenchmarksuite:   - singularity is not installed in the system.', " ".join(log.output))
+        with self.assertLogs('hepbenchmarksuite.preflight', level='INFO') as log:
+            assert suite.preflight.check() == False
+            output = " ".join(log.output)
+
+            for message in ['ERROR', 'hepbenchmarksuite.preflight', 'singularity is not installed in the system']:
+                self.assertIn(message, output)
 
 
-    @patch.object(HepBenchmarkSuite, 'preflight', return_code=1)
+    @patch.object(Preflight, 'check', return_code=1)
     @patch.object(HepBenchmarkSuite, 'cleanup', return_code=0)
     def test_suite_run(self, mock_clean, mock_preflight):
         """ Test the benchmark suite main run.

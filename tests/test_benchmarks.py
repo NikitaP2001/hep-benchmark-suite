@@ -93,7 +93,7 @@ class TestSpec:
     @pytest.mark.parametrize('mode', ["docker", "singularity"])
     @patch.object(utils, 'exec_live_output', side_effect=alternate_exec)
     def test_cli_interface(self, mock,  mode, bench):
-        """ Test interface to run hepspec06 and spec2017 """
+        """ Test interface to run HEPSpec06 and SPEC2017 """
 
         self.setup()
         sample_config = self.config_file.copy()
