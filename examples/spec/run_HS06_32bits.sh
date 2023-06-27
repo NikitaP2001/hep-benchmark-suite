@@ -20,12 +20,12 @@ while getopts ':c:k:iprs:e:wd:' OPTION; do
   case "$OPTION" in
     c)
       cert="$OPTARG"
-      echo "Setting Certificate to $cert"
+      echo "Setting certificate to $cert"
       ;;
 
     k)
       key="$OPTARG"
-      echo "Option b used with: $key"
+      echo "Setting key to $key"
       ;;
 
     i)
@@ -38,7 +38,7 @@ while getopts ':c:k:iprs:e:wd:' OPTION; do
       ;;
     p)
       publish=true
-      echo "Publish results?"
+      echo "Results will be published"
       ;;
     s)
       site="$OPTARG"
@@ -93,7 +93,7 @@ SERVER=dashb-mb.cern.ch
 PORT=61123
 TOPIC=/topic/vm.spec
 
-SCRIPT_VERSION="1.2"
+SCRIPT_VERSION="1.2.1"
 HEPSCORE_VERSION="v1.5"
 SUITE_VERSION="v2.2-rc7" # Use "latest" for the latest stable release
 
@@ -116,8 +116,18 @@ NC='\033[0m' # No Color
 echo "Running script: $0 - version: $SCRIPT_VERSION"
 cd $( dirname $0)
 
-create_python_venv(){
+create_workdir(){
+    echo "Creating the WORKDIR $WORKDIR"
+    mkdir -p $WORKDIR
+    chmod a+rw -R $WORKDIR
     cd $WORKDIR
+
+    # Make paths relative to workdir
+    CERTIFKEY=$(realpath --relative-to=WORKDIR $CERTIFKEY)
+    CERTIFCRT=$(realpath --relative-to=WORKDIR $CERTIFCRT)
+}
+
+create_python_venv(){
     python3 -m venv $MYENV        # Create a directory with the virtual environment
     source $MYENV/bin/activate    # Activate the environment
 }
@@ -163,10 +173,7 @@ validate_container_executor(){
 
 hepscore_install(){
 
-    echo "Creating the WORKDIR $WORKDIR"
-    mkdir -p $WORKDIR
-    chmod a+rw -R $WORKDIR
-
+    create_workdir
     validate_params
     create_python_venv
     install_suite
