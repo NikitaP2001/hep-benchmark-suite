@@ -106,6 +106,10 @@ class Extractor():
         scaling_governors = ' '.join(glob('/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor'))
         scaling_drivers = ' '.join(glob('/sys/devices/system/cpu/cpu*/cpufreq/scaling_driver'))
 
+        # Default to /dev/null [BMK-1258]
+        scaling_governors = scaling_governors if scaling_governors else '/dev/null'
+        scaling_drivers = scaling_drivers if scaling_drivers else '/dev/null'
+
         # Update with additional data
         cpu.update({
             'Power_Policy': self.exec_cmd(f"cat {scaling_governors} | sort | uniq"),

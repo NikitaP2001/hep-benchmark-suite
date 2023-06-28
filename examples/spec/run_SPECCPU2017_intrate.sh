@@ -234,7 +234,7 @@ EOF2
 install_suite(){
     if [ $SUITE_VERSION = "latest" ];  then
         SUITE_VERSION=$(curl --silent https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/latest)
-        echo "Latest suite release selected: ${SUITE_VERSION}."
+        echo "Latest suite release selected: ${SUITE_VERSION}"
     fi
     
     if [ $INSTALL_FROM_WHEELS == true ]; then
