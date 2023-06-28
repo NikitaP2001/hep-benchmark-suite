@@ -15,7 +15,7 @@
 #####################################################################
 
 
-while getopts ':c:k:iprs:wd:' OPTION; do
+while getopts ':c:k:iprs:e:wd:' OPTION; do
 
   case "$OPTION" in
     c)
@@ -44,6 +44,10 @@ while getopts ':c:k:iprs:wd:' OPTION; do
       site="$OPTARG"
       echo "Setting site to $site"
       ;;
+    e)
+      executor="$OPTARG"
+      echo "Setting the container executor to $executor"
+      ;;
     w)
       install_from_wheels=true
       echo "Installing the suite from wheels"
@@ -64,6 +68,7 @@ Options:
   -r            Run only, skip installation
   -p            Publish the results to AMQ
   -s site       Site name to tag the results with
+  -e executor   Container executor to use (singularity or docker)
   -w            Install the suite from wheels rather than the repository"
       exit 1
       ;;
@@ -78,6 +83,7 @@ CERTIFKEY="${key:-PATH_TO_CERT_KEY}"
 CERTIFCRT="${cert:-PATH_TO_CERT}"
 INSTALL_ONLY="${install_only:-false}"
 RUN_ONLY="${run_only:-false}"
+EXECUTOR="${executor:-singularity}"
 INSTALL_FROM_WHEELS="${install_from_wheels:-false}"
 WORKDIR="${workdir:-$(pwd)/workdir}"
 #--------------[End of user editable section]-------------------------
@@ -87,7 +93,7 @@ SERVER=dashb-mb.cern.ch
 PORT=61123
 TOPIC=/topic/vm.spec
 
-SCRIPT_VERSION="1.2"
+SCRIPT_VERSION="1.2.1"
 HEPSCORE_VERSION="v1.5"
 SUITE_VERSION="latest" # Use "latest" for the latest stable release
 
@@ -110,8 +116,18 @@ NC='\033[0m' # No Color
 echo "Running script: $0 - version: $SCRIPT_VERSION"
 cd $( dirname $0)
 
-create_python_venv(){
+create_workdir(){
+    echo "Creating the WORKDIR $WORKDIR"
+    mkdir -p $WORKDIR
+    chmod a+rw -R $WORKDIR
     cd $WORKDIR
+
+    # Make paths relative to workdir
+    CERTIFKEY=$(realpath --relative-to=WORKDIR $CERTIFKEY)
+    CERTIFCRT=$(realpath --relative-to=WORKDIR $CERTIFCRT)
+}
+
+create_python_venv(){
     python3 -m venv $MYENV        # Create a directory with the virtual environment
     source $MYENV/bin/activate    # Activate the environment
 }
@@ -119,6 +135,7 @@ create_python_venv(){
 validate_params(){
     validate_site
     validate_publish
+    validate_container_executor
 }
 
 validate_site(){
@@ -142,12 +159,21 @@ validate_publish(){
     fi
 }
 
+validate_container_executor(){
+    declare -A registries=( ["singularity"]="oras" ["docker"]="docker" )
+    declare -A registry_suffixes=( ["singularity"]="-sif" ["docker"]="" )
+    REGISTRY="${registries[$EXECUTOR]}"
+    REGISTRY_SUFFIX="${registry_suffixes[$EXECUTOR]}"
+    
+    if [ -z "${REGISTRY}" ]; then
+        echo "The executor has got to be one of: ${!registries[@]}. Wrong input value: $executor"
+        exit 1
+    fi
+}
+
 hepscore_install(){
 
-    echo "Creating the WORKDIR $WORKDIR"
-    mkdir -p $WORKDIR
-    chmod a+rw -R $WORKDIR
-
+    create_workdir
     validate_params
     create_python_venv
     install_suite
@@ -165,13 +191,12 @@ activemq:
 global:
   benchmarks:
   - hepscore
-  mode: singularity
+  mode: $EXECUTOR
   publish: $PUBLISH
   rundir: $RUNDIR
   show: true
   tags:
     site: $SITE
-    purpose: "Official measurement"
 
 hepscore:
   version: $HEPSCORE_VERSION
@@ -200,7 +225,7 @@ install_suite(){
 }
 
 install_suite_from_repo(){
-    pip3 install --disable-pip-version-check --upgrade pip
+    pip3 install --upgrade pip
     pip3 install git+https://gitlab.cern.ch/hep-benchmarks/hep-score.git@$HEPSCORE_VERSION
     pip3 install git+https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite.git@$SUITE_VERSION
 }

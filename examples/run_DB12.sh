@@ -95,7 +95,7 @@ TOPIC=/topic/vm.spec
 
 SCRIPT_VERSION="1.2.1"
 HEPSCORE_VERSION="v1.5"
-SUITE_VERSION="v2.2-rc7" # Use "latest" for the latest stable release
+SUITE_VERSION="latest" # Use "latest" for the latest stable release
 
 RUNDIR=$WORKDIR/suite_results
 MYENV="env_bmk"        # Define the name of the python environment
