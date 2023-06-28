@@ -19,7 +19,7 @@ class Preflight:
         self.benchmarks_to_run = config['global']['benchmarks']
         self.global_config       = config['global']
         self.full_config         = config
-        self.checks              = []
+        self.failed_checks              = []
 
     def check(self):
         """Perform pre-flight checks."""
@@ -33,7 +33,7 @@ class Preflight:
         self.check_disk_space()
 
         # Check if any pre-flight check failed
-        if any(self.checks):
+        if any(self.failed_checks):
             return False
         else:
             return True
@@ -75,14 +75,14 @@ class Preflight:
                        self.global_config['rundir'], disk_space_gb, DISK_THRESHOLD)
 
             # Flag for a failed check
-            self.checks.append(1)
+            self.failed_checks.append(1)
 
     def validate_spec_config(self):
         """ Validate [HEP]Spec configuration """
         _log.info(" - Checking for a valid configuration...")
         for bench in self.benchmarks_to_run:
             if bench in ('hs06', 'spec2017'):
-                self.checks.append(benchmarks.validate_spec(self.full_config, bench))
+                self.failed_checks.append(benchmarks.validate_spec(self.full_config, bench))
 
     def check_working_directories(self):
         """ Ensure the specified working directories exist """
@@ -125,8 +125,8 @@ class Preflight:
 
             else:
                 _log.error("   - %s is not installed in the system.", mode)
-                self.checks.append(1)
+                self.failed_checks.append(1)
 
         else:
             _log.error("Invalid run mode specified: %s.", mode)
-            self.checks.append(1)
+            self.failed_checks.append(1)
