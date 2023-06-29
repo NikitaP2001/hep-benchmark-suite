@@ -10,7 +10,6 @@ import os
 import json
 import logging
 import time
-import shutil
 
 from hepbenchmarksuite import db12
 from hepbenchmarksuite import utils
@@ -73,12 +72,13 @@ class HepBenchmarkSuite:
             _log.info("Running benchmark: %s", bench2run)
 
             if bench2run == 'db12':
-                # TO FIX returns a dict{'DB12':{ 'value': float(), 'unit': string() }}
-                returncode = db12.run_db12(rundir=self._config['rundir'], 
-                                           cpu_num=self._config_full['global']['ncores'])
+                returncode = 0
+                result = db12.run_db12(rundir = self._config['rundir'],
+                                       cpu_num = self._config_full['global']['ncores'])
 
-                if not returncode['DB12']['value']:
+                if not result['DB12']['value']:
                     self.failures.append(bench2run)
+                    returncode = 1
 
             elif bench2run == 'hepscore':
                 # Prepare hepscore
