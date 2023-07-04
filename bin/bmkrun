@@ -207,8 +207,7 @@ def main():
 
     # Create rundir, example: /tmp/hep-benchmark-suite/run_date
     active_config['global']['rundir'] = os.path.join(active_config['global']['rundir'],
-                                                     'run_{}'.format(time.strftime('%Y-%m-%d_%H%M',
-                                                     time.gmtime())))
+                                                     'run_{}'.format(time.strftime('%Y-%m-%d_%H%M', time.gmtime())))
 
     os.makedirs(active_config['global']['rundir'], exist_ok=True)
 

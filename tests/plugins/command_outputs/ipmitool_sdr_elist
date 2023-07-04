@@ -1,0 +1,70 @@
+Pwr Unit Status  | 01h | ok  | 21.1 |
+Pwr Unit Redund  | 02h | ok  | 21.1 | Fully Redundant
+IPMI Watchdog    | 03h | ok  |  7.1 |
+Physical Scrty   | 04h | ok  | 23.1 |
+SMI Timeout      | 06h | ok  |  7.1 |
+System Event Log | 07h | ok  |  7.1 |
+System Event     | 08h | ok  |  7.1 |
+Button           | 09h | ok  | 12.1 |
+BMC Watchdog     | 0Ah | ok  | 46.1 |
+VR Watchdog      | 0Bh | ok  |  7.1 |
+SSB Therm Trip   | 0Dh | ok  |  7.1 |
+BMC FW Health    | 10h | ok  | 46.1 |
+System Airflow   | 11h | ok  | 23.1 | 12 CFM
+BB CPU2 VR Temp  | 14h | ok  |  7.1 | 30 degrees C
+BB Inlet Temp    | 20h | ok  |  7.1 | 28 degrees C
+HSBP Temp        | 21h | ok  | 15.1 | 23 degrees C
+SSB Temp         | 22h | ok  |  7.1 | 44 degrees C
+BB BMC Temp      | 23h | ok  |  7.1 | 39 degrees C
+BB CPU1 VR Temp  | 24h | ok  |  7.1 | 35 degrees C
+BB REAR Temp     | 25h | ok  |  7.1 | 35 degrees C
+HSBP PSOC Temp   | 29h | ok  | 15.1 | 31 degrees C
+Exit Air Temp    | 2Eh | ok  |  7.1 | 36 degrees C
+LAN NIC Temp     | 2Fh | ok  |  7.1 | 51 degrees C
+Sys Fan 1A       | 30h | ok  | 29.1 | 9152 RPM
+Sys Fan 1B       | 31h | ok  | 29.2 | 9440 RPM
+Sys Fan 2A       | 32h | ok  | 29.3 | 9152 RPM
+Sys Fan 2B       | 33h | ok  | 29.4 | 9920 RPM
+Sys Fan 3A       | 34h | ok  | 29.5 | 9152 RPM
+Sys Fan 3B       | 35h | ok  | 29.6 | 9920 RPM
+PS1 Status       | 50h | ok  | 10.1 | Presence detected
+PS2 Status       | 51h | ok  | 10.2 | Presence detected
+PS1 Power In     | 54h | ok  | 10.1 | 210 Watts
+PS2 Power In     | 55h | ok  | 10.2 | 200 Watts
+PS1 Curr Out %   | 58h | ok  | 10.1 | 11 percent
+PS2 Curr Out %   | 59h | ok  | 10.2 | 11 percent
+PS1 Temperature  | 5Ch | ok  | 10.1 | 32 degrees C
+PS2 Temperature  | 5Dh | ok  | 10.2 | 33 degrees C
+P1 Status        | 70h | ok  |  3.1 | Presence detected
+P2 Status        | 71h | ok  |  3.2 | Presence detected
+P1 Therm Margin  | 74h | ok  |  3.1 | -51 degrees C
+P2 Therm Margin  | 75h | ok  |  3.2 | -52 degrees C
+P1 Therm Ctrl %  | 78h | ok  |  3.1 | 0 percent
+P2 Therm Ctrl %  | 79h | ok  |  3.2 | 0 percent
+CPU ERR2         | 7Ch | ok  |  3.1 |
+IERR             | 80h | ok  |  3.1 |
+CPU Missing      | 82h | ok  |  3.1 |
+P1 DTS Therm Mgn | 83h | ok  |  3.1 | -41 degrees C
+P2 DTS Therm Mgn | 84h | ok  |  3.2 | -41 degrees C
+VRD Hot          | 90h | ok  |  7.1 |
+PS1 Fan1 Fail    | A0h | ok  | 10.1 |
+PS1 Fan2 Fail    | A1h | ok  | 10.2 |
+PS2 Fan1 Fail    | A4h | ok  | 10.1 |
+PS2 Fan2 Fail    | A5h | ok  | 10.2 |
+DIMM Thrm Mrgn 1 | B0h | ok  |  8.1 | -51 degrees C
+DIMM Thrm Mrgn 2 | B1h | ok  |  8.2 | -52 degrees C
+DIMM Thrm Mrgn 3 | B2h | ok  |  8.3 | -52 degrees C
+DIMM Thrm Mrgn 4 | B3h | ok  |  8.4 | -53 degrees C
+Auto Shutdown    | B8h | ok  | 21.3 |
+P1 Mem Thrm Trip | C0h | ok  | 32.1 |
+P2 Mem Thrm Trip | C1h | ok  | 32.2 |
+Agg Therm Mgn 1  | C8h | ok  |  7.1 | -35 degrees C
+BB +12.0V        | D0h | ok  |  7.1 | 12.10 Volts
+Voltage Fault    | D1h | ok  |  7.1 |
+BB +3.3V Vbat    | DEh | ok  |  7.1 | 3.02 Volts
+HDD 0 Status     | F0h | ok  |  4.1 | Drive Present
+HDD 1 Status     | F1h | ok  |  4.2 | Drive Present
+HDD 2 Status     | F2h | ok  |  4.3 |
+NM Capabilities  | 1Ah | ok  | 46.1 |
+MTT CPU1         | 34h | ok  |  3.1 | 0 percent
+MTT CPU2         | 35h | ok  |  3.2 | 0 percent

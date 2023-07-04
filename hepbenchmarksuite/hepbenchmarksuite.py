@@ -6,19 +6,23 @@
 ###############################################################################
 """
 
-import os
 import json
 import logging
+import os
 import time
-import shutil
 
+import pkg_resources
+
+from hepbenchmarksuite import benchmarks
 from hepbenchmarksuite import db12
 from hepbenchmarksuite import utils
-from hepbenchmarksuite import benchmarks
-from hepbenchmarksuite.preflight import Preflight
-from hepbenchmarksuite.exceptions import PreFlightError
 from hepbenchmarksuite.exceptions import BenchmarkFailure
 from hepbenchmarksuite.exceptions import BenchmarkFullFailure
+from hepbenchmarksuite.exceptions import PreFlightError
+from hepbenchmarksuite.plugins.construction.config_builder import ConfigPluginBuilder
+from hepbenchmarksuite.plugins.construction.dynamic_metadata_provider import DynamicPluginMetadataProvider
+from hepbenchmarksuite.plugins.runner import PluginRunner
+from hepbenchmarksuite.preflight import Preflight
 
 _log = logging.getLogger(__name__)
 
@@ -29,22 +33,29 @@ class HepBenchmarkSuite:
      *********************************************************"""
     # Location of result files
     RESULT_FILES = {
-        'hs06'    : 'HS06/hs06_result.json',
+        'hs06': 'HS06/hs06_result.json',
         'spec2017': 'SPEC2017/spec2017_result.json',
         'hepscore': 'HEPSCORE/hepscore_result.json',
-        'db12'    : 'db12_result.json',
+        'db12': 'db12_result.json',
     }
 
     def __init__(self, config=None):
         """Initialize setup"""
-        self._bench_queue        = config['global']['benchmarks'].copy()
+        self._bench_queue = config['global']['benchmarks'].copy()
         self.selected_benchmarks = config['global']['benchmarks'].copy()
-        self._config             = config['global']
-        self._config_full        = config
-        self._extra              = {}
-        self._result             = {}
-        self.failures            = []
-        self.preflight           = Preflight(config)
+        self._config = config['global']
+        self._config_full = config
+        self._extra = {}
+        self._result = {}
+        self.failures = []
+        self.preflight = Preflight(config)
+
+        plugin_config = config.get('plugins', {})
+        plugin_registry_path = pkg_resources.resource_filename('hepbenchmarksuite.plugins.registry', '')
+        self.plugin_metadata_provider = DynamicPluginMetadataProvider(plugin_registry_path)
+        self.plugin_metadata_provider.initialize()
+        plugin_builder = ConfigPluginBuilder(plugin_config, self.plugin_metadata_provider)
+        self.plugin_runner = PluginRunner(plugin_builder)
 
     def start(self):
         """Entrypoint for suite."""
@@ -54,10 +65,18 @@ class HepBenchmarkSuite:
 
         if self.preflight.check():
             _log.info("Pre-flight checks passed successfully.")
+            self.plugins_sync_run('pre')
             self.run()
         else:
             _log.error("Pre-flight checks failed.")
             raise PreFlightError
+
+    def plugins_sync_run(self, key):
+        _log.info(f"Running plugins synchronously: {key}")
+        self.plugin_runner.start_plugins()
+        time.sleep(0)  # TODO - make this configurable
+        self.plugin_runner.stop_plugins(key)
+
 
     def run(self):
         """Run the benchmark at the head of _bench_queue and recurse"""
@@ -65,12 +84,14 @@ class HepBenchmarkSuite:
         # Check if there are still benchmarks to run
         if len(self._bench_queue) == 0:
             self._extra['end_time'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+            self.plugins_sync_run('post')
             self.cleanup()
 
         else:
             _log.info("Benchmarks left to run: %s", self._bench_queue)
             bench2run = self._bench_queue.pop(0)
             _log.info("Running benchmark: %s", bench2run)
+            self.plugin_runner.start_plugins()
 
             if bench2run == 'db12':
                 # TO FIX returns a dict{'DB12':{ 'value': float(), 'unit': string() }}
@@ -95,6 +116,7 @@ class HepBenchmarkSuite:
                 if returncode > 0:
                     self.failures.append(bench2run)
             _log.info("Completed %s with return code %s", bench2run, returncode)
+            self.plugin_runner.stop_plugins(bench2run)
             # recursive call to run() with check_lock
             self.check_lock()
 
@@ -111,6 +133,7 @@ class HepBenchmarkSuite:
 
         # compile metadata
         self._result = utils.prepare_metadata(self._config_full, self._extra)
+        self._result.update({'plugins': self.plugin_runner.get_results()})
         self._result.update({'profiles': {}})
 
         # Get results from each benchmark
@@ -130,8 +153,12 @@ class HepBenchmarkSuite:
                 _log.warning('Skipping %s because of %s', bench, err)
 
         # Save complete json report
-        with open(os.path.join(self._config['rundir'], "bmkrun_report.json"), 'w') as fout:
-            fout.write(json.dumps(self._result))
+        report_file_path = os.path.join(self._config['rundir'], "bmkrun_report.json")
+        with open(report_file_path, 'w') as fout:
+            dump = json.dumps(self._result)
+            _log.info("Saving final report: %s", report_file_path)
+            _log.debug("Report: %s", dump)
+            fout.write(dump)
 
         # Check for workload errors
         if len(self.failures) == len(self.selected_benchmarks):
