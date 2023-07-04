@@ -1,0 +1,79 @@
+UID              | AEh | ok  | 23.1 |
+SysHealth_Stat   | ACh | ok  | 23.1 | Transition to OK
+01-Inlet Ambient | A2h | ok  | 55.1 | 22 degrees C
+02-CPU 1 PkgTmp  | FEh | ok  |  7.1 | 42 degrees C
+03-P1 DIMM 1-8   | 24h | ok  | 32.11 | 37 degrees C
+04-P1 DIMM 9-16  | 25h | ok  | 32.12 | 39 degrees C
+05-VR P1         | 0Ah | ok  | 20.1 | 38 degrees C
+06-VR P1 Mem 1   | 61h | ok  | 20.21 | 34 degrees C
+08-HD Max        | 97h | ns  |  4.2 | Disabled
+09-AHCI HD Max   | FDh | ns  |  7.1 | Disabled
+10-Exp Bay Drive | 96h | ns  |  4.1 | Disabled
+11-ExpBayBoot    | FCh | ok  |  7.1 | 61 degrees C
+12-Stor Batt     | BFh | ns  | 40.1 | Disabled
+13-BMC           | FBh | ok  |  7.1 | 49 degrees C
+15-P/S 1 Inlet   | 4Bh | ok  | 10.1 | 30 degrees C
+14-P/S 1         | 43h | ok  | 10.1 | 40 degrees C
+17-P/S 2 Inlet   | 4Ch | ok  | 10.2 | 29 degrees C
+16-P/S 2         | 44h | ok  | 10.2 | 40 degrees C
+19-OCP 1         | FAh | ns  |  7.1 | Disabled
+20-OCP 2         | F9h | ns  |  7.1 | Disabled
+21-PCI 1         | 84h | ok  | 49.1 | 45 degrees C
+23-PCI 2         | 85h | ok  | 49.2 | 62 degrees C
+27-Board Inlet   | F8h | ok  |  7.1 | 24 degrees C
+28-P/S 2 Zone    | F7h | ok  |  7.1 | 32 degrees C
+29-Battery Zone  | F6h | ok  |  7.1 | 33 degrees C
+33-Sys Exhaust 1 | F5h | ok  |  7.1 | 32 degrees C
+34-Sys Exhaust 2 | F4h | ok  |  7.1 | 30 degrees C
+Fan 1            | 03h | ok  | 29.1 | Transition to OK
+Fan 1 DutyCycle  | 01h | ok  | 29.1 | 14.50 percent
+Fan 1 Presence   | 02h | ok  | 29.1 | Device Present
+Fan 2            | 06h | ok  | 29.2 | Transition to OK
+Fan 2 DutyCycle  | 04h | ok  | 29.2 | 14.50 percent
+Fan 2 Presence   | 05h | ok  | 29.2 | Device Present
+Fan 3            | 09h | ok  | 29.3 | Transition to OK
+Fan 3 DutyCycle  | 07h | ok  | 29.3 | 14.50 percent
+Fan 3 Presence   | 08h | ok  | 29.3 | Device Present
+Fan 4            | 0Ch | ok  | 29.4 | Transition to OK
+Fan 4 DutyCycle  | 0Ah | ok  | 29.4 | 14.50 percent
+Fan 4 Presence   | 0Bh | ok  | 29.4 | Device Present
+Fan 5            | 0Fh | ok  | 29.5 | Transition to OK
+Fan 5 DutyCycle  | 0Dh | ok  | 29.5 | 14.50 percent
+Fan 5 Presence   | 0Eh | ok  | 29.5 | Device Present
+Fan 6            | 12h | ok  | 29.6 | Transition to OK
+Fan 6 DutyCycle  | 10h | ok  | 29.6 | 14.50 percent
+Fan 6 Presence   | 11h | ok  | 29.6 | Device Present
+Fan 7            | 15h | ok  | 29.7 | Transition to OK
+Fan 7 DutyCycle  | 13h | ok  | 29.7 | 14.50 percent
+Fan 7 Presence   | 14h | ok  | 29.7 | Device Present
+Power Supply 1   | 32h | ok  | 10.1 | Presence detected
+PS 1 Input       | 3Ah | ok  | 10.1 | 65 Watts
+Power Supply 2   | 33h | ok  | 10.2 | Presence detected
+PS 2 Input       | 3Bh | ok  | 10.2 | 50 Watts
+Power Meter      | B6h | ok  |  7.1 | 115 Watts
+Fans             | 31h | ok  | 30.1 | Fully Redundant
+Power Supplies   | 42h | ok  | 19.1 | Fully Redundant
+Memory Status    | 48h | ok  | 32.0 | Presence Detected
+Intrusion        | ABh | ok  | 23.1 |
+Megacell Status  | BBh | ns  | 40.1 | Disabled
+PS 1 Output      | D0h | ok  | 10.1 | 55 Watts
+PS_Volt_Out_01   | D0h | ok  | 10.1 | 11 Volts
+PS_Volt_In_01    | D0h | ok  | 10.1 | 11 Volts
+PS_Curr_Out_01   | D0h | ok  | 10.1 | 1.10 Amps
+PS_Curr_In_01    | D0h | ok  | 10.1 | 1.10 Amps
+PS 2 Output      | D0h | ok  | 10.2 | 55 Watts
+PS_Volt_Out_02   | D0h | ok  | 10.2 | 11 Volts
+PS_Volt_In_02    | D0h | ok  | 10.2 | 11 Volts
+PS_Curr_Out_02   | D0h | ok  | 10.2 | 1.10 Amps
+PS_Curr_In_02    | D0h | ok  | 10.2 | 1.10 Amps
+21-PCI 1-I/O mod | D0h | ok  | 48.1 | 55 degrees C
+23-PCI 2-I/O mod | D1h | ok  | 48.1 | 72 degrees C
+NIC_Link_01P1    | 01h | ns  | 44.97 | Disabled
+NIC_Link_01P2    | 02h | ns  | 44.98 | Disabled
+NIC_Link_01P3    | 03h | ns  | 44.99 | Disabled
+NIC_Link_01P4    | 04h | ns  | 44.100 | Disabled
+NIC_Link_02P1    | 01h | ok  | 44.97 | Heartbeat
+NIC_Link_02P2    | 02h | ok  | 44.98 | Heartbeat
+NIC_Link_02P3    | 03h | ns  | 44.99 | Disabled
+NIC_Link_02P4    | 04h | ns  | 44.100 | Disabled
+CPU_Stat_C1      | 12h | ok  |  3.1 | Presence detected
