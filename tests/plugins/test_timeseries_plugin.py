@@ -6,7 +6,7 @@ from typing import List
 
 from hepbenchmarksuite.plugins.execution.strategy import ExecutionStrategy, ThreadExecutionStrategy, \
     ProcessExecutionStrategy
-from tests.plugins.dummy_timeseries_collector_plugin import DummyTimeseriesCollectorPlugin
+from tests.plugins.dummy_timeseries_plugin import DummyTimeseriesPlugin
 
 
 def measure_time(function) -> float:
@@ -37,7 +37,7 @@ class TestTimeseriesCollectorPlugin(unittest.TestCase):
 
     def start_new_plugin(self, interval_secs: float, execution_strategy: ExecutionStrategy):
         interval_mins = interval_secs / 60
-        self.plugin = DummyTimeseriesCollectorPlugin(interval_mins)
+        self.plugin = DummyTimeseriesPlugin(interval_mins)
         self.event = mp.Event()
         execution_strategy.start(self.plugin.start, args=(self.event,))
         # self.start_plugin(self.plugin)
@@ -115,13 +115,13 @@ class TestTimeseriesCollectorPlugin(unittest.TestCase):
         values_sorted = is_ordered(values)
         self.assertTrue(values_sorted)
 
-        # Should contain timestamps and tstart < tend
-        tstart = result['tstart']
-        tend = result['tend']
-        self.assertLessEqual(tstart, tend, "The start should come before the end.")
+        # Should contain timestamps and start_time < end_time
+        start_time = result['start_time']
+        end_time = result['end_time']
+        self.assertLessEqual(start_time, end_time, "The start should come before the end.")
 
         unit = result['unit']
-        self.assertEqual('dummy', unit)
+        self.assertEqual('unit', unit)
 
         interval = result['interval']
         self.assertAlmostEqual(interval_secs, interval)

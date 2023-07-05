@@ -15,10 +15,12 @@ import subprocess
 import sys
 import tarfile
 import uuid
+
 import requests
 from requests import RequestException
-from hepbenchmarksuite.plugins.extractor import Extractor
+
 from hepbenchmarksuite import __version__
+from hepbenchmarksuite.plugins.extractor import Extractor
 
 _log = logging.getLogger(__name__)
 
@@ -188,6 +190,28 @@ def run_piped_commands(cmd_str, env=None):
         return output.returncode, output.stdout.decode().rstrip(), output.stderr.decode()
     else:
         return None, None, None
+
+
+def run_separated_commands(cmd_str):
+    """
+    Executes multiple commands delimited by a semicolon (';').
+    Each command is executed regardless of the result of
+    the previous one. All outputs are concatenated.
+    Returns the return code and error message of the last
+    executed command.
+    """
+    return_code = 0
+    error = None
+    commands = cmd_str.split(";")
+
+    outputs = []
+    for cmd in commands:
+        return_code, reply, error = run_piped_commands(cmd)
+        outputs.append(reply)
+
+    output = ''.join(outputs)
+    return return_code, output, error
+
 
 
 def get_host_ips():

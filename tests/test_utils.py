@@ -9,16 +9,17 @@
 
 import contextlib
 import difflib
-import unittest
-
-from hepbenchmarksuite import utils
 import os
 import sys
-import pytest
-import tempfile
 import tarfile
+import tempfile
+import unittest
+
+import pytest
 import yaml
-from schema import Schema, And, Use, Optional, Or
+from schema import Schema
+
+from hepbenchmarksuite import utils
 
 
 def test_prepare_metadata():
@@ -84,6 +85,10 @@ def test_get_tags_env():
 
     assert utils.get_tags_env() == valid_dict
 
+def test_run_separated_commands():
+    cmd = 'echo test ; echo test'
+    _, reply, _ = utils.run_separated_commands(cmd)
+    assert reply == 'testtest'
 
 @pytest.mark.parametrize("cmd_str", ["cat /proc/minfo | grep MemTotal", "lxcpu"])
 def test_exec_cmd_fail(cmd_str):

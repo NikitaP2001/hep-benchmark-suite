@@ -5,13 +5,11 @@
 # the top-level directory of this distribution.
 ###############################################################################
 """
-import locale
-import os
 import json
 import logging
-import random
 import multiprocessing
-
+import os
+import random
 from os import path
 
 UNITS = {'HS06': 1., 'SI00': 1. / 344.}
@@ -34,7 +32,6 @@ def get_cpu_normalization(i, reference='HS06', iterations=1):
         print(e)
 
     # return S_ERROR( x )
-
 
     # This number of iterations corresponds to 360 HS06 seconds
     n = int(1000 * 1000 * 12.5)
@@ -84,17 +81,17 @@ def run_db12(rundir=".", cpu_num=multiprocessing.cpu_count(), reference='HS06'):
     _log.debug("Running DB12 with rundir=%s cpu_num=%s", rundir, cpu_num)
 
     cores = int(cpu_num)
-    pool = multiprocessing.Pool(processes=cores)
-    result = {
-        'DB12': {
-            'value': (float(sum(pool.map(get_cpu_normalization, range(cores))))),
-            'unit': f"est. {reference}"
+    with multiprocessing.Pool(processes=cores) as pool:
+        result = {
+            'DB12': {
+                'value': (float(sum(pool.map(get_cpu_normalization, range(cores))))),
+                'unit': f"est. {reference}"
+            }
         }
-    }
 
     # Save result to json
     # Change encoding in python >= 3.10 [https://peps.python.org/pep-0597/#encoding-locale]
-    with open(path.join(rundir, 'db12_result.json'),  'w', encoding='utf8') as fout:
+    with open(path.join(rundir, 'db12_result.json'), 'w', encoding='utf8') as fout:
         json.dump(result, fout)
 
     _log.debug("Result from DB12: %s", result)

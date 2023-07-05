@@ -5,10 +5,10 @@ from typing import List
 from hepbenchmarksuite.plugins.execution.executor import LeafPluginExecutor, CompositePluginExecutor, RootPluginExecutor
 from hepbenchmarksuite.plugins.execution.strategy import ThreadExecutionStrategy, ProcessExecutionStrategy
 from hepbenchmarksuite.plugins.stateful_plugin import StatefulPlugin
-from tests.plugins.dummy_timeseries_collector_plugin import DummyTimeseriesCollectorPlugin
+from tests.plugins.dummy_timeseries_plugin import DummyTimeseriesPlugin
 
 
-class DummyTimeseriesCollectorPlugin2(DummyTimeseriesCollectorPlugin):
+class DummyTimeseriesPlugin2(DummyTimeseriesPlugin):
     pass
 
 
@@ -31,8 +31,8 @@ class TestPluginExecutors(unittest.TestCase):
             A few dummy plugins that run every 50 ms.
         """
         plugins = [
-            DummyTimeseriesCollectorPlugin2(interval_mins=0.05 / 60),
-            DummyTimeseriesCollectorPlugin(interval_mins=0.05 / 60)
+            DummyTimeseriesPlugin2(interval_mins=0.05 / 60),
+            DummyTimeseriesPlugin(interval_mins=0.05 / 60)
         ]
         return plugins
 
@@ -121,7 +121,7 @@ class TestPluginExecutors(unittest.TestCase):
         the plugins again, mainly the multiprocessing events in the RootPluginExecutor.
         """
         plugins = [
-            DummyTimeseriesCollectorPlugin(interval_mins=0.1 / 60)
+            DummyTimeseriesPlugin(interval_mins=0.1 / 60)
         ]
 
         leaf_executor = LeafPluginExecutor(plugins, ThreadExecutionStrategy)

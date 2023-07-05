@@ -57,10 +57,14 @@ class PluginRunner:
                                  f'Results would be overwritten."')
 
             result = plugin.get_result()
-            if result['status'] == 'failed':
+            if result['status'] == 'failure':
                 logging.error(f'Plugin "{plugin_name}" failed: {result["error_message"]}')
+                logging.debug(f'Traceback: {result["traceback"]}')
 
             self.results[plugin_name][period] = result
+
+    def are_plugins_running(self) -> bool:
+        return self.are_plugins_started
 
     def get_results(self):
         return self.results
