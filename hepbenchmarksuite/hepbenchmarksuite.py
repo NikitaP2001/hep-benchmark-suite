@@ -67,6 +67,9 @@ class HepBenchmarkSuite:
             _log.info("Pre-flight checks passed successfully.")
             self.plugins_sync_run('pre')
             self.run()
+            self._extra['end_time'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+            self.plugins_sync_run('post')
+            self.cleanup()
         else:
             _log.error("Pre-flight checks failed.")
             raise PreFlightError
@@ -77,49 +80,46 @@ class HepBenchmarkSuite:
         time.sleep(0)  # TODO - make this configurable
         self.plugin_runner.stop_plugins(key)
 
-
     def run(self):
-        """Run the benchmark at the head of _bench_queue and recurse"""
-
-        # Check if there are still benchmarks to run
-        if len(self._bench_queue) == 0:
-            self._extra['end_time'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
-            self.plugins_sync_run('post')
-            self.cleanup()
-
-        else:
+        """Runs benchmarks sequentially."""
+        for bench2run in self._bench_queue:
             _log.info("Benchmarks left to run: %s", self._bench_queue)
-            bench2run = self._bench_queue.pop(0)
             _log.info("Running benchmark: %s", bench2run)
+
             self.plugin_runner.start_plugins()
+            try:
+                return_code = self._run_benchmark(bench2run)
+            finally:
+                if self.plugin_runner.are_plugins_running():
+                    self.plugin_runner.stop_plugins(bench2run)
+            _log.info("Completed %s with return code %s", bench2run, return_code)
 
-            if bench2run == 'db12':
-                returncode = 0
-                result = db12.run_db12(rundir = self._config['rundir'],
-                                       cpu_num = self._config_full['global']['ncores'])
+    def _run_benchmark(self, bench2run):
+        if bench2run == 'db12':
+            return_code = 0
+            result = db12.run_db12(rundir = self._config['rundir'],
+                                   cpu_num = self._config_full['global']['ncores'])
 
-                if not result['DB12']['value']:
+            if not result['DB12']['value']:
+                self.failures.append(bench2run)
+                return_code = 1
+
+        elif bench2run == 'hepscore':
+            # Prepare hepscore
+            if benchmarks.prep_hepscore(self._config_full) == 0:
+                # Run hepscore
+                return_code = benchmarks.run_hepscore(self._config_full)
+                if return_code < 0:
                     self.failures.append(bench2run)
-                    returncode = 1
+            else:
+                _log.error("Skipping hepscore due to failed installation.")
 
-            elif bench2run == 'hepscore':
-                # Prepare hepscore
-                if benchmarks.prep_hepscore(self._config_full) == 0:
-                    # Run hepscore
-                    returncode = benchmarks.run_hepscore(self._config_full)
-                    if returncode < 0:
-                        self.failures.append(bench2run)
-                else:
-                    _log.error("Skipping hepscore due to failed installation.")
+        elif bench2run in ('hs06', 'spec2017'):
+            return_code = benchmarks.run_hepspec(conf=self._config_full, bench=bench2run)
+            if return_code > 0:
+                self.failures.append(bench2run)
 
-            elif bench2run in ('hs06', 'spec2017'):
-                returncode = benchmarks.run_hepspec(conf=self._config_full, bench=bench2run)
-                if returncode > 0:
-                    self.failures.append(bench2run)
-            _log.info("Completed %s with return code %s", bench2run, returncode)
-            self.plugin_runner.stop_plugins(bench2run)
-            # recursive call to run() with check_lock
-            self.check_lock()
+        return return_code
 
     def check_lock(self):
         """Check benchmark locks."""

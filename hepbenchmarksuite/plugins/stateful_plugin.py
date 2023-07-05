@@ -1,4 +1,5 @@
 import multiprocessing as mp
+import traceback
 from abc import ABC, abstractmethod
 from multiprocessing import Event
 from typing import Dict
@@ -24,9 +25,11 @@ class StatefulPlugin(ABC):
             result['status'] = 'success'
         except Exception as e:
             message = f'{type(e).__name__}("{str(e)}")'
+            traceback_message = traceback.format_exc()
             result = {
                 'status': 'failure',
-                'error_message': message
+                'error_message': message,
+                'traceback': traceback_message
             }
         self.queue.put(result)
 

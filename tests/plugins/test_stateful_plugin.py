@@ -31,9 +31,10 @@ class TestStatefulPlugin(unittest.TestCase):
 
         result = plugin.get_result()
 
-        self.assertEqual(2, len(result.keys()))
+        self.assertEqual(3, len(result.keys()))
         self.assertEqual('failure', result['status'])
         self.assertEqual('RuntimeError("A test error message.")', result['error_message'])
+        self.assertTrue(len(result['traceback']) > 0)
 
     def test_start__sets_status_success(self):
         plugin = SuccessfulPlugin()
