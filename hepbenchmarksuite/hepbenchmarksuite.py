@@ -75,13 +75,14 @@ class HepBenchmarkSuite:
             raise PreFlightError
 
     def plugins_sync_run(self, key):
-        _log.info(f"Running plugins synchronously: {key}")
+        """Run a plugin synchronously for stage 'key'."""
+        _log.info("Running plugins synchronously: %s", key)
         self.plugin_runner.start_plugins()
         time.sleep(0)  # TODO - make this configurable
         self.plugin_runner.stop_plugins(key)
 
     def run(self):
-        """Runs benchmarks sequentially."""
+        """Run benchmarks sequentially."""
         for bench2run in self._bench_queue:
             _log.info("Benchmarks left to run: %s", self._bench_queue)
             _log.info("Running benchmark: %s", bench2run)
@@ -120,14 +121,6 @@ class HepBenchmarkSuite:
                 self.failures.append(bench2run)
 
         return return_code
-
-    def check_lock(self):
-        """Check benchmark locks."""
-        # TODO: Check lock files
-        # loop until lock is released from benchmark
-        # print(os.path.exists("bench.lock"))
-        # Release lock and resume benchmarks
-        self.run()
 
     def cleanup(self):
         """Run the cleanup phase - collect the results from each benchmark"""
