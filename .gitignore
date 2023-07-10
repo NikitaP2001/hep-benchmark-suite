@@ -6,7 +6,7 @@ venv/
 # Packages
 *.egg*
 dist
-build
+/build
 eggs
 parts
 var
