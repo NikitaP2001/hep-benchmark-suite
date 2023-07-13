@@ -190,6 +190,10 @@ def main():
         print("{}CPU number (ncores) is not an integer.{}".format(Color.RED, Color.END))
         sys.exit(1)
 
+    # Set default duration of pre- and post-stage
+    active_config['global'].setdefault('pre-stage-duration', 0)
+    active_config['global'].setdefault('post-stage-duration', 0)
+
     print("# The following configuration was loaded: {}".format(load_config))
     if len(non_empty):
         print("# The configuration was overridden by the following CLI args: {}".format(non_empty))
