@@ -183,7 +183,7 @@ def run_piped_commands(cmd_str, env=None):
             return e.returncode, e.output.decode(), e.stderr.decode()
         except Exception as e:
             _log.error("Error executing command: %s", str(e))
-            return e.returncode, e.output.decode(), e.stderr.decode() # pylint: disable=no-member
+            return None, None, None
 
     # Return the output, error, and returncode (if the command sequence was executed without errors)
     if output:
@@ -207,7 +207,10 @@ def run_separated_commands(cmd_str):
     outputs = []
     for cmd in commands:
         return_code, reply, error = run_piped_commands(cmd)
-        outputs.append(reply)
+        if return_code == 0:
+            outputs.append(reply)
+        else:
+            return return_code, reply, error
 
     output = ''.join(outputs)
     return return_code, output, error
