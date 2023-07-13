@@ -4,6 +4,8 @@ import statistics
 from functools import reduce
 from typing import Dict, Callable, List
 
+from hepbenchmarksuite.exceptions import PluginBuilderException
+
 
 class MetricDefinition:
     """
@@ -11,19 +13,33 @@ class MetricDefinition:
     and all necessary attributes for acquiring values of this metric.
     """
 
-    def __init__(self, name: str, options: Dict, interval_granularity_secs: float = 10):
+    def __init__(self, name: str, params: Dict, interval_granularity_secs: float = 10):
         self.name = name
         self.interval_granularity_secs = interval_granularity_secs
-        self.interval_mins: float = self._round_interval(options['interval_mins'])
-        self.command: str = options['command'].strip()
-        self.regex: str = options['regex']
-        self.unit: str = options['unit']
-        self.aggregation: str = 'sum'
 
-        if 'aggregation' in options:
-            self.aggregation: str = options['aggregation'].strip()
+        self._check_params(params)
 
+        self.interval_mins: float = self._round_interval(params['interval_mins'])
+        self.command: str = params['command'].strip()
+        self.regex: str = params['regex']
+        self.unit: str = params['unit']
+        self.aggregation: str = params.get('aggregation', 'sum').strip()
         self.agg_func = self._parse_aggregation(self.aggregation)
+
+    def _check_params(self, params: Dict):
+        """
+        Checks that only the required or optional parameters were set.
+        """
+        required_params = {'command', 'regex', 'unit', 'interval_mins'}
+        optional_params = {'aggregation'}
+
+        given_params = set(params.keys())
+        required_given = given_params - optional_params
+
+        if required_given != required_params:
+            raise PluginBuilderException(f'Invalid argument to {MetricDefinition.__name__}. '
+                                         f'Required: {required_params}, optional: {optional_params},'
+                                         f' given: {given_params}')
 
     def _round_interval(self, interval_mins: float):
         """

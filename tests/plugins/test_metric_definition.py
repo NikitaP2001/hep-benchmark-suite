@@ -1,19 +1,20 @@
 import unittest
 
+from hepbenchmarksuite.exceptions import PluginBuilderException
 from hepbenchmarksuite.plugins.metric_definition import MetricDefinition
 
 
 class TestMetricDefinition(unittest.TestCase):
 
     def test_parse(self):
-        options = {
+        params = {
             'command': 'none',
             'regex': r'V\d+: (?P<value>\d+).*',
             'unit': 'none',
             'aggregation': 'average',
             'interval_mins': 1
         }
-        definition = MetricDefinition('metric', options)
+        definition = MetricDefinition('metric', params)
 
         command_output = """
             V1: 10,
@@ -29,13 +30,13 @@ class TestMetricDefinition(unittest.TestCase):
         The parsing function extracts a value denoted as "value".
         Unnamed groups or groups with different names are ignored.
         """
-        options = {
+        params = {
             'command': 'none',
             'regex': r'(?P<value>\d+).(?P<value2>\d+)(.\d+)?',
             'unit': 'none',
             'interval_mins': 1
         }
-        definition = MetricDefinition('metric', options)
+        definition = MetricDefinition('metric', params)
 
         command_output = "10.20.50"
         value = definition.parse(command_output)
@@ -48,15 +49,41 @@ class TestMetricDefinition(unittest.TestCase):
         Test that intervals similar to each other are
         considered to be the same interval.
         """
-        options = {
+        params = {
             'command': '',
             'regex': '',
             'unit': '',
             'interval_mins': 0.00061666666  # 37 ms in minutes
         }
-        definition = MetricDefinition('metric', options)
+        definition = MetricDefinition('metric', params)
         metric_config = definition.serialize_to_dict()
 
         # 10s in minutes
         expected_rounded_interval = 0.166666667
         self.assertAlmostEqual(expected_rounded_interval, metric_config['interval_mins'])
+
+    def test_construction__superfluous_parameters(self):
+        params = {
+            'command': '',
+            'regex': '',
+            'unit': '',
+            'interval_mins': 1,
+            'superfluous_parameter': ''
+        }
+
+        def create_instance():
+            MetricDefinition('metric', params)
+
+        self.assertRaises(PluginBuilderException, create_instance)
+
+    def test_construction__missing_parameters(self):
+        params = {
+            'command': '',
+            'regex': '',
+            'unit': '',
+        }
+
+        def create_instance():
+            MetricDefinition('metric', params)
+
+        self.assertRaises(PluginBuilderException, create_instance)
