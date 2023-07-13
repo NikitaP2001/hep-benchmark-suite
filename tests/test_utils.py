@@ -152,7 +152,7 @@ def test_export_creation():
     file_extensions = [".json", ".yaml", ".log", ".txt", ".ini", ".logg"]
 
     # Create a temporary directory
-    # It will cleanup automatically after context end
+    # It will finalize automatically after context end
     with tempfile.TemporaryDirectory() as tmp_dir_path:
         print("Created temporary directory:", tmp_dir_path)
 

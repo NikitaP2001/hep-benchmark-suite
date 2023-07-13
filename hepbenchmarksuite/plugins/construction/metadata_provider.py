@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import List
 
 from hepbenchmarksuite.exceptions import PluginMetadataException
@@ -42,14 +42,7 @@ class PluginMetadataProvider(ABC):
     """
 
     def __init__(self):
-        self.items: List[PluginMetadata] = list()
-
-    @abstractmethod
-    def initialize(self) -> None:
-        """
-        Initializes the list of PluginMetadata instances.
-        """
-        pass
+        self.items: List[PluginMetadata] = []
 
     def get_items(self) -> List[PluginMetadata]:
         return self.items

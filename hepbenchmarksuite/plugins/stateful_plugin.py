@@ -8,6 +8,16 @@ from hepbenchmarksuite.exceptions import PluginAssertError
 
 
 class StatefulPlugin(ABC):
+    """
+    StatefulPlugin is the base class of all plugins.
+    It provides an interface for starting the plugins and
+    collecting the result.
+
+    Since the plugins are typically
+    run in separate threads or processes, it takes care of
+    passing the results between the parent process and the
+    thread or process in which the plugin runs.
+    """
 
     def __init__(self):
         self.manager = mp.Manager()
@@ -23,7 +33,10 @@ class StatefulPlugin(ABC):
             self.run(stop_event)
             result = self.on_end()
             result['status'] = 'success'
-        except Exception as e:
+        except Exception as e:  # pylint: disable=W0718
+            # Catching the broad exception is justified. The start method is a top-level
+            # function in a thread or a process. It is desired to capture all exceptions
+            # and return the information to the parent process.
             message = f'{type(e).__name__}("{str(e)}")'
             traceback_message = traceback.format_exc()
             result = {
@@ -51,7 +64,6 @@ class StatefulPlugin(ABC):
         This is the optimal place for setting up necessary resources, configurations,
         or connections needed by the plugin.
         """
-        pass
 
     @abstractmethod
     def run(self, stop_event: Event) -> None:
@@ -63,7 +75,6 @@ class StatefulPlugin(ABC):
         Args:
             stop_event: An event that signals whether the plugin should stop running.
         """
-        pass
 
     @abstractmethod
     def on_end(self) -> Dict:
@@ -74,4 +85,3 @@ class StatefulPlugin(ABC):
         Returns:
              Any results produced by the plugin.
         """
-        pass

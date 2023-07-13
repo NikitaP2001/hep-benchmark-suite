@@ -30,7 +30,7 @@ class MetricDefinition:
         The collection of metrics should be spaced with certain granularity.
         The interval of 18s and 20s should be the same granularity of 20s.
         """
-        assert (interval_mins > 0)
+        assert interval_mins > 0
         interval_secs = interval_mins * 60
         interval_rounded_secs = round(
             interval_secs / self.interval_granularity_secs) * self.interval_granularity_secs
@@ -73,6 +73,9 @@ class MetricDefinition:
         return result
 
     def serialize_to_dict(self) -> Dict:
+        """
+        Returns a dictionary containing the parameters.
+        """
         return {
             'interval_mins': self.interval_mins,
             'command': self.command,

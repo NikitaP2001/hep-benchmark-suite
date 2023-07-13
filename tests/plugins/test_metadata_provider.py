@@ -16,8 +16,6 @@ class TestDynamicPluginMetadataProvider(unittest.TestCase):
         metadata_path = 'tests/plugins/registry/valid'
         metadata_provider = DynamicPluginMetadataProvider(metadata_path)
 
-        metadata_provider.initialize()
-
         plugins_metadata = metadata_provider.get_items()
 
         # Three plugins should be registered
@@ -56,7 +54,6 @@ class TestDynamicPluginMetadataProvider(unittest.TestCase):
         metadata_path = 'tests/plugins/registry/invalid'
         metadata_provider = DynamicPluginMetadataProvider(metadata_path)
 
-        metadata_provider.initialize()
         plugins_metadata = metadata_provider.get_items()
 
         self.assertListEqual(list(), plugins_metadata)
@@ -69,7 +66,6 @@ class TestDynamicPluginMetadataProvider(unittest.TestCase):
         metadata_path = 'register/non_existent'
         metadata_provider = DynamicPluginMetadataProvider(metadata_path)
 
-        metadata_provider.initialize()
         plugins_metadata = metadata_provider.get_items()
 
         self.assertListEqual(list(), plugins_metadata)
