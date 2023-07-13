@@ -60,12 +60,12 @@ class TestSuite(unittest.TestCase):
 
 
     @patch.object(Preflight, 'check', return_code=1)
-    @patch.object(HepBenchmarkSuite, 'cleanup', return_code=0)
+    @patch.object(HepBenchmarkSuite, 'finalize', return_code=0)
     def test_suite_run(self, mock_clean, mock_preflight):
         """ Test the benchmark suite main run.
          Mocking to simulate the following conditions:
          - Assumes that preflight were successfull.
-         - Avoids running cleanup stage.
+         - Avoids running finalize stage.
         """
 
         sample_config = self.config_file.copy()
@@ -89,8 +89,8 @@ class TestSuite(unittest.TestCase):
 
 
     @patch('builtins.open', new_callable=mock_open, read_data="{'data':1}")
-    def test_cleanup(self, mock_file):
-        """ Test if suite cleanup raises exceptions on failed benchmarks. """
+    def test_finalize(self, mock_file):
+        """ Test if suite finalize raises exceptions on failed benchmarks. """
 
         sample_config = self.config_file.copy()
         sample_config['global']['ncores']=2
@@ -104,29 +104,29 @@ class TestSuite(unittest.TestCase):
         os.makedirs(sample_config['global']['rundir'], exist_ok=True)
 
         # Test success
-        with self.assertLogs('hepbenchmarksuite.hepbenchmarksuite', level='INFO') as cleanuplog:
-            suite.cleanup()
+        with self.assertLogs('hepbenchmarksuite.hepbenchmarksuite', level='INFO') as finalizelog:
+            suite.finalize()
             # test requires python3.9 dict union operator
             # self.assertEqual(suite._result | mock_data, suite._result) 
-            self.assertIn('INFO:hepbenchmarksuite.hepbenchmarksuite:Successfully completed all requested benchmarks', cleanuplog.output)
+            self.assertIn('INFO:hepbenchmarksuite.hepbenchmarksuite:Successfully completed all requested benchmarks', finalizelog.output)
 
 
         # Test when one benchmark fails with multiple benchmarks selected
         suite.failures = [1]
         suite.selected_benchmarks = ['db12', 'hepscore']
         with self.assertRaises(BenchmarkFailure):
-            suite.cleanup()
+            suite.finalize()
 
         # Test when all selected benchmarks fail
         suite.selected_benchmarks = ['db12']
         with self.assertRaises(BenchmarkFullFailure):
-            suite.cleanup()
+            suite.finalize()
 
         # Test array of failures, but reportable success
         suite.failures = [1, 2]
         suite.selected_benchmarks = ['db12', 'hepscore', 'hs06_32']
         with self.assertRaises(BenchmarkFailure):
-            suite.cleanup()
+            suite.finalize()
 
 
 if __name__ == '__main__':

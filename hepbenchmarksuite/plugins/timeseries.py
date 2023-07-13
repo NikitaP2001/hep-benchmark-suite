@@ -14,7 +14,7 @@ class Timeseries:
 
     def __init__(self, name: str):
         self.name = name
-        self.values = dict()
+        self.values = {}
 
     def get_name(self) -> str:
         return self.name
@@ -42,8 +42,7 @@ class Timeseries:
                 'mean': mean(timeseries_data),
                 'max': max(timeseries_data)
             }
-        else:
-            return dict()
+        return {}
 
     def create_report(self) -> Dict:
         statistics = self.calculate_statistics()

@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 from typing import List
 
+from hepbenchmarksuite.exceptions import PluginAssertError
 from hepbenchmarksuite.plugins.construction.builder import PluginBuilder
 from hepbenchmarksuite.plugins.execution.executor import RootPluginExecutor, LeafPluginExecutor
 from hepbenchmarksuite.plugins.execution.strategy import ThreadExecutionStrategy
@@ -18,16 +19,32 @@ class PluginRunner:
         self.plugin_builder = plugin_builder
         self.results = defaultdict(dict)
         self.executor = None
-        self.plugins = None
+        self.plugins = []
         self.are_plugins_started = False
 
-    def start_plugins(self):
-        assert not self.are_plugins_started
-        logging.info('Starting plugins...')
+    def initialize(self):
+        """
+        Initializes the plugin runner by instantiating plugins and
+        setting up the execution strategy.
+        """
+        if self.executor is not None:
+            raise PluginAssertError('The PluginRunner has already been initialized.')
 
-        if self.executor is None:
-            self.plugins = self.plugin_builder.build()
-            self.executor = self._create_plugin_executor(self.plugins)
+        self.plugins = self.plugin_builder.build()
+        self.executor = self._create_plugin_executor(self.plugins)
+
+    def has_plugins(self) -> bool:
+        return len(self.plugins) > 0
+
+    def start_plugins(self):
+        """
+        Starts plugins in the background in either threads or processes.
+        The plugins must not yet be started when this method is called.
+        """
+        assert not self.are_plugins_started
+
+        logging.debug('Starting plugins...')
+
         self.executor.start_plugins()
 
         self.are_plugins_started = True
@@ -40,13 +57,21 @@ class PluginRunner:
         return root_executor
 
     def stop_plugins(self, period: str):
+        """
+        Stops plugins and waits for them to finish.
+        The plugins must be running when this function is called.
+
+        Args:
+            period: The name of the plugin stage. Multiple plugin runs
+            are tracked using this variable.
+        """
         assert self.are_plugins_started
 
         self.executor.stop_plugins()
         self._collect_plugin_results(period)
 
         self.are_plugins_started = False
-        logging.info(f'Plugin stage "{period}" finished.')
+        logging.debug('Plugin stage "%s" finished.', period)
 
     def _collect_plugin_results(self, period: str):
         for plugin in self.plugins:
@@ -58,8 +83,8 @@ class PluginRunner:
 
             result = plugin.get_result()
             if result['status'] == 'failure':
-                logging.error(f'Plugin "{plugin_name}" failed: {result["error_message"]}')
-                logging.debug(f'Traceback: {result["traceback"]}')
+                logging.error('Plugin "%s" failed: %s', plugin_name, result["error_message"])
+                logging.debug('Traceback: %s', result["traceback"])
 
             self.results[plugin_name][period] = result
 

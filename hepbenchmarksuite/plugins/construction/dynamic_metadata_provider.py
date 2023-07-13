@@ -12,12 +12,17 @@ from hepbenchmarksuite.plugins.stateful_plugin import StatefulPlugin
 
 
 class DynamicPluginMetadataProvider(PluginMetadataProvider):
+    """
+    The class reads Python modules in the specified directory and
+    provides metadata about what plugins are present in those modules.
+    """
 
     def __init__(self, directory: str):
         super().__init__()
         self.directory = directory
+        self.load_metadata()
 
-    def initialize(self) -> None:
+    def load_metadata(self) -> None:
         """
         Registers plugin classes located in the directory.
         Skips classes that do not inherit from StatefulPlugin.
@@ -50,31 +55,27 @@ class DynamicPluginMetadataProvider(PluginMetadataProvider):
 
         # Import the module
         if os.path.isabs(self.directory):
-            """
-            The package name is not known in the case of an absolute path. 
-            
-            The class name differs from a relative path import. 
-            For example, given absolute path /foo/bar/baz/package/module.py, inside
-            which a class called Plugin resides, the instance of the this class
-            will be <module.Plugin>.
-            
-            Note that `isinstance` can return False when checking whether an object that
-            was instantiated from a class imported using an absolute path is an instance
-            of a class that is imported via a relative import (the package may differ).
-            """
+            # The package name is not known in the case of an absolute path.
+            #
+            # The class name differs from a relative path import.
+            # For example, given absolute path /foo/bar/baz/package/module.py, inside
+            # which a class called Plugin resides, the instance of this class
+            # will be <module.Plugin>.
+            #
+            # Note that `isinstance` can return False when checking whether an object that
+            # was instantiated from a class imported using an absolute path is an instance
+            # of a class that is imported via a relative import (the package may differ).
             spec = importlib.util.spec_from_file_location(module_name, module_file_path)
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
         else:
-            """
-            In case of relative path, we can rely on the classical importing mechanism
-            via `import_module`. It will search for the file in the location provided 
-            by the `plugins_package_name`.
-            
-            Given that /foo/bar/baz is the PYTHONPATH, an instance of the Plugin class
-            from the /foo/bar/baz/package/module.py will be <package.module.Plugin>.
-            This is because the `plugins_package_name` is set to "package.module".
-            """
+            # In case of relative path, we can rely on the classical importing mechanism
+            # via `import_module`. It will search for the file in the location provided
+            # by the `plugins_package_name`.
+            #
+            # Given that /foo/bar/baz is the PYTHONPATH, an instance of the Plugin class
+            # from the /foo/bar/baz/package/module.py will be <package.module.Plugin>.
+            # This is because the `plugins_package_name` is set to "package.module".
             plugins_package_name = self.directory.replace(os.path.sep, '.')
             module = importlib.import_module("." + module_name, package=plugins_package_name)
 

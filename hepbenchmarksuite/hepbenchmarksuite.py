@@ -53,7 +53,6 @@ class HepBenchmarkSuite:
         plugin_config = config.get('plugins', {})
         plugin_registry_path = pkg_resources.resource_filename('hepbenchmarksuite.plugins.registry', '')
         self.plugin_metadata_provider = DynamicPluginMetadataProvider(plugin_registry_path)
-        self.plugin_metadata_provider.initialize()
         plugin_builder = ConfigPluginBuilder(plugin_config, self.plugin_metadata_provider)
         self.plugin_runner = PluginRunner(plugin_builder)
 
@@ -65,20 +64,21 @@ class HepBenchmarkSuite:
 
         if self.preflight.check():
             _log.info("Pre-flight checks passed successfully.")
+            self.plugin_runner.initialize()
             self.plugins_sync_run('pre')
             self.run()
             self._extra['end_time'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
             self.plugins_sync_run('post')
-            self.cleanup()
+            self.finalize()
         else:
             _log.error("Pre-flight checks failed.")
             raise PreFlightError
 
     def plugins_sync_run(self, key):
         """Run a plugin synchronously for stage 'key'."""
-        _log.info("Running plugins synchronously: %s", key)
+        _log.debug("Running plugins synchronously: %s", key)
         self.plugin_runner.start_plugins()
-        time.sleep(0)  # TODO - make this configurable
+        time.sleep(0)
         self.plugin_runner.stop_plugins(key)
 
     def run(self):
@@ -98,8 +98,8 @@ class HepBenchmarkSuite:
     def _run_benchmark(self, bench2run):
         if bench2run == 'db12':
             return_code = 0
-            result = db12.run_db12(rundir = self._config['rundir'],
-                                   cpu_num = self._config_full['global']['ncores'])
+            result = db12.run_db12(rundir=self._config['rundir'],
+                                   cpu_num=self._config_full['global']['ncores'])
 
             if not result['DB12']['value']:
                 self.failures.append(bench2run)
@@ -122,10 +122,13 @@ class HepBenchmarkSuite:
 
         return return_code
 
-    def cleanup(self):
-        """Run the cleanup phase - collect the results from each benchmark"""
+    def finalize(self):
+        """Finalize the benchmark execution - collect results, save reports, and check for errors"""
+        self._compile_benchmark_results()
+        self._save_complete_report()
+        self._check_for_workload_errors()
 
-        # compile metadata
+    def _compile_benchmark_results(self):
         self._result = utils.prepare_metadata(self._config_full, self._extra)
         self._result.update({'plugins': self.plugin_runner.get_results()})
         self._result.update({'profiles': {}})
@@ -135,7 +138,7 @@ class HepBenchmarkSuite:
             try:
                 result_path = os.path.join(self._config['rundir'], self.RESULT_FILES[bench])
 
-                with open(result_path, "r") as result_file:
+                with open(result_path, "r", encoding='utf-8') as result_file:
                     _log.info("Reading result file: %s", result_path)
 
                     if bench == "hepscore":
@@ -143,25 +146,22 @@ class HepBenchmarkSuite:
                     else:
                         self._result['profiles'].update(json.loads(result_file.read()))
 
-            except Exception as err:
+            except Exception as err:  # pylint: disable=broad-except
                 _log.warning('Skipping %s because of %s', bench, err)
 
-        # Save complete json report
+    def _save_complete_report(self):
         report_file_path = os.path.join(self._config['rundir'], "bmkrun_report.json")
-        with open(report_file_path, 'w') as fout:
+        with open(report_file_path, 'w', encoding='utf-8') as output_file:
             dump = json.dumps(self._result)
             _log.info("Saving final report: %s", report_file_path)
             _log.debug("Report: %s", dump)
-            fout.write(dump)
+            output_file.write(dump)
 
-        # Check for workload errors
+    def _check_for_workload_errors(self):
         if len(self.failures) == len(self.selected_benchmarks):
             _log.error('All benchmarks failed!')
             raise BenchmarkFullFailure
-
-        elif len(self.failures) > 0:
+        if len(self.failures) > 0:
             _log.error("%s Failed. Please check the logs.", self.failures)
             raise BenchmarkFailure
-
-        else:
-            _log.info("Successfully completed all requested benchmarks")
+        _log.info("Successfully completed all requested benchmarks")

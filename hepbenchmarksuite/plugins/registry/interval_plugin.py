@@ -6,6 +6,9 @@ from hepbenchmarksuite.plugins.stateful_plugin import StatefulPlugin
 
 
 class IntervalPlugin(StatefulPlugin):
+    """
+    IntervalPlugin executes itself in regular intervals.
+    """
 
     def __init__(self, interval_mins: float):
         super().__init__()
@@ -38,4 +41,3 @@ class IntervalPlugin(StatefulPlugin):
         """
         This functionality is executed in regular intervals.
         """
-        pass

@@ -27,6 +27,7 @@ class TestPluginRunner(unittest.TestCase):
         """
         builder = DummyPluginBuilder()
         runner = PluginRunner(builder)
+        runner.initialize()
 
         runner.start_plugins()
 
@@ -50,6 +51,7 @@ class TestPluginRunner(unittest.TestCase):
         """
         builder = DummyPluginBuilder()
         runner = PluginRunner(builder)
+        runner.initialize()
 
         # Start for the first time with 'test' period
         runner.start_plugins()

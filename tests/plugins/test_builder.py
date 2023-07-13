@@ -21,7 +21,6 @@ class TestConfigPluginBuilder(unittest.TestCase):
         """
         config = yaml.safe_load(raw_config)
         plugin_registry = DynamicPluginMetadataProvider('tests/plugins/registry/valid')
-        plugin_registry.initialize()
         plugin_builder = ConfigPluginBuilder(config['plugins'], plugin_registry)
 
         plugins = plugin_builder.build()
@@ -45,7 +44,6 @@ class TestConfigPluginBuilder(unittest.TestCase):
         """
         config = yaml.safe_load(raw_config)
         plugin_registry = DynamicPluginMetadataProvider('tests/plugins/registry/valid')
-        plugin_registry.initialize()
         plugin_builder = ConfigPluginBuilder(config['plugins'], plugin_registry)
 
         self.assertRaises(PluginMetadataException, plugin_builder.build)
@@ -58,7 +56,6 @@ class TestConfigPluginBuilder(unittest.TestCase):
         """
         config = yaml.safe_load(raw_config)
         plugin_registry = DynamicPluginMetadataProvider('tests/plugins/registry/valid')
-        plugin_registry.initialize()
         plugin_builder = ConfigPluginBuilder(config['plugins'], plugin_registry)
 
         self.assertRaises(PluginBuilderException, plugin_builder.build)
@@ -71,7 +68,6 @@ class TestConfigPluginBuilder(unittest.TestCase):
         """
         config = yaml.safe_load(raw_config)
         plugin_registry = DynamicPluginMetadataProvider('tests/plugins/registry/valid')
-        plugin_registry.initialize()
         plugin_builder = ConfigPluginBuilder(config['plugins'], plugin_registry)
 
         self.assertRaises(PluginBuilderException, plugin_builder.build)
@@ -83,7 +79,6 @@ class TestConfigPluginBuilder(unittest.TestCase):
            """
         config = yaml.safe_load(raw_config)
         plugin_registry = DynamicPluginMetadataProvider('tests/plugins/registry/valid')
-        plugin_registry.initialize()
         plugin_builder = ConfigPluginBuilder(config['plugins'], plugin_registry)
 
         self.assertRaises(PluginBuilderException, plugin_builder.build)
@@ -96,7 +91,6 @@ class TestConfigPluginBuilder(unittest.TestCase):
            """
         config = yaml.safe_load(raw_config)
         plugin_registry = DynamicPluginMetadataProvider('tests/plugins/registry/valid')
-        plugin_registry.initialize()
         plugin_builder = ConfigPluginBuilder(config['plugins'], plugin_registry)
 
         plugins = plugin_builder.build()
@@ -110,7 +104,6 @@ class TestConfigPluginBuilder(unittest.TestCase):
            """
         config = yaml.safe_load(raw_config)
         plugin_registry = DynamicPluginMetadataProvider('tests/plugins/registry/optional')
-        plugin_registry.initialize()
         plugin_builder = ConfigPluginBuilder(config['plugins'], plugin_registry)
 
         plugins = plugin_builder.build()

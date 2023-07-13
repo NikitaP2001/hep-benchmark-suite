@@ -131,11 +131,10 @@ class Extractor():
 
             if res == 'not_available' and (req_typ in (float, int)):
                 return req_typ(-1)
-            else:
-                try:
-                    return req_typ(res)
-                except ValueError:
-                    return res
+            try:
+                return req_typ(res)
+            except ValueError:
+                return res
 
         cpu = {
             'Architecture'     : conv("Architecture"),

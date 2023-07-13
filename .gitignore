@@ -30,7 +30,6 @@ result_dump
 .*sw?
 .idea
 .vscode
-.idea
 
 # Desktop Service Store
 *.DS_Store

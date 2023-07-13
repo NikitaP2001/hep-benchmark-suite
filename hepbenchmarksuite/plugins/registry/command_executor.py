@@ -12,8 +12,11 @@ from hepbenchmarksuite.utils import run_separated_commands
 
 _log = logging.getLogger(__name__)
 
+
 class BashCommandFailedException(Exception):
-    pass
+    """
+    Exception that is raised when a bash command fails to execute.
+    """
 
 
 class CommandExecutor(StatefulPlugin):
@@ -50,9 +53,9 @@ class CommandExecutor(StatefulPlugin):
     def __init__(self, metrics: Dict[str, Dict], interval_granularity_secs: float = 10):
         super().__init__()
         self.interval_granularity_secs = interval_granularity_secs
-        self.metrics: Dict[str, MetricDefinition] = dict()
-        self.timeseries: Dict[str, Timeseries] = dict()
-        self.command_results = dict()
+        self.metrics: Dict[str, MetricDefinition] = {}
+        self.timeseries: Dict[str, Timeseries] = {}
+        self.command_results = {}
         self._initialize(metrics)
 
     def _initialize(self, metrics: Dict[str, Dict]) -> None:
@@ -151,7 +154,7 @@ class CommandExecutor(StatefulPlugin):
             self.timeseries[metric_definition.name].append(value)
 
     def on_end(self) -> Dict:
-        report = dict()
+        report = {}
         for timeseries in self.timeseries.values():
             timeseries_report = self._compose_report_for_metric(timeseries)
             report[timeseries.get_name()] = timeseries_report

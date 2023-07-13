@@ -24,9 +24,9 @@ class ConfigPluginBuilder(PluginBuilder):
         return plugins
 
     def _read_config(self) -> List[PluginConfigItem]:
-        plugin_configs = list()
+        plugin_configs = []
         for plugin_name, plugin_configuration in self.config.items():
-            params = list()
+            params = []
             for param_name, param_value in plugin_configuration.items():
                 params.append(PluginConfigParameter(param_name, param_value))
             plugin_configs.append(PluginConfigItem(plugin_name, params))
@@ -35,7 +35,7 @@ class ConfigPluginBuilder(PluginBuilder):
     def _instantiate_plugins(self, plugin_config_items: List[PluginConfigItem]) -> List[StatefulPlugin]:
         self._check_plugin_names(plugin_config_items)
 
-        plugins = list()
+        plugins = []
         for plugin_config_item in plugin_config_items:
             plugin_name = plugin_config_item.get_name()
             plugin_metadata = self.metadata_provider.get_item_by_name(plugin_name)
