@@ -65,20 +65,23 @@ class HepBenchmarkSuite:
         if self.preflight.check():
             _log.info("Pre-flight checks passed successfully.")
             self.plugin_runner.initialize()
-            self.plugins_sync_run('pre')
+            self._run_plugins_synchronously('pre', self._config.get('pre-stage-duration', 0))
             self.run()
             self._extra['end_time'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
-            self.plugins_sync_run('post')
+            self._run_plugins_synchronously('post', self._config.get('post-stage-duration', 0))
             self.finalize()
         else:
             _log.error("Pre-flight checks failed.")
             raise PreFlightError
 
-    def plugins_sync_run(self, key):
+    def _run_plugins_synchronously(self, key, duration_mins: float):
         """Run a plugin synchronously for stage 'key'."""
-        _log.debug("Running plugins synchronously: %s", key)
+        _log.debug("Running plugins synchronously '%s' for %.1f minutes.", key, duration_mins)
         self.plugin_runner.start_plugins()
-        time.sleep(0)
+
+        duration_secs = duration_mins * 60
+        time.sleep(duration_secs)
+
         self.plugin_runner.stop_plugins(key)
 
     def run(self):
