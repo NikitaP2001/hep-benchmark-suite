@@ -53,7 +53,7 @@ services:
       - 'ACTIVEMQ_STATIC_TOPICS=bmktopic'
       - 'ACTIVEMQ_STATIC_QUEUES=bmkqueue'
       - 'ACTIVEMQ_MIN_MEMORY=1024' 
-      -  'ACTIVEMQ_MAX_MEMORY=4096'
+      - 'ACTIVEMQ_MAX_MEMORY=4096'
       - 'ACTIVEMQ_ENABLED_SCHEDULER=true'
       - 'ACTIVEMQ_ENABLED_AUTH=true'
     volumes:

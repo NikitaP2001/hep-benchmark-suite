@@ -7,12 +7,12 @@ QUEUE_USERNAME=producer_login
 QUEUE_PASSWD=producer_password
 QUEUE_NAME="/queue/bmkqueue"
 
-CODE_DIR=/opt/hep-benchmark-suite
+CODE_DIR=/opt/hep-benchmark-suite/
 
 
 @test "Test: use right AMQ connection credentials" {
-    run python ${CODE_DIR}/pyscripts/send_queue.py --port=$QUEUE_PORT \
-        --server=$QUEUE_HOST --name=$QUEUE_NAME  --username=$QUEUE_USERNAME \
+    run python ${CODE_DIR}/send_queue.py --port=$QUEUE_PORT \
+        --server=$QUEUE_HOST --topic=$QUEUE_NAME  --username=$QUEUE_USERNAME \
         --password=$QUEUE_PASSWD --file=$TESTDIR/data/result_profile_sample.json
     echo -e "$output"
     [ "$status" -eq 0 ]
@@ -20,8 +20,8 @@ CODE_DIR=/opt/hep-benchmark-suite
 
 
 @test "Test: wrong AMQ credentials username-password" { 
-    run python ${CODE_DIR}/pyscripts/send_queue.py --port=$QUEUE_PORT \
-        --server=$QUEUE_HOST --name=$QUEUE_NAME  --username=$QUEUE_USERNAME \
+    run python ${CODE_DIR}/send_queue.py --port=$QUEUE_PORT \
+        --server=$QUEUE_HOST --topic=$QUEUE_NAME  --username=$QUEUE_USERNAME \
         --file=$TESTDIR/data/result_profile_sample.json 
     echo -e "$output" 
     [ "$status" -ne 0 ]
@@ -29,7 +29,7 @@ CODE_DIR=/opt/hep-benchmark-suite
 
 
 @test "Test: missing AMQ topic parameter" {
-    run python ${CODE_DIR}/pyscripts/send_queue.py --port=$QUEUE_PORT \
+    run python ${CODE_DIR}/send_queue.py --port=$QUEUE_PORT \
         --server=$QUEUE_HOST --username=$QUEUE_USERNAME --password=$QUEUE_PASSWD \
         --file=$TESTDIR/data/result_profile_sample.json 
     echo -e "$output"
@@ -38,8 +38,8 @@ CODE_DIR=/opt/hep-benchmark-suite
 
 
 @test "Test: wrong AMQ topic name" {
-    run python ${CODE_DIR}/pyscripts/send_queue.py --port=$QUEUE_PORT --server=$QUEUE_HOST \
-        --name=foo  --username=$QUEUE_USERNAME --password=$QUEUE_PASSWD \
+    run python ${CODE_DIR}/send_queue.py --port=$QUEUE_PORT --server=$QUEUE_HOST \
+        --topic=foo  --username=$QUEUE_USERNAME --password=$QUEUE_PASSWD \
         --file=$TESTDIR/data/result_profile_sample.json
     echo -e "$output"
     [ "$status" -ne 0 ]
@@ -58,8 +58,8 @@ CODE_DIR=/opt/hep-benchmark-suite
 @test "Test wrong configuration certificate" {
     skip # Needs a certificate to be tested
     
-    run python ${CODE_DIR}/pyscripts/send_queue.py --port=$QUEUE_PORT --server=$QUEUE_HOST \
-        --name=$QUEUE_NAME --cert_file=$CERT_FILE  --file=$TESTDIR/data/result_profile_sample.json
+    run python ${CODE_DIR}/send_queue.py --port=$QUEUE_PORT --server=$QUEUE_HOST \
+        --topic=$QUEUE_NAME --cert_file=$CERT_FILE  --file=$TESTDIR/data/result_profile_sample.json
     echo -e "$output"
     [ "$status" -ne 0 ]
 }
@@ -68,8 +68,8 @@ CODE_DIR=/opt/hep-benchmark-suite
 @test "Test both certificate and password connection" {
     skip # Needs a certificate to be tested
 
-    run python ${CODE_DIR}/pyscripts/send_queue.py --port=$QUEUE_PORT --server=$QUEUE_HOST \
-        --name=$QUEUE_NAME --cert_file=$CERT_FILE --key_file=$KEY_FILE --username=$QUEUE_USERNAME \
+    run python ${CODE_DIR}/send_queue.py --port=$QUEUE_PORT --server=$QUEUE_HOST \
+        --topic=$QUEUE_NAME --cert_file=$CERT_FILE --key_file=$KEY_FILE --username=$QUEUE_USERNAME \
         --password=$QUEUE_PASSWD --file=$TESTDIR/data/result_profile_sample.json
     echo -e "$output"
     [ "$status" -ne 0 ]
@@ -79,8 +79,8 @@ CODE_DIR=/opt/hep-benchmark-suite
 @test "Test successful connection" {
     skip # Needs a certificate to be tested
     
-    run python ${CODE_DIR}/pyscripts/send_queue.py --port=$QUEUE_PORT --server=$QUEUE_HOST \
-        --name=$QUEUE_NAME --cert_file=$CERT_FILE --key_file=$KEY_FILE \
+    run python ${CODE_DIR}/send_queue.py --port=$QUEUE_PORT --server=$QUEUE_HOST \
+        --topic=$QUEUE_NAME --cert_file=$CERT_FILE --key_file=$KEY_FILE \
         --file=$TESTDIR/data/result_profile_sample.json
     echo -e "$output"
     [ "$status" -eq 0 ]
