@@ -18,7 +18,7 @@
     - envsubst < $config | sponge $config   # Replace env variables in the config file
     - export PATH=$PATH:$HOME/.local/bin    # $PATH cannot be modified in the variables section
     - python3 -m pip install -U pip wheel
-  # Script
+    # Script
     - python3 -m pip install --user .
     - bmkrun --mode=$executor --config=$config --rundir=$bmk_volume --benchmarks=$benchmark
   after_script:

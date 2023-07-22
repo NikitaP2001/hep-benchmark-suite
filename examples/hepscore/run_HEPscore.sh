@@ -93,7 +93,7 @@ SERVER=dashb-mb.cern.ch
 PORT=61123
 TOPIC=/topic/vm.spec
 
-SCRIPT_VERSION="1.3"
+SCRIPT_VERSION="1.3.1"
 HEPSCORE_VERSION="v1.5"
 SUITE_VERSION="latest" # Use "latest" for the latest stable release
 
@@ -238,19 +238,34 @@ install_suite_from_wheels() {
         PY_VERSION=$DEFAULT_PY_VERSION
     fi
 
-    # Download and extract the wheels
+    # Get appropriate wheels
     ARCH=$(uname -m)
-    wheels_version="hep-benchmark-suite-wheels-${PY_VERSION}-${ARCH}-${SUITE_VERSION}.tar"
+    GLIBC=$(ldd --version | awk 'NR==1 {gsub(/\./,"_",$NF); print $NF}')
+
+    if [[ $SUITE_VERSION =~ ^v ]];  then
+        wheels_version="hep-benchmark-suite-wheels-${PY_VERSION}-${ARCH}-${SUITE_VERSION}.tar"  # Old format < 3.0
+    else
+        wheels_version="hep-benchmark-suite-wheels-${SUITE_VERSION}-${PY_VERSION}-none-linux_${GLIBC}_${ARCH}.tar" # New format >= 3.0
+    fi
+
+    # Find dev versions too
+    wheels_path=""
+    if ! [[ $SUITE_VERSION =~ ^[0-9v] ]]; then
+        wheels_path="dev/"
+    fi
+    
+    # Download and extract the wheels
     echo -e "-> Downloading wheel: $wheels_version \n"    
-    curl -O "https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/${SUITE_VERSION}/${wheels_version}"
+    curl -O "https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/${wheels_path}${SUITE_VERSION}/${wheels_version}"
     tar xvf ${wheels_version}
 
     # Update pip before installing any other wheel
-    if ls suite_wheels/pip* 1> /dev/null 2>&1; then
-        python3 -m pip install suite_wheels/pip*.whl
+    if ls suite_wheels*/pip* 1> /dev/null 2>&1; then
+        python3 -m pip install suite_wheels*/pip*.whl
     fi
 
-    python3 -m pip install suite_wheels/*.whl
+    python3 -m pip install suite_wheels*/*.whl
+    rm -rf suite_wheels*
 }
 
 ensure_suite_is_not_running() {
@@ -327,6 +342,7 @@ hepscore_run(){
 
 # Always done so options are taken into account
 create_workdir
+cd $WORKDIR
 create_config_file
 
 if [[ $INSTALL_ONLY == false && $RUN_ONLY == false ]] ; then
