@@ -76,16 +76,19 @@ YAML_lint:
 db12_benchmark:
   stage: test-components
   dependencies: []
-  script:
-    - yum install -y -q apptainer python3-pip
+  variables:
+    PYTHON_VERSION: python36
+  before_script:
+    - yum install -y -q apptainer $PYTHON_VERSION --setopt=install_weak_deps=True
     - python3 -m pip install --user --upgrade pip
+    - export PATH=~/.local/bin:$PATH
+  script:
     - python3 -m pip install --user .
     - python3 -m pip install -r requirements.txt
-    - export PATH=~/.local/bin:$PATH
     - bmkrun --config default --rundir . --benchmarks db12
   artifacts:
     paths:
-      - ./run_*/result_profile.json
+      - ./run_*/db12_result.json
       - ./run_*/run_config.yaml
     expire_in: 1 week
     when: always

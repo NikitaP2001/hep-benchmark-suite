@@ -278,7 +278,7 @@ def run_hepspec(conf, bench):
         else:
             _log.error("Invalid docker image specified. Image should start with docker://")
             return 1
-        
+
     # Set singularity cache dir
     env = os.environ.copy()
     if run_mode == "singularity":
