@@ -272,6 +272,8 @@ hepscore_benchmark:
     container_exec: $EXECUTOR
 EOF
 
+    create_plugin_configuration
+
     cat > $SUITE_CONFIG_FILE <<EOF2
 activemq:
   server: $SERVER
@@ -298,10 +300,67 @@ hepscore:
   options:
       userns: True
       clean: True
+
+$SUITE_PLUGINS_CONFIG
 EOF2
 
     if [ -f $HEPSCORE_CONFIG_FILE ]; then
         cat $HEPSCORE_CONFIG_FILE
+    fi
+}
+
+create_plugin_configuration() {
+    # TODO: Change these conditions to check whether they are contained within the script arguments
+    collect_cpu_frequency=true
+    collect_load=true
+    collect_memory_usage=true
+    collect_swap_usage=true
+
+    METRICS_CONFIG=""
+
+    if [ "$collect_cpu_frequency" = true ]; then
+      METRICS_CONFIG="$METRICS_CONFIG
+      cpu-frequency:
+        command: cpupower frequency-info -f
+        regex: 'current CPU frequency: (?P<value>\d+).*'
+        unit: kHz
+        interval_mins: 1"
+    fi
+
+    if [ "$collect_load" = true ]; then
+      METRICS_CONFIG="$METRICS_CONFIG
+      load:
+        command: uptime
+        regex: 'load average: (?P<value>\d+.\d+),'
+        unit: ''
+        interval_mins: 1"
+    fi
+
+    if [ "$collect_memory_usage" = true ]; then
+      METRICS_CONFIG="$METRICS_CONFIG
+      used-memory:
+        command: free -m
+        regex: 'Mem: *(\d+) *(?P<value>\d+).*'
+        unit: MiB
+        interval_mins: 1"
+    fi
+
+    if [ "$collect_swap_usage" = true ]; then
+      METRICS_CONFIG="$METRICS_CONFIG
+      used-swap-memory:
+        command: free -m
+        regex: 'Swap: *\d+ *(?P<value>\d+).*'
+        unit: MiB
+        interval_mins: 1"
+    fi
+
+    #  If no plugin were requested
+    if [ -n "$METRICS_CONFIG" ]; then
+        SUITE_PLUGINS_CONFIG="
+plugins:
+  CommandExecutor:
+    metrics: $METRICS_CONFIG
+"
     fi
 }
 
