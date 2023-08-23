@@ -5,7 +5,7 @@
 .test_benchmarks:
   stage: test-benchmarks
   dependencies: []
-  retry: 2  # tmp to workaround worker with user namespace issues
+  retry: 1  # tmp to workaround worker with user namespace issues
   tags:
     - hep-benchmarks  # Requires a machine with 20GB free
     - x86_64          # CC7 image not available for aarch64
@@ -20,12 +20,15 @@
     - python3 -m pip install -U pip wheel
     # Script
     - python3 -m pip install --user .
-    - bmkrun --mode=$executor --config=$config --rundir=$bmk_volume --benchmarks=$benchmark
+    - bmkrun --mode=$executor --config=$config --rundir=$bmk_volume --benchmarks=$benchmark | tee log
+    - grep "with return code 0" log
   after_script:
     - mv $bmk_volume/run_*/bmkrun_report.json $CI_PROJECT_DIR
     - rm -rf $bmk_volume
   rules:
-    - if: $CI_COMMIT_BRANCH =~ /^qa.*$/ || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/
+    - if: $CI_COMMIT_BRANCH =~ /^qa.*$/
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/
+      allow_failure: true  # Since protected vars cannot be accessed in MRs (see comment at the top)
   artifacts:
     paths:
       - bmkrun_report.json
