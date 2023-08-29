@@ -175,12 +175,28 @@ class Extractor():
     def collect_bios(self):
         """Collect all relevant BIOS information."""
         _log.info("Collecting BIOS information.")
-
+        
         # get common parser
         if self.pkg['dmidecode'] and self._permission:
             parse_bios = self.get_parser(self.exec_cmd("dmidecode -t bios"), "bios")
         else:
-            parse_bios = lambda x: "not_available"
+            def parse_bios(sysfsEntry):
+                """
+                read from syfs - BIOS Board entries readable for users on most systems
+                """
+                sysfsBasePath="/sys/class/dmi/id/"
+                sysfsDict = {
+                    'Version':'bios_version',
+                    'Vendor':'bios_vendor',
+                    'Release Date':'bios_date',
+                    'Board Version':'board_version',
+                    'Board Vendor':'board_vendor',
+                }
+                try:
+                    with open(os.path.join(sysfsBasePath,sysfsDict[sysfsEntry]), 'r') as f:
+                        return(f.read().strip())
+                except:
+                    return "not_available"
 
         bios = {
             'Vendor'      : parse_bios("Vendor"),
