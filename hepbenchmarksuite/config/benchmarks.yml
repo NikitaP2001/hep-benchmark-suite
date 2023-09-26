@@ -21,6 +21,11 @@ global:
     other_tag: "Some text"
   # enable AMQ reporting using credentials in activemq
   publish: False
+  # Specify the duration in minutes the suite should stay in these
+  # stages before and after running benchmarks (useful for
+  # running plugins for a longer duration)
+  pre-stage-duration: 0
+  post-stage-duration: 0
 
 # Section to configure ActiveMQ
 # Evaluated ONLY if the parameter `publish` is set to True

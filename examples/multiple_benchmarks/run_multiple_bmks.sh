@@ -19,12 +19,12 @@ while getopts ':c:k:iprs:e:wd:' OPTION; do
 
   case "$OPTION" in
     c)
-      cert="$OPTARG"
+      cert="$(realpath $OPTARG)"
       echo "Setting certificate to $cert"
       ;;
 
     k)
-      key="$OPTARG"
+      key="$(realpath $OPTARG)"
       echo "Setting key to $key"
       ;;
 
@@ -93,15 +93,15 @@ SERVER=dashb-mb.cern.ch
 PORT=61123
 TOPIC=/topic/vm.spec
 
-SCRIPT_VERSION="1.2.1"
+SCRIPT_VERSION="1.3.1"
 HEPSCORE_VERSION="v1.5"
 SUITE_VERSION="latest" # Use "latest" for the latest stable release
 
 RUNDIR=$WORKDIR/suite_results
-MYENV="env_bmk"        # Define the name of the python environment
+MYENV=$WORKDIR/env_bmk        # Define the name of the python environment
 LOGFILE=$WORKDIR/output.txt
-SUITE_CONFIG_FILE=bmkrun_config.yml
-HEPSCORE_CONFIG_FILE=hepscore_config.yml
+SUITE_CONFIG_FILE=$WORKDIR/bmkrun_config.yml
+HEPSCORE_CONFIG_FILE=$WORKDIR/hepscore_config.yml
 GiB_PER_CORE=1
 
 SUPPORTED_PY_VERSIONS=(py36 py38 py39)
@@ -117,14 +117,11 @@ echo "Running script: $0 - version: $SCRIPT_VERSION"
 cd $( dirname $0)
 
 create_workdir(){
-    echo "Creating the WORKDIR $WORKDIR"
-    mkdir -p $WORKDIR
-    chmod a+rw -R $WORKDIR
-    cd $WORKDIR
-
-    # Make paths relative to workdir
-    CERTIFKEY=$(realpath --relative-to=WORKDIR $CERTIFKEY)
-    CERTIFCRT=$(realpath --relative-to=WORKDIR $CERTIFCRT)
+    if [ ! -d $WORKDIR ]; then
+        echo "Creating the WORKDIR $WORKDIR"
+        mkdir -p $WORKDIR
+        chmod a+rw -R $WORKDIR
+    fi
 }
 
 create_python_venv(){
@@ -164,22 +161,16 @@ validate_container_executor(){
     declare -A registry_suffixes=( ["singularity"]="-sif" ["docker"]="" )
     REGISTRY="${registries[$EXECUTOR]}"
     REGISTRY_SUFFIX="${registry_suffixes[$EXECUTOR]}"
-    
+
     if [ -z "${REGISTRY}" ]; then
         echo "The executor has got to be one of: ${!registries[@]}. Wrong input value: $executor"
         exit 1
     fi
 }
 
-hepscore_install(){
-
-    create_workdir
-    validate_params
-    create_python_venv
-    install_suite
-
+create_config_file(){
     # CONFIG_FILE_CREATION
-    cat > $WORKDIR/$SUITE_CONFIG_FILE <<EOF2
+    cat > $SUITE_CONFIG_FILE <<EOF2
 activemq:
   server: $SERVER
   topic: $TOPIC
@@ -242,15 +233,23 @@ spec2017:
 
 EOF2
 
-    if [ -f $WORKDIR/$HEPSCORE_CONFIG_FILE ]; then
-        cat $WORKDIR/$HEPSCORE_CONFIG_FILE
+    if [ -f $HEPSCORE_CONFIG_FILE ]; then
+        cat $HEPSCORE_CONFIG_FILE
     fi
+}
+
+hepscore_install(){
+
+    validate_params
+    create_python_venv
+    install_suite
+
 }
 
 install_suite(){
     if [ $SUITE_VERSION = "latest" ];  then
         SUITE_VERSION=$(curl --silent https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/latest)
-        echo "Latest suite release selected: ${SUITE_VERSION}."
+        echo "Latest suite release selected: ${SUITE_VERSION}"
     fi
     
     if [ $INSTALL_FROM_WHEELS == true ]; then
@@ -275,25 +274,34 @@ install_suite_from_wheels() {
         PY_VERSION=$DEFAULT_PY_VERSION
     fi
 
-    # Set suite version to install. Use "latest" for the latest stable release
-    if [ $SUITE_VERSION = "latest" ];  then
-       echo "Latest release selected."
-       SUITE_VERSION=$(curl --silent https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/latest)
+    # Get appropriate wheels
+    ARCH=$(uname -m)
+    GLIBC=$(ldd --version | awk 'NR==1 {gsub(/\./,"_",$NF); print $NF}')
+
+    if [[ $SUITE_VERSION =~ ^v ]];  then
+        wheels_version="hep-benchmark-suite-wheels-${PY_VERSION}-${ARCH}-${SUITE_VERSION}.tar"  # Old format < 3.0
+    else
+        wheels_version="hep-benchmark-suite-wheels-${SUITE_VERSION}-${PY_VERSION}-none-linux_${GLIBC}_${ARCH}.tar" # New format >= 3.0
     fi
 
+    # Find dev versions too
+    wheels_path=""
+    if ! [[ $SUITE_VERSION =~ ^[0-9v] ]]; then
+        wheels_path="dev/"
+    fi
+    
     # Download and extract the wheels
-    ARCH=$(uname -m)
-    wheels_version="hep-benchmark-suite-wheels-${PY_VERSION}-${ARCH}-${SUITE_VERSION}.tar"
     echo -e "-> Downloading wheel: $wheels_version \n"    
-    curl -O "https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/${SUITE_VERSION}/${wheels_version}"
+    curl -O "https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/${wheels_path}${SUITE_VERSION}/${wheels_version}"
     tar xvf ${wheels_version}
 
     # Update pip before installing any other wheel
-    if ls suite_wheels/pip* 1> /dev/null 2>&1; then
-        python3 -m pip install suite_wheels/pip*.whl
+    if ls suite_wheels*/pip* 1> /dev/null 2>&1; then
+        python3 -m pip install suite_wheels*/pip*.whl
     fi
 
-    python3 -m pip install suite_wheels/*.whl
+    python3 -m pip install suite_wheels*/*.whl
+    rm -rf suite_wheels*
 }
 
 ensure_suite_is_not_running() {
@@ -318,7 +326,7 @@ print_amq_send_command() {
     # Print command to send results if they were produced but not sent
     if [ $RESULTS ] && { [ $PUBLISH == false ] || [ $AMQ_SUCCESSFUL -ne 0 ] ; }; then
         echo -e "${GREEN}\nThe results were not sent to AMQ. In order to send them, you can run (--dryrun option available):"
-        echo -e "${WORKDIR}/${MYENV}/bin/bmksend -c ${WORKDIR}/${SUITE_CONFIG_FILE} ${RUNDIR} ${NC}"
+        echo -e "${MYENV}/bin/bmksend -c ${SUITE_CONFIG_FILE} ${RUNDIR} ${NC}"
     fi
 }
 
@@ -342,10 +350,11 @@ check_workdir_space() {
 
 hepscore_run(){
 
-    if [[ -d $WORKDIR && -f $WORKDIR/$MYENV/bin/activate ]]; then 
-	    create_python_venv
+    if [[ -d $WORKDIR && -f $MYENV/bin/activate ]]; then 
+	    source $MYENV/bin/activate
     else
 	    echo "The suite installation cannot be found; please run $0 to install and run it or $0 -i to install it only"
+        exit 1
     fi
 
     ensure_suite_is_not_running
@@ -365,6 +374,12 @@ hepscore_run(){
     print_amq_send_command
     check_memory_difference
 }
+
+
+# Always done so options are taken into account
+create_workdir
+cd $WORKDIR
+create_config_file
 
 if [[ $INSTALL_ONLY == false && $RUN_ONLY == false ]] ; then
 

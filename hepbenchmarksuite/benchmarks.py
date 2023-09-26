@@ -165,7 +165,7 @@ def run_hepscore(suite_conf):
                 _hsfinal = hepscore.hepscore.named_conf(_hsconf[10:])
             else:
                 _log.error("Installed version of hepscore does not support the builtin:// option")
-                return(-1)
+                return -1
 
     elif _hsconf.startswith("http://") or _hsconf.startswith("https://"):
         _log.info("Loading config from remote: %s", _hsconf)
@@ -175,7 +175,7 @@ def run_hepscore(suite_conf):
         # Download remote file
         if utils.download_file(_hsconf, _hsfinal) != 0:
             _log.error("Error downloading %s", _hsconf,)
-            return(-1)
+            return -1
 
     else:
         _log.info("Loading user provided config: %s", _hsfinal)
@@ -209,12 +209,15 @@ def run_hepscore(suite_conf):
     _log.info("Starting hepscore")
     _log.debug("Config in use: %s", hepscore_conf)
 
-    returncode = hs.run()
+    try:
+        returncode = hs.run()
+        if returncode >= 0:
+            hs.gen_score()
 
-    if returncode >= 0:
-        hs.gen_score()
-
-    hs.write_output("json", os.path.join(suite_conf['global']['rundir'], 'HEPSCORE/hepscore_result.json'))
+        output_file = os.path.join(suite_conf['global']['rundir'], 'HEPSCORE/hepscore_result.json')
+        hs.write_output("json", output_file)
+    except SystemExit as e:
+        _log.error("HEPScore execution failed with error code %s", e)
 
     return returncode
 
@@ -275,7 +278,7 @@ def run_hepspec(conf, bench):
         else:
             _log.error("Invalid docker image specified. Image should start with docker://")
             return 1
-        
+
     # Set singularity cache dir
     env = os.environ.copy()
     if run_mode == "singularity":

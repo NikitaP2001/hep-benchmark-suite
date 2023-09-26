@@ -1,0 +1,79 @@
+# Build the base image which is used to test installation and build the final hep-benchmark-suite image
+.template_build_image:
+  image: # NB enable shared runners and do not specify a CI tag
+    name: gitlab-registry.cern.ch/ci-tools/docker-image-builder # CERN version of the Kaniko image
+    entrypoint: [""]
+  script:
+    # Prepare Kaniko configuration file
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    # Build and push the image from the Dockerfile at the root of the project.
+    # To push to a specific docker tag, amend the --destination parameter, e.g. --destination $CI_REGISTRY_IMAGE:$CI_BUILD_REF_NAME
+    # See https://docs.gitlab.com/ee/ci/variables/predefined_variables.html#variables-reference for available variables
+    - /kaniko/executor --context $CONTEXT --dockerfile $DOCKERFILE $DESTINATIONS 
+
+build_logstash_image:
+  stage: build-base-image
+  before_script:
+      - export DOCKERFILE=$CI_PROJECT_DIR/docker-images/logstash/Dockerfile
+      - export CONTEXT=$CI_PROJECT_DIR/
+      - export DESTINATIONS="--destination $CI_REGISTRY_IMAGE/logstash:${CI_COMMIT_BRANCH} --destination $CI_REGISTRY_IMAGE/logstash:ci-${CI_COMMIT_SHA:0:8}"
+  extends: .template_build_image
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /^qa.*$/ || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/
+      changes:
+        - docker-images/logstash/*
+
+build_elasticsearch_image:
+  stage: build-base-image
+  before_script:
+      - export DOCKERFILE=$CI_PROJECT_DIR/docker-images/es-extractor/Dockerfile
+      - export CONTEXT=$CI_PROJECT_DIR/docker-images/es-extractor
+      - export DESTINATIONS="--destination $CI_REGISTRY_IMAGE/es-extractor:${CI_COMMIT_BRANCH} --destination $CI_REGISTRY_IMAGE/es-extractor:ci-${CI_COMMIT_SHA:0:8} --destination $CI_REGISTRY_IMAGE/es-extractor:latest"
+  extends: .template_build_image
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /^qa.*$/ || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/
+      changes:
+        - docker-images/es-extractor/*
+
+.build_suite_image:
+  stage: build-base-image
+  before_script:
+      - export DOCKERFILE=$CI_PROJECT_DIR/docker-images/hep-benchmark-suite/Dockerfile-cc7
+      - export CONTEXT=$CI_PROJECT_DIR/docker-images/hep-benchmark-suite
+      - export DESTINATIONS="--destination $CI_REGISTRY_IMAGE/hep-benchmark-suite-cc7:ci-${CI_COMMIT_BRANCH} --destination $CI_REGISTRY_IMAGE/hep-benchmark-suite-cc7:ci-${CI_COMMIT_SHA:0:8} --destination $CI_REGISTRY_IMAGE/hep-benchmark-suite-cc7:prior"
+  extends: .template_build_image
+
+build_suite_prior_image:
+  extends: .build_suite_image
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /^qa.*$/
+      changes:
+        - docker-images/hep-benchmark-suite/Dockerfile-cc7
+      variables:
+        ID: '$CI_COMMIT_BRANCH'
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/
+      changes:
+        - docker-images/hep-benchmark-suite/Dockerfile-cc7
+      variables:
+        ID: '$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME'
+    - if: $CI_COMMIT_TAG =~ $PEP440_VERSION_REGEX
+      changes:
+        - docker-images/hep-benchmark-suite/Dockerfile-cc7
+      variables:
+        ID: '$CI_COMMIT_TAG'
+
+# Build image that containts docker compose to test pipelines in docker compose in privileged runner
+build_docker_compose_image:
+    stage: build-base-image
+    extends: .template_build_image
+    before_script:
+        - ls -lta $CI_PROJECT_DIR
+        - export DOCKERFILE=$CI_PROJECT_DIR/docker-images/docker-compose/Dockerfile
+        - export CONTEXT=$CI_PROJECT_DIR/
+        - export IMAGE_NAME=docker-compose
+        - export IMAGE_TAG=latest
+        - export DESTINATIONS="--destination $CI_REGISTRY_IMAGE/$IMAGE_NAME:$IMAGE_TAG --destination $CI_REGISTRY_IMAGE/$IMAGE_NAME:ci-${CI_COMMIT_BRANCH}-${CI_COMMIT_SHORT_SHA}"
+    rules:
+      - if: '$CI_COMMIT_BRANCH =~ /^qa.*$/'
+        changes:
+          - docker-images/docker-compose/*

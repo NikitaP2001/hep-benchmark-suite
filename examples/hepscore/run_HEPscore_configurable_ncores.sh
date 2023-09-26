@@ -15,17 +15,17 @@
 #####################################################################
 
 
-while getopts ':c:k:iprs:wd:n:' OPTION; do
+while getopts ':c:k:iprs:e:wd:n:' OPTION; do
 
   case "$OPTION" in
     c)
-      cert="$OPTARG"
-      echo "Setting Certificate to $cert"
+      cert="$(realpath $OPTARG)"
+      echo "Setting certificate to $cert"
       ;;
 
     k)
-      key="$OPTARG"
-      echo "Option b used with: $key"
+      key="$(realpath $OPTARG)"
+      echo "Setting key to $key"
       ;;
 
     i)
@@ -38,11 +38,15 @@ while getopts ':c:k:iprs:wd:n:' OPTION; do
       ;;
     p)
       publish=true
-      echo "Publish results?"
+      echo "Results will be published"
       ;;
     s)
       site="$OPTARG"
       echo "Setting site to $site"
+      ;;
+    e)
+      executor="$OPTARG"
+      echo "Setting the container executor to $executor"
       ;;
     w)
       install_from_wheels=true
@@ -75,6 +79,7 @@ Options:
   -r            Run only, skip installation
   -p            Publish the results to AMQ
   -s site       Site name to tag the results with
+  -e executor   Container executor to use (singularity or docker)
   -w            Install the suite from wheels rather than the repository
   -n            Max number of cores of the server that will be used by the benchmark"
       exit 1
@@ -90,6 +95,7 @@ CERTIFKEY="${key:-PATH_TO_CERT_KEY}"
 CERTIFCRT="${cert:-PATH_TO_CERT}"
 INSTALL_ONLY="${install_only:-false}"
 RUN_ONLY="${run_only:-false}"
+EXECUTOR="${executor:-singularity}"
 INSTALL_FROM_WHEELS="${install_from_wheels:-false}"
 WORKDIR="${workdir:-$(pwd)/workdir}"
 NCORES="${ncores:-`nproc`}"
@@ -100,15 +106,15 @@ SERVER=dashb-mb.cern.ch
 PORT=61123
 TOPIC=/topic/vm.spec
 
-SCRIPT_VERSION="1.2"
+SCRIPT_VERSION="1.3"
 HEPSCORE_VERSION="v1.5"
-SUITE_VERSION="v2.2-rc7" # Use "latest" for the latest stable release
+SUITE_VERSION="latest" # Use "latest" for the latest stable release
 
 RUNDIR=$WORKDIR/suite_results
-MYENV="env_bmk"        # Define the name of the python environment
+MYENV=$WORKDIR/env_bmk        # Define the name of the python environment
 LOGFILE=$WORKDIR/output.txt
-SUITE_CONFIG_FILE=bmkrun_config.yml
-HEPSCORE_CONFIG_FILE=hepscore_config.yml
+SUITE_CONFIG_FILE=$WORKDIR/bmkrun_config.yml
+HEPSCORE_CONFIG_FILE=$WORKDIR/hepscore_config.yml
 GiB_PER_CORE=1
 
 SUPPORTED_PY_VERSIONS=(py36 py38 py39)
@@ -123,8 +129,15 @@ NC='\033[0m' # No Color
 echo "Running script: $0 - version: $SCRIPT_VERSION"
 cd $( dirname $0)
 
+create_workdir(){
+    if [ ! -d $WORKDIR ]; then
+        echo "Creating the WORKDIR $WORKDIR"
+        mkdir -p $WORKDIR
+        chmod a+rw -R $WORKDIR
+    fi
+}
+
 create_python_venv(){
-    cd $WORKDIR
     python3 -m venv $MYENV        # Create a directory with the virtual environment
     source $MYENV/bin/activate    # Activate the environment
 }
@@ -132,6 +145,7 @@ create_python_venv(){
 validate_params(){
     validate_site
     validate_publish
+    validate_container_executor
 }
 
 validate_site(){
@@ -155,19 +169,25 @@ validate_publish(){
     fi
 }
 
-hepscore_install(){
+validate_container_executor(){
+    declare -A registries=( ["singularity"]="oras" ["docker"]="docker" )
+    declare -A registry_suffixes=( ["singularity"]="-sif" ["docker"]="" )
+    REGISTRY="${registries[$EXECUTOR]}"
+    REGISTRY_SUFFIX="${registry_suffixes[$EXECUTOR]}"
 
-    echo "Creating the WORKDIR $WORKDIR"
-    mkdir -p $WORKDIR
-    chmod a+rw -R $WORKDIR
+    if [ -z "${REGISTRY}" ]; then
+        echo "The executor has got to be one of: ${!registries[@]}. Wrong input value: $executor"
+        exit 1
+    fi
+}
 
-    validate_params
-    create_python_venv
-    install_suite
-
-    NCOPIES_1THREADS=$NCORES
+create_config_file(){
+    
+    # CONFIG_FILE_CREATION
+    NCOPIES_1THREAD=$NCORES
     NCOPIES_4THREADS=$(echo "$NCORES/4" | bc)
-    cat > $WORKDIR/$HEPSCORE_CONFIG_FILE <<EOF
+    
+    cat > $HEPSCORE_CONFIG_FILE <<EOF
 hepscore_benchmark:
   benchmarks:
     atlas-gen_sherpa-ma-bmk:
@@ -179,7 +199,7 @@ hepscore_benchmark:
       args:
         threads: 1
         events: 200
-        copies: ${NCOPIES_1THREADS}
+        copies: ${NCOPIES_1THREAD}
     atlas-reco_mt-ma-bmk:
       results_file: atlas-reco_mt-ma_summary.json
       ref_scores:
@@ -219,7 +239,7 @@ hepscore_benchmark:
       args:
         threads: 1
         events: 10
-        copies: ${NCOPIES_1THREADS}
+        copies: ${NCOPIES_1THREAD}
     belle2-gen-sim-reco-ma-bmk:
       results_file: belle2-gen-sim-reco-ma_summary.json
       ref_scores:
@@ -229,7 +249,7 @@ hepscore_benchmark:
       args:
         threads: 1
         events: 50
-        copies: ${NCOPIES_1THREADS}
+        copies: ${NCOPIES_1THREAD}
     alice-digi-reco-core-run3-ma-bmk:
       results_file: alice-digi-reco-core-run3-ma_summary.json
       ref_scores:
@@ -241,21 +261,18 @@ hepscore_benchmark:
         events: 10
         copies: ${NCOPIES_4THREADS}
   settings:
-    name: HEPscore23Beta
+    name: HEPscore23
     reference_machine: "E423521X1B04810-B Gold 6326 CPU @ 2.90GHz - 64 cores SMT ON"
-    registry: oras://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads-sif
+    registry: $REGISTRY://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads$REGISTRY_SUFFIX
     addarch: true
     method: geometric_mean
     repetitions: 3
     retries: 1
     scaling: 1018
-    container_exec: singularity
+    container_exec: $EXECUTOR
 EOF
 
-
-
-    # CONFIG_FILE_CREATION
-    cat > $WORKDIR/$SUITE_CONFIG_FILE <<EOF2
+    cat > $SUITE_CONFIG_FILE <<EOF2
 activemq:
   server: $SERVER
   topic: $TOPIC
@@ -267,7 +284,7 @@ activemq:
 global:
   benchmarks:
   - hepscore
-  mode: singularity
+  mode: $EXECUTOR
   publish: $PUBLISH
   rundir: $RUNDIR
   show: true
@@ -277,21 +294,29 @@ global:
 
 hepscore:
   version: $HEPSCORE_VERSION
-  config: $WORKDIR/$HEPSCORE_CONFIG_FILE
+  config: $HEPSCORE_CONFIG_FILE
   options:
       userns: True
       clean: True
 EOF2
 
-    if [ -f $WORKDIR/$HEPSCORE_CONFIG_FILE ]; then
-        cat $WORKDIR/$HEPSCORE_CONFIG_FILE
+    if [ -f $HEPSCORE_CONFIG_FILE ]; then
+        cat $HEPSCORE_CONFIG_FILE
     fi
+}
+
+hepscore_install(){
+
+    validate_params
+    create_python_venv
+    install_suite
+
 }
 
 install_suite(){
     if [ $SUITE_VERSION = "latest" ];  then
         SUITE_VERSION=$(curl --silent https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/latest)
-        echo "Latest suite release selected: ${SUITE_VERSION}."
+        echo "Latest suite release selected: ${SUITE_VERSION}"
     fi
     
     if [ $INSTALL_FROM_WHEELS == true ]; then
@@ -314,12 +339,6 @@ install_suite_from_wheels() {
     if [[ ! "$PY_VERSION" =~ ^py3[0-9]{1,2}$ ]] || [[ ! " ${SUPPORTED_PY_VERSIONS[*]} " =~ " ${PY_VERSION} " ]]; then
         echo "Your default python3 version (${PY_VERSION}) isn't supported. Falling back to ${DEFAULT_PY_VERSION}."
         PY_VERSION=$DEFAULT_PY_VERSION
-    fi
-
-    # Set suite version to install. Use "latest" for the latest stable release
-    if [ $SUITE_VERSION = "latest" ];  then
-       echo "Latest release selected."
-       SUITE_VERSION=$(curl --silent https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/latest)
     fi
 
     # Download and extract the wheels
@@ -359,7 +378,7 @@ print_amq_send_command() {
     # Print command to send results if they were produced but not sent
     if [ $RESULTS ] && { [ $PUBLISH == false ] || [ $AMQ_SUCCESSFUL -ne 0 ] ; }; then
         echo -e "${GREEN}\nThe results were not sent to AMQ. In order to send them, you can run (--dryrun option available):"
-        echo -e "${WORKDIR}/${MYENV}/bin/bmksend -c ${WORKDIR}/${SUITE_CONFIG_FILE} ${RUNDIR} ${NC}"
+        echo -e "${MYENV}/bin/bmksend -c ${SUITE_CONFIG_FILE} ${RUNDIR} ${NC}"
     fi
 }
 
@@ -383,10 +402,11 @@ check_workdir_space() {
 
 hepscore_run(){
 
-    if [[ -d $WORKDIR && -f $WORKDIR/$MYENV/bin/activate ]]; then 
-	    create_python_venv
+    if [[ -d $WORKDIR && -f $MYENV/bin/activate ]]; then 
+	    source $MYENV/bin/activate
     else
 	    echo "The suite installation cannot be found; please run $0 to install and run it or $0 -i to install it only"
+      exit 1
     fi
 
     ensure_suite_is_not_running
@@ -406,6 +426,11 @@ hepscore_run(){
     print_amq_send_command
     check_memory_difference
 }
+
+
+# Always done so options are taken into account
+create_workdir
+create_config_file
 
 if [[ $INSTALL_ONLY == false && $RUN_ONLY == false ]] ; then
 

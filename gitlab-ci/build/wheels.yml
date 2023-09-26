@@ -1,14 +1,14 @@
-build_wheels:
+.build_wheels:
   stage: deploy
-  image: gitlab-registry.cern.ch/linuxsupport/cs8-base
   retry: 2
   tags:
     - $ARCH
   variables:
-    WHEELS_PATH: suite_wheels
+    WHEELS_PATH: "suite_wheels_${PYTHON_VERSION}_${ARCH}"
   before_script:
-    - export PKG_NAME=hep-benchmark-suite-wheels-${PYTHON_VERSION/thon}-${ARCH}-${ID}.tar
-    - dnf install -y -q $PYTHON_VERSION git sshpass --setopt=install_weak_deps=True
+    - export GLIBC=$(ldd --version | awk 'NR==1 {gsub(/\./,"_",$NF); print $NF}')
+    - export PKG_NAME=hep-benchmark-suite-wheels-${ID}-${PYTHON_VERSION/thon}-none-linux_${GLIBC}_${ARCH}.tar
+    - yum install -y -q $PYTHON_VERSION git sshpass --setopt=install_weak_deps=True
     - python3 -m pip install --upgrade setuptools wheel pip
   script:
     - python3 -m pip wheel -r requirements.txt --wheel-dir=$WHEELS_PATH .
@@ -21,7 +21,7 @@ build_wheels:
     paths:
       - $WHEELS_PATH
   rules:
-    - if: $CI_COMMIT_TAG =~ /^v.*$/
+    - if: $CI_COMMIT_TAG =~ $PEP440_VERSION_REGEX
       variables:
         ID: $CI_COMMIT_TAG
         FULL_RELEASE_PATH: $CI_EOS_RELEASES/$ID
@@ -29,10 +29,22 @@ build_wheels:
       variables:
         ID: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
         FULL_RELEASE_PATH: $CI_EOS_RELEASES/dev/$ID
+
+build_wheels_rhel7:
+  extends: .build_wheels
+  image: gitlab-registry.cern.ch/linuxsupport/cc7-base
+  variables:
+    ARCH: x86_64
+    PYTHON_VERSION: python36
+
+build_wheels_rhel8:
+  extends: .build_wheels
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
   parallel:
     matrix:
       - ARCH: [x86_64, aarch64]
         PYTHON_VERSION: [python36, python38, python39]
+
 
 delete_dev_wheels:
   stage: deploy

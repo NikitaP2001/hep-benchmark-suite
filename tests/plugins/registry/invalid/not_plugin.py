@@ -1,0 +1,2 @@
+class NotPlugin:
+    pass

@@ -6,7 +6,7 @@ venv/
 # Packages
 *.egg*
 dist
-build
+/build
 eggs
 parts
 var
@@ -30,7 +30,6 @@ result_dump
 .*sw?
 .idea
 .vscode
-.idea
 
 # Desktop Service Store
 *.DS_Store

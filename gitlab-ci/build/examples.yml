@@ -1,12 +1,12 @@
 build_examples:
   stage: build-examples
   needs: []
-  image: gitlab-registry.cern.ch/linuxsupport/cs8-base
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
   variables:
     TEMPLATE: examples/example_generator/example_template.sh
     USE_CASE_DIR: examples/example_generator/use_cases
   before_script:
-    - yum install -y git
+    - dnf install -y git
     # Set the list of examples to build
     - if [[ "$EXAMPLES_TO_BUILD" == "all_examples" ]]; then export EXAMPLES=$(find -L examples/example_generator | grep "\.cfg"); fi
     - if [[ "$EXAMPLES_TO_BUILD" == "changed_examples" ]]; then export EXAMPLES=$(git diff --diff-filter=d --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA | grep "\.cfg"); fi

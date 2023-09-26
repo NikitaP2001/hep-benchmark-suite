@@ -9,16 +9,18 @@
 
 import contextlib
 import difflib
-import unittest
-
-from hepbenchmarksuite import utils
 import os
 import sys
-import pytest
-import tempfile
 import tarfile
+import tempfile
+import unittest
+from unittest.mock import patch
+
+import pytest
 import yaml
-from schema import Schema, And, Use, Optional, Or
+from schema import Schema
+
+from hepbenchmarksuite import utils
 
 
 def test_prepare_metadata():
@@ -85,6 +87,28 @@ def test_get_tags_env():
     assert utils.get_tags_env() == valid_dict
 
 
+def test_run_separated_commands__valid_commands():
+    cmd = 'echo test ; echo test'
+    _, reply, _ = utils.run_separated_commands(cmd)
+    assert reply == 'testtest'
+
+
+@patch("hepbenchmarksuite.utils.run_piped_commands", return_value=(None, None, 'Command not found: dummy'))
+def test_run_separated_commands__unknown_command(patch):
+    cmd = 'dummy'
+    _, reply, error = utils.run_separated_commands(cmd)
+    assert len(error) > 0
+
+
+@patch("hepbenchmarksuite.utils.run_piped_commands", return_value=(1, '', 'error message'))
+def test_run_separated_commands__nonzero_return_code(patch):
+    cmd = 'dummy ; dummy'
+    return_code, reply, error = utils.run_separated_commands(cmd)
+    assert return_code == 1
+    assert reply == ''
+    assert error == 'error message'
+
+
 @pytest.mark.parametrize("cmd_str", ["cat /proc/minfo | grep MemTotal", "lxcpu"])
 def test_exec_cmd_fail(cmd_str):
     """Test exec for failures."""
@@ -147,7 +171,7 @@ def test_export_creation():
     file_extensions = [".json", ".yaml", ".log", ".txt", ".ini", ".logg"]
 
     # Create a temporary directory
-    # It will cleanup automatically after context end
+    # It will finalize automatically after context end
     with tempfile.TemporaryDirectory() as tmp_dir_path:
         print("Created temporary directory:", tmp_dir_path)
 
@@ -223,8 +247,8 @@ def test_failed_download(url):
 def test_success_download(url, tmpdir_factory):
     """Test the download success."""
     assert (
-        utils.download_file(url, tmpdir_factory.mktemp().join("downloaded_README.md"))
-        == 0
+            utils.download_file(url, tmpdir_factory.mktemp().join("downloaded_README.md"))
+            == 0
     )
     assert os.path.isfile("downloaded_README.md") == 1
 

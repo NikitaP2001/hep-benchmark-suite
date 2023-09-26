@@ -1,0 +1,32 @@
+.test_wheels:
+  stage: test-wheels
+  retry: 2
+  tags:
+    - $ARCH
+  variables:
+    WHEELS_PATH: "suite_wheels_${PYTHON_VERSION}_${ARCH}"
+  before_script:
+    - !reference [db12_benchmark, before_script]
+  script:
+    - python3 -m pip install --user ${WHEELS_PATH}/*.whl
+    - bmkrun --config default --rundir . --benchmarks db12
+  artifacts: !reference [db12_benchmark, artifacts]
+  rules:
+    - !reference [.build_wheels, rules]
+
+test_wheels_rhel7:
+  extends: .test_wheels
+  needs: [build_wheels_rhel7]
+  image: gitlab-registry.cern.ch/linuxsupport/cc7-base
+  variables:
+    ARCH: x86_64
+    PYTHON_VERSION: python36
+
+test_wheels_rhel8:
+  extends: .test_wheels
+  needs: [build_wheels_rhel8]
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
+  parallel:
+    matrix:
+      - ARCH: [x86_64, aarch64]
+        PYTHON_VERSION: [python36, python38, python39]

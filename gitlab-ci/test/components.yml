@@ -1,0 +1,139 @@
+code_quality:
+  stage: test-components
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
+  dependencies: []
+  before_script:
+    - dnf install -y -q python3.11 python3.11-pip git
+    - python3 -m pip install -U pip tox pylint_gitlab
+    - mkdir -p public/badges public/lint
+    - echo undefined > public/badges/$CI_JOB_NAME.score
+  script:
+    - tox -e pylint | tee /tmp/pylint.txt
+    - sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' /tmp/pylint.txt > public/badges/$CI_JOB_NAME.score
+    - PYLINT_EXIT_CODE=$(pylint -j 0 --output-format=pylint_gitlab.GitlabCodeClimateReporter $(find . \( -path ./.tox -o -path ./tests \) -prune -false -o -name "*.py") bin/bmkrun bin/bmk_show_metadata > codeclimate.json; echo $?)
+    # Only fail in case of fatal errors
+    - if [[ $((PYLINT_EXIT_CODE%2)) -eq 1 ]]; then exit 1; fi
+  after_script:
+    - anybadge --overwrite --label "code quality" --value=$(cat public/badges/$CI_JOB_NAME.score) --file=public/badges/$CI_JOB_NAME.svg 4=red 6=orange 8=yellow 10=green
+    - echo "Your score is $(cat public/badges/$CI_JOB_NAME.score)"
+  artifacts:
+    paths:
+      - public
+    reports:
+      codequality: codeclimate.json
+    when: always
+  rules:
+    - if: '$CODE_QUALITY_DISABLED'
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_TAG || $CI_COMMIT_BRANCH'
+
+# Determine minimum supported python version
+python_supported_versions:
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
+  stage: test-components
+  dependencies: []
+  script:
+    - dnf install -y -q python3-pip
+    - python3 -m pip install -U pip vermin
+    - vermin -vv .
+  rules:
+    - changes:
+      - "**/*.py"
+      - "bin/*"
+
+coverage:
+  stage: test-components
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
+  dependencies: []
+  script:
+    - dnf install -y -q python3-pip git
+    - python3 -m pip install -U pip tox
+    - tox
+  rules:
+    - when: always
+  artifacts:
+    reports:
+      junit: report.xml
+    paths:
+      - htmlcov/*
+    expire_in: 1 week
+    when: always
+
+YAML_lint:
+  stage: test-components
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
+  dependencies: []
+  before_script:
+    - dnf install -y -q epel-release
+    - dnf install -y -q yamllint
+  script:
+    - yamllint -c tests/ci/yamllint_conf.yml hepbenchmarksuite/config/benchmarks.yml
+  rules:
+    - if: $CI_COMMIT_BRANCH == "qa" || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "qa"
+      when: never
+    - if: $CI_COMMIT_BRANCH == "master" || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "master"
+      when: never
+    - changes:
+      - "**/*.yaml"
+      - "**/*.yml"
+
+db12_benchmark:
+  stage: test-components
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
+  dependencies: []
+  variables:
+    PYTHON_VERSION: python36
+  before_script:
+    # Use yum instead of dnf since we still test wheels with cc7
+    - yum install -y -q epel-release
+    - yum install -y -q apptainer git $PYTHON_VERSION --setopt=install_weak_deps=True
+    - python3 -m pip install --user --upgrade pip
+    - export PATH=~/.local/bin:$PATH
+  script:
+    - python3 -m pip install --user .
+    - python3 -m pip install -r requirements.txt
+    - bmkrun --config default --rundir . --benchmarks db12
+  artifacts:
+    paths:
+      - ./run_*/db12_result.json
+      - ./run_*/run_config.yaml
+    expire_in: 1 week
+    when: always
+  rules:
+    - if: $CI_COMMIT_BRANCH == "qa" || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "qa"
+      when: never
+    - if: $CI_COMMIT_BRANCH == "master" || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "master"
+      when: never
+    - when: always
+
+security:
+  stage: test-components
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
+  dependencies: []
+  allow_failure: true
+  script:
+    - dnf install -y -q python3.11 python3.11-pip git
+    - python3 -m pip install -U pip tox
+    - tox -e bandit
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /^qa-.*$/ || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa-.*$/
+      when: never
+    - if: $CI_COMMIT_BRANCH == "master" || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "master"
+      when: never
+    - if: $CI_COMMIT_TAG =~ $PEP440_VERSION_REGEX
+      when: never
+    - when: always
+
+# Gitlab SAST
+include:
+  - template: Jobs/SAST.gitlab-ci.yml
+
+sast:
+  stage: test-components
+
+# Make SAST reports downloadable from job description
+# https://gitlab.com/gitlab-org/gitlab/-/issues/296902 might fix it
+semgrep-sast:
+  artifacts:
+    paths: [gl-sast-report.json]
