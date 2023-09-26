@@ -2,9 +2,9 @@ update_release_info:
   stage: deploy
   tags:
     - x86_64
-  image: gitlab-registry.cern.ch/linuxsupport/cc7-base
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
   before_script:
-    - yum install -y git sshpass
+    - dnf install -y git sshpass
   script:
     - |
       curl -X POST "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/releases" \

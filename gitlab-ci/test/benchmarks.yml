@@ -8,7 +8,6 @@
   retry: 1  # tmp to workaround worker with user namespace issues
   tags:
     - hep-benchmarks  # Requires a machine with 20GB free
-    - x86_64          # CC7 image not available for aarch64
   variables:
     bmk_volume: /tmp/${CI_JOB_NAME_SLUG}_${CI_JOB_ID}
     config: tests/ci/benchmarks.yml
@@ -41,11 +40,12 @@
 
 apptainer:
   extends: .test_benchmarks
-  image: gitlab-registry.cern.ch/linuxsupport/cc7-base # Use an image that has apptainer.cern repo
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
   variables:
     SINGULARITY_CACHEDIR: $CI_PROJECT_DIR/apptainer_cachedir
     executor: singularity
   before_script:
+    - dnf install -y -q epel-release
     - yum install -y -q apptainer
   cache:
     key: "$CI_JOB_STAGE-$CI_COMMIT_REF_SLUG"

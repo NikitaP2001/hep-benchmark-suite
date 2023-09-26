@@ -6,7 +6,6 @@
   variables:
     WHEELS_PATH: "suite_wheels_${PYTHON_VERSION}_${ARCH}"
   before_script:
-    - yum install -y -q epel-release
     - !reference [db12_benchmark, before_script]
   script:
     - python3 -m pip install --user ${WHEELS_PATH}/*.whl

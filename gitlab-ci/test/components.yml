@@ -1,6 +1,6 @@
 code_quality:
   stage: test-components
-  image: gitlab-registry.cern.ch/linuxsupport/cs8-base
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
   dependencies: []
   before_script:
     - dnf install -y -q python3.11 python3.11-pip git
@@ -28,12 +28,13 @@ code_quality:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_TAG || $CI_COMMIT_BRANCH'
 
+# Determine minimum supported python version
 python_supported_versions:
-  # determine minimum supported python version
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
   stage: test-components
   dependencies: []
   script:
-    - yum install -y -q python3-pip
+    - dnf install -y -q python3-pip
     - python3 -m pip install -U pip vermin
     - vermin -vv .
   rules:
@@ -43,9 +44,10 @@ python_supported_versions:
 
 coverage:
   stage: test-components
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
   dependencies: []
   script:
-    - yum install -y -q python3-pip
+    - dnf install -y -q python3-pip git
     - python3 -m pip install -U pip tox
     - tox
   rules:
@@ -60,9 +62,12 @@ coverage:
 
 YAML_lint:
   stage: test-components
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
   dependencies: []
+  before_script:
+    - dnf install -y -q epel-release
+    - dnf install -y -q yamllint
   script:
-    - yum install -y -q yamllint
     - yamllint -c tests/ci/yamllint_conf.yml hepbenchmarksuite/config/benchmarks.yml
   rules:
     - if: $CI_COMMIT_BRANCH == "qa" || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "qa"
@@ -75,11 +80,14 @@ YAML_lint:
 
 db12_benchmark:
   stage: test-components
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
   dependencies: []
   variables:
     PYTHON_VERSION: python36
   before_script:
-    - yum install -y -q apptainer $PYTHON_VERSION --setopt=install_weak_deps=True
+    # Use yum instead of dnf since we still test wheels with cc7
+    - yum install -y -q epel-release
+    - yum install -y -q apptainer git $PYTHON_VERSION --setopt=install_weak_deps=True
     - python3 -m pip install --user --upgrade pip
     - export PATH=~/.local/bin:$PATH
   script:
@@ -101,7 +109,7 @@ db12_benchmark:
 
 security:
   stage: test-components
-  image: gitlab-registry.cern.ch/linuxsupport/cs8-base
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
   dependencies: []
   allow_failure: true
   script:
