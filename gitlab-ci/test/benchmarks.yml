@@ -40,12 +40,11 @@
 
 apptainer:
   extends: .test_benchmarks
-  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
+  image: gitlab-registry.cern.ch/linuxsupport/cc7-base # Move to Alma8 https://its.cern.ch/jira/browse/BMK-1343
   variables:
     SINGULARITY_CACHEDIR: $CI_PROJECT_DIR/apptainer_cachedir
     executor: singularity
   before_script:
-    - dnf install -y -q epel-release
     - yum install -y -q apptainer
   cache:
     key: "$CI_JOB_STAGE-$CI_COMMIT_REF_SLUG"
