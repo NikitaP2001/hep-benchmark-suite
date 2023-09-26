@@ -188,6 +188,7 @@ global:
   show: true
   tags:
     site: $SITE
+    purpose: "db12 test"
 EOF2
 
     if [ -f $HEPSCORE_CONFIG_FILE ]; then
