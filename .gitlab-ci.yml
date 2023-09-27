@@ -19,4 +19,8 @@ workflow:
       when: never
     - when: always
 
+# Retry all jobs by default, since even pod creation could fail
+default:
+  retry: 2
+
 include: 'gitlab-ci/**.yml'

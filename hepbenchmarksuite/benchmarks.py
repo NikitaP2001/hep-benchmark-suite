@@ -193,6 +193,14 @@ def run_hepscore(suite_conf):
     # ensure same runmode as suite
     hepscore_conf['hepscore_benchmark']['settings']['container_exec'] = suite_conf['global']['mode']
 
+    # BMK-363: 
+    # ncores is always available in the suite_conf['global']. 
+    # It defaults to cpu_count when not explicitly set to a different value
+    # Explicitly pass the parameter to hepscore only in case it differs from cpu_count
+    # Otherwise hepscore will generate a different hash for that configuration 
+    if 'ncores' in suite_conf['global'] and int(suite_conf['global']['ncores']) != os.cpu_count():
+        hepscore_conf['hepscore_benchmark']['settings']['ncores'] = suite_conf['global']['ncores']
+
     if 'options' in suite_conf['hepscore'].keys():
         hepscore_conf['hepscore_benchmark']['options'] = suite_conf['hepscore']['options']
 
