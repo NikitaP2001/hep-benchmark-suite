@@ -20,7 +20,7 @@
     - python3 -m pip install -U pip wheel
     # Script
     - python3 -m pip install --user .
-    - bmkrun --mode=$executor --config=$config --rundir=$bmk_volume --benchmarks=$benchmark | tee log
+    - bmkrun --mode=$executor --config=$config --rundir=$bmk_volume --benchmarks=$benchmark --ncores=$ncores | tee log
     - grep "with return code 0" log
   after_script:
     - mv $bmk_volume/run_*/bmkrun_report.json $CI_PROJECT_DIR
@@ -38,6 +38,7 @@
   parallel:
     matrix:
       - benchmark: [hepscore, hs06, spec2017]
+        ncores: [4,8]
 
 apptainer:
   extends: .test_benchmarks
