@@ -93,7 +93,7 @@ SERVER=dashb-mb.cern.ch
 PORT=61123
 TOPIC=/topic/vm.spec
 
-SCRIPT_VERSION="1.3.1"
+SCRIPT_VERSION="1.4"
 HEPSCORE_VERSION="v1.5"
 SUITE_VERSION="latest" # Use "latest" for the latest stable release
 
@@ -106,6 +106,11 @@ GiB_PER_CORE=1
 
 SUPPORTED_PY_VERSIONS=(py36 py38 py39)
 DEFAULT_PY_VERSION="py36"
+
+declare -A registries=( ["singularity"]="oras" ["docker"]="docker" )
+declare -A registry_suffixes=( ["singularity"]="-sif" ["docker"]="" )
+REGISTRY="${registries[$EXECUTOR]}"
+REGISTRY_SUFFIX="${registry_suffixes[$EXECUTOR]}"
 
 # Colors
 GREEN='\033[0;32m'
@@ -157,11 +162,6 @@ validate_publish(){
 }
 
 validate_container_executor(){
-    declare -A registries=( ["singularity"]="oras" ["docker"]="docker" )
-    declare -A registry_suffixes=( ["singularity"]="-sif" ["docker"]="" )
-    REGISTRY="${registries[$EXECUTOR]}"
-    REGISTRY_SUFFIX="${registry_suffixes[$EXECUTOR]}"
-
     if [ -z "${REGISTRY}" ]; then
         echo "The executor has got to be one of: ${!registries[@]}. Wrong input value: $executor"
         exit 1
