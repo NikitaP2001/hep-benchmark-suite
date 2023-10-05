@@ -51,6 +51,7 @@ coverage:
     - dnf install -y -q python3-pip git
     - python3 -m pip install -U pip tox
     - tox
+  coverage: '/TOTAL.*\s+(\d+%)$/'
   rules:
     - when: always
   artifacts:

@@ -1,14 +1,14 @@
 # HEP Benchmark Suite
 
-|   qa-v2.1 | master |
-| --------- | -------- |
-|   [![pipeline status](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/badges/qa-v2.1/pipeline.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/pipelines?ref=qa-v2.1)     |  [![pipeline status](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/badges/master/pipeline.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/pipelines?ref=master)     |
-[![coverage report](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/badges/qa-v2.1/coverage.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/commits/qa-v2.1)|[![coverage report](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/badges/master/coverage.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/commits/master)|
-|[![code quality](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/jobs/artifacts/qa-v2.1/raw/public/badges/code_quality.svg?job=code_quality)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/pipelines?ref=qa-v2.1)| [![code quality](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/jobs/artifacts/master/raw/public/badges/code_quality.svg?job=code_quality)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/pipelines?ref=master)|
+| master |
+| -------- |
+|  [![pipeline status](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/badges/master/pipeline.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/pipelines?ref=master)     |
+[![coverage report](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/badges/master/coverage.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/commits/master)|
+| [![code quality](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/jobs/artifacts/master/raw/public/badges/code_quality.svg?job=code_quality)](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/pipelines?ref=master)|
 
-| License | Python Support |
-| --------- | -------- |
-| [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) | [![image](https://img.shields.io/badge/python-3.6%2B-blue.svg)](https://www.python.org/downloads/release/python-368/) |
+| License | Python Support | Latest Release |
+| --------- | -------- | -------- |
+| [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) | [![image](https://img.shields.io/badge/python-3.6%2B-blue.svg)](https://www.python.org/downloads/release/python-368/) | ![Latest Release](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/badges/release.svg) |
 
 [[_TOC_]]
 
