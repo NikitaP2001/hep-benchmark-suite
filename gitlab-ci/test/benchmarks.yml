@@ -27,8 +27,7 @@
     - rm -rf $bmk_volume
   rules:
     - if: $CI_COMMIT_BRANCH =~ /^qa.*$/
-    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/
-      allow_failure: true  # Since protected vars cannot be accessed in MRs (see comment at the top)
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/ && $benchmark == "hepscore"
   artifacts:
     paths:
       - bmkrun_report.json
