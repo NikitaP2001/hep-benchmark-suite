@@ -89,6 +89,7 @@ db12_benchmark:
     # Use yum instead of dnf since we still test wheels with cc7
     - yum install -y -q epel-release
     - yum install -y -q apptainer git $PYTHON_VERSION --setopt=install_weak_deps=True
+    - yum install -y -q gettext moreutils
     - python3 -m pip install --user --upgrade pip
     - export PATH=~/.local/bin:$PATH
   script:

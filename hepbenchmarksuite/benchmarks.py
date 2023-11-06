@@ -98,7 +98,10 @@ def prep_hepscore(conf):
       Error code: 0 OK , 1 Not OK
     """
 
-    REQ_VERSION = conf['hepscore']['version']
+    if 'hepscore_benchmark' in conf:
+        REQ_VERSION = conf['hepscore_benchmark']['version']
+    else:
+        REQ_VERSION = conf['hepscore']['version']
     HEPSCORE_REPO = 'git+https://gitlab.cern.ch/hep-benchmarks/hep-score.git'
 
     _log.info("Checking if hep-score is installed.")
@@ -190,8 +193,13 @@ def run_hepscore(suite_conf):
         _log.exception("Unable to load config yaml %s.", _hsfinal)
         return -1
 
+    if 'hepscore_benchmark' in hepscore_conf:
+        hskey = 'hepscore_benchmark'
+    else:
+        hskey = 'hepscore'
+
     # ensure same runmode as suite
-    hepscore_conf['hepscore_benchmark']['settings']['container_exec'] = suite_conf['global']['mode']
+    hepscore_conf[hskey]['settings']['container_exec'] = suite_conf['global']['mode']
 
     # BMK-363: 
     # ncores is always available in the suite_conf['global']. 
@@ -199,10 +207,10 @@ def run_hepscore(suite_conf):
     # Explicitly pass the parameter to hepscore only in case it differs from cpu_count
     # Otherwise hepscore will generate a different hash for that configuration 
     if 'ncores' in suite_conf['global'] and int(suite_conf['global']['ncores']) != os.cpu_count():
-        hepscore_conf['hepscore_benchmark']['settings']['ncores'] = suite_conf['global']['ncores']
+        hepscore_conf[hskey]['settings']['ncores'] = suite_conf['global']['ncores']
 
     if 'options' in suite_conf['hepscore'].keys():
-        hepscore_conf['hepscore_benchmark']['options'] = suite_conf['hepscore']['options']
+        hepscore_conf[hskey]['options'] = suite_conf['hepscore']['options']
 
     _log.debug(hepscore_conf)
 
