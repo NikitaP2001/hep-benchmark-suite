@@ -98,31 +98,29 @@ def prep_hepscore(conf):
       Error code: 0 OK , 1 Not OK
     """
 
-    if 'hepscore_benchmark' in conf:
-        REQ_VERSION = conf['hepscore_benchmark']['version']
-    else:
-        REQ_VERSION = conf['hepscore']['version']
-    HEPSCORE_REPO = 'git+https://gitlab.cern.ch/hep-benchmarks/hep-score.git'
+    hs_key = get_hepscore_key(conf)
+    req_version = conf[hs_key]['version']
+    hepscore_url = f'git+https://gitlab.cern.ch/hep-benchmarks/hep-score.git@{req_version}'
 
     _log.info("Checking if hep-score is installed.")
 
     try:
 
-        SYS_VERSION = version('hep-score')
-        _log.info("Found existing installation of hep-score in the system: v%s", SYS_VERSION)
+        sys_version = version('hep-score')
+        _log.info("Found existing installation of hep-score in the system: v%s", sys_version)
 
         # If the installation matches the one in the config file we can resume.
-        if parse_version(REQ_VERSION) == parse_version(SYS_VERSION):
-            _log.info("Installation matches requested version in the config file: %s", REQ_VERSION)
+        if parse_version(req_version) == parse_version(sys_version):
+            _log.info("Installation matches requested version in the config file: %s", req_version)
             return 0
 
         # Force the re-installation of desired version in the config
         else:
-            _log.warning("Installed version (%s) differs from config file (%s) - forcing reinstall", SYS_VERSION,
-                                                                                                     REQ_VERSION)
+            _log.warning("Installed version (%s) differs from config file (%s) - forcing reinstall", sys_version,
+                                                                                                     req_version)
 
             try:
-                install_hepscore(HEPSCORE_REPO+"@{}".format(REQ_VERSION), force=True)
+                install_hepscore(hepscore_url, force=True)
             except InstallHEPscoreFailure:
                 return 1
 
@@ -130,7 +128,7 @@ def prep_hepscore(conf):
         _log.info('Installation of hep-score not found in the system.')
 
         try:
-            install_hepscore(HEPSCORE_REPO+"@{}".format(REQ_VERSION))
+            install_hepscore(hepscore_url)
         except InstallHEPscoreFailure:
             return 1
 
@@ -193,24 +191,20 @@ def run_hepscore(suite_conf):
         _log.exception("Unable to load config yaml %s.", _hsfinal)
         return -1
 
-    if 'hepscore_benchmark' in hepscore_conf:
-        hskey = 'hepscore_benchmark'
-    else:
-        hskey = 'hepscore'
-
+    hs_key = get_hepscore_key(hepscore_conf)
     # ensure same runmode as suite
-    hepscore_conf[hskey]['settings']['container_exec'] = suite_conf['global']['mode']
+    hepscore_conf[hs_key]['settings']['container_exec'] = suite_conf['global']['mode']
 
-    # BMK-363: 
-    # ncores is always available in the suite_conf['global']. 
+    # BMK-363:
+    # ncores is always available in the suite_conf['global'].
     # It defaults to cpu_count when not explicitly set to a different value
     # Explicitly pass the parameter to hepscore only in case it differs from cpu_count
-    # Otherwise hepscore will generate a different hash for that configuration 
+    # Otherwise hepscore will generate a different hash for that configuration
     if 'ncores' in suite_conf['global'] and int(suite_conf['global']['ncores']) != os.cpu_count():
-        hepscore_conf[hskey]['settings']['ncores'] = suite_conf['global']['ncores']
+        hepscore_conf[hs_key]['settings']['ncores'] = suite_conf['global']['ncores']
 
     if 'options' in suite_conf['hepscore'].keys():
-        hepscore_conf[hskey]['options'] = suite_conf['hepscore']['options']
+        hepscore_conf[hs_key]['options'] = suite_conf['hepscore']['options']
 
     _log.debug(hepscore_conf)
 
@@ -335,3 +329,16 @@ def format_volume_string(platform, volumes):
     }
 
     return ' '.join(list(map(lambda volume: volume_formats[platform].format(volume), volumes)))
+
+
+def get_hepscore_key(config):
+    """ Returns the HEPscore key to be used for the configuration passed.
+        If 'hepscore' is present, it takes precedence over the legacy 'hepscore_benchmark'.
+        
+        If none of them is present, an exception is raised instead."""
+
+    for key in ['hepscore', 'hepscore_benchmark']:
+        if key in config:
+            return key
+
+    raise ValueError("The configuration does not contain a valid HEPscore key: ", config)

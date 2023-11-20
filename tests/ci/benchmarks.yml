@@ -34,4 +34,4 @@ spec2017:
 
 hepscore:
   version: "${HEPSCORE_VER}"
-  config: "tests/ci/hepscore_${HEPSCORE_VER}.yaml"
+  config: "${HEPSCORE_CONFIG}"

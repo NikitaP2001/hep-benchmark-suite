@@ -6,17 +6,18 @@
   variables:
     WHEELS_PATH: "suite_wheels_${PYTHON_VERSION}_${ARCH}"
     HEPSCORE_VER: v1.5
+    bmk_volume: !reference [.test_benchmarks, variables, bmk_volume]
+    suite_config: !reference [.test_benchmarks, variables, suite_config]
+    HEPSCORE_CONFIG: !reference [.test_benchmarks, variables, HEPSCORE_CONFIG]
   before_script:
     - !reference [db12_benchmark, before_script]
+    - envsubst < $suite_config | sponge $suite_config   # Replace env variables in the config file
   script:
     - python3 -m pip install --user ${WHEELS_PATH}/*.whl
-    - bmkrun --config default --rundir . --benchmarks db12
-    - config=${CI_PROJECT_DIR}/tests/ci/benchmarks.yml 
-    - envsubst '$HEPSCORE_VER' < $config | sponge $config
-    - cat $config
-    - bmkrun --mode=singularity --config=${config} --rundir=. --benchmarks=hepscore
-
-  artifacts: !reference [db12_benchmark, artifacts]
+    - bmkrun --mode=singularity --config=$suite_config --rundir=$bmk_volume --benchmarks=hepscore | tee log
+    - grep "with return code 0" log
+  after_script: !reference [apptainer, after_script]
+  artifacts: !reference [apptainer, artifacts]
   rules:
     - !reference [.build_wheels, rules]
 

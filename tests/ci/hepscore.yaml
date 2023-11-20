@@ -3,8 +3,9 @@ hepscore_benchmark:
     name: HEPscoreCI
     reference_machine: 'Unknown'
     registry: docker://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
+    addarch: true
     scaling: 10
-    repetitions: 1  # number of repetitions of the same benchmark
+    repetitions: 2  # number of repetitions of the same benchmark
     method: geometric_mean # or any other algorithm
   benchmarks:
     hello-world-c7-ma-bmk:
@@ -14,4 +15,3 @@ hepscore_benchmark:
         gen: 1
       args:
         debug: true
-        mop: none
