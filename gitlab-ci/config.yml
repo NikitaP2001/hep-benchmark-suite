@@ -1,0 +1,9 @@
+# This file includes all the requirements to use certain tools/services
+# That way other jobs can simply extend/reference it when they want to use a service 
+
+.sshpass:
+  variables:
+    SSHPASS: $CI_CPUBMK
+  before_script:
+    - yum install -y git sshpass
+    - echo -e "StrictHostKeyChecking no\nPreferredAuthentications keyboard-interactive" >> /etc/ssh/ssh_config

@@ -1,5 +1,5 @@
 # Build the base image which is used to test installation and build the final hep-benchmark-suite image
-.template_build_image:
+.build_image:
   image: # NB enable shared runners and do not specify a CI tag
     name: gitlab-registry.cern.ch/ci-tools/docker-image-builder # CERN version of the Kaniko image
     entrypoint: [""]
@@ -17,7 +17,7 @@ build_logstash_image:
       - export DOCKERFILE=$CI_PROJECT_DIR/docker-images/logstash/Dockerfile
       - export CONTEXT=$CI_PROJECT_DIR/
       - export DESTINATIONS="--destination $CI_REGISTRY_IMAGE/logstash:${CI_COMMIT_BRANCH} --destination $CI_REGISTRY_IMAGE/logstash:ci-${CI_COMMIT_SHA:0:8}"
-  extends: .template_build_image
+  extends: .build_image
   rules:
     - if: $CI_COMMIT_BRANCH =~ /^qa.*$/ || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/
       changes:
@@ -29,7 +29,7 @@ build_elasticsearch_image:
       - export DOCKERFILE=$CI_PROJECT_DIR/docker-images/es-extractor/Dockerfile
       - export CONTEXT=$CI_PROJECT_DIR/docker-images/es-extractor
       - export DESTINATIONS="--destination $CI_REGISTRY_IMAGE/es-extractor:${CI_COMMIT_BRANCH} --destination $CI_REGISTRY_IMAGE/es-extractor:ci-${CI_COMMIT_SHA:0:8} --destination $CI_REGISTRY_IMAGE/es-extractor:latest"
-  extends: .template_build_image
+  extends: .build_image
   rules:
     - if: $CI_COMMIT_BRANCH =~ /^qa.*$/ || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/
       changes:
@@ -41,7 +41,7 @@ build_elasticsearch_image:
       - export DOCKERFILE=$CI_PROJECT_DIR/docker-images/hep-benchmark-suite/Dockerfile-cc7
       - export CONTEXT=$CI_PROJECT_DIR/docker-images/hep-benchmark-suite
       - export DESTINATIONS="--destination $CI_REGISTRY_IMAGE/hep-benchmark-suite-cc7:ci-${CI_COMMIT_BRANCH} --destination $CI_REGISTRY_IMAGE/hep-benchmark-suite-cc7:ci-${CI_COMMIT_SHA:0:8} --destination $CI_REGISTRY_IMAGE/hep-benchmark-suite-cc7:prior"
-  extends: .template_build_image
+  extends: .build_image
 
 build_suite_prior_image:
   extends: .build_suite_image
@@ -65,7 +65,7 @@ build_suite_prior_image:
 # Build image that containts docker compose to test pipelines in docker compose in privileged runner
 build_docker_compose_image:
     stage: build-base-image
-    extends: .template_build_image
+    extends: .build_image
     before_script:
         - ls -lta $CI_PROJECT_DIR
         - export DOCKERFILE=$CI_PROJECT_DIR/docker-images/docker-compose/Dockerfile
