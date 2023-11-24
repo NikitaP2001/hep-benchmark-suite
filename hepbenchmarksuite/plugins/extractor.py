@@ -20,6 +20,10 @@ from hepbenchmarksuite import utils
 
 _log = logging.getLogger(__name__)
 
+def not_available(x):
+    """Accepts one argument, which it deletes and returns 'not_available'"""
+    del x
+    return "not_available"
 
 class Extractor():
     """********************************************************
@@ -166,7 +170,7 @@ class Extractor():
         # Populate NUMA nodes
         try:
             for i in range(0, int(cpu['NUMA_nodes'])):
-                cpu['NUMA_node{}_CPUs'.format(i)] = parse_lscpu(r"NUMA node{} CPU\(s\)".format(i))
+                cpu[f'NUMA_node{i}_CPUs'] = parse_lscpu(rf"NUMA node{i} CPU\(s\)")
         except ValueError:
             _log.warning('Failed to parse or NUMA nodes not existent.')
 
@@ -175,27 +179,29 @@ class Extractor():
     def collect_bios(self):
         """Collect all relevant BIOS information."""
         _log.info("Collecting BIOS information.")
-        
+
         # get common parser
         if self.pkg['dmidecode'] and self._permission:
             parse_bios = self.get_parser(self.exec_cmd("dmidecode -t bios"), "bios")
         else:
-            def parse_bios(sysfsEntry):
+            def parse_bios(sysfs_entry):
                 """
-                read from syfs - BIOS Board entries readable for users on most systems
+                Read from syfs - BIOS Board entries readable for users on most systems
                 """
-                sysfsBasePath="/sys/class/dmi/id/"
-                sysfsDict = {
+                sysfs_base_path="/sys/class/dmi/id/"
+                sysfs_dict = {
                     'Version':'bios_version',
                     'Vendor':'bios_vendor',
                     'Release Date':'bios_date',
                     'Board Version':'board_version',
                     'Board Vendor':'board_vendor',
                 }
+
                 try:
-                    with open(os.path.join(sysfsBasePath,sysfsDict[sysfsEntry]), 'r') as f:
+                    file = os.path.join(sysfs_base_path, sysfs_dict[sysfs_entry])
+                    with open(file, 'r', encoding='utf-8') as f:
                         return(f.read().strip())
-                except:
+                except OSError:
                     return "not_available"
 
         bios = {
@@ -214,12 +220,12 @@ class Extractor():
         if self.pkg['dmidecode'] and self._permission:
             parse_system = self.get_parser(self.exec_cmd("dmidecode -t system"), "system")
         else:
-            parse_system = lambda x: "not_available"
+            parse_system = not_available
 
         if self.pkg['ipmitool'] and self._permission:
             parse_bmc_fru = self.get_parser(self.exec_cmd("ipmitool fru"), "BMC")
         else:
-            parse_bmc_fru = lambda x: "not_available"
+            parse_bmc_fru = not_available
 
         if self.pkg['facter']:
             is_virtual = self.exec_cmd("facter is_virtual").casefold() == 'true'
@@ -269,20 +275,16 @@ class Extractor():
         reg_type = re.compile(r'\n\s*(?P<Field>Type:\s*\s)(?P<value>(?!Unknown).*\S)')
 
         # Return iterators containing matches
-        result_size = re.finditer(reg_size, cmd_output)
-        result_part = re.finditer(reg_part, cmd_output)
-        result_man  = re.finditer(reg_man,  cmd_output)
-        result_type = re.finditer(reg_type, cmd_output)
+        result_size = [entry.group('value') for entry in re.finditer(reg_size, cmd_output)]
+        result_part = [entry.group('value') for entry in re.finditer(reg_part, cmd_output)]
+        result_man  = [entry.group('value') for entry in re.finditer(reg_man,  cmd_output)]
+        result_type = [entry.group('value') for entry in re.finditer(reg_type, cmd_output)]
 
         count = 1
         mem = {}
-
-        # Loop at same time each iterator
-        for size, part, man, typ in zip(result_size, result_part, result_man, result_type):
-            mem["dimm" + str(count)] = "{0} {1} | {2} | {3}".format(size.group('value'),
-                                                                typ.group('value'),
-                                                                man.group('value'),
-                                                                part.group('value'))
+        # Loop through all iterators at the same time
+        for size, part, manuf, typ in zip(result_size, result_part, result_man, result_type):
+            mem["dimm" + str(count)] = f"{size} {typ} | {manuf} | {part}"
             count += 1
 
         return mem
@@ -312,16 +314,14 @@ class Extractor():
         reg_size    = re.compile(r'\n\s*(?P<Field>size:\s*\s)(?P<value>.*)')
 
         # Return iterators containing matches
-        result_logic   = re.finditer(reg_logic,   cmd_output)
-        result_product = re.finditer(reg_product, cmd_output)
-        result_size    = re.finditer(reg_size,    cmd_output)
+        result_logic   = [entry.group('value') for entry in re.finditer(reg_logic, cmd_output)]
+        result_product = [entry.group('value') for entry in re.finditer(reg_product, cmd_output)]
+        result_size    = [entry.group('value') for entry in re.finditer(reg_size, cmd_output)]
 
         count = 1
         storage = {}
-        for log, prod, siz in zip(result_logic, result_product, result_size):
-            storage["disk" + str(count)] = "{0} | {1} | {2}".format(log.group('value'),
-                                                                prod.group('value'),
-                                                                siz.group('value'))
+        for logic, product, size in zip(result_logic, result_product, result_size):
+            storage["disk" + str(count)] = f"{logic} | {product} | {size}"
             count += 1
 
         return storage
@@ -332,9 +332,9 @@ class Extractor():
             """Parser function."""
             # Different regex for parsing different outputs
             if reg == "BMC":
-                exp = r'(?P<Field>{}\s*:\s)(?P<Value>.*)'.format(pattern)
+                exp = rf'(?P<Field>{pattern}\s*:\s)(?P<Value>.*)'
             else:
-                exp = r'(?P<Field>{}:\s*\s)(?P<Value>.*)'.format(pattern)
+                exp = rf'(?P<Field>{pattern}:\s*\s)(?P<Value>.*)'
 
             # Search pattern in output
             result = re.search(exp, cmd_output)
@@ -380,7 +380,7 @@ class Extractor():
 
         # Dump json data to file
         if outfile is not False:
-            with open(outfile, 'w') as json_file:
+            with open(outfile, 'w', encoding='utf-8') as json_file:
                 json.dump(self.data, json_file, indent=4, sort_keys=True)
 
     def export(self):

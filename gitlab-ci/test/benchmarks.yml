@@ -4,7 +4,7 @@
 # !!! This includes merge request pipelines - https://gitlab.com/gitlab-org/gitlab/-/issues/28002
 .test_benchmarks:
   stage: test-benchmarks
-  dependencies: []
+  needs: []
   retry: 1  # tmp to workaround worker with user namespace issues
   tags:
     - hep-benchmarks  # Requires a machine with 20GB free

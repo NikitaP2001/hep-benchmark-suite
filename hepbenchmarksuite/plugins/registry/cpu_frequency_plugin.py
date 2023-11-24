@@ -1,3 +1,5 @@
+"""CPU frequency plugin module."""
+
 import os
 from statistics import mean
 
@@ -5,6 +7,7 @@ from hepbenchmarksuite.plugins.registry.timeseries_collector_plugin import Times
 
 
 class CPUFrequencyPlugin(TimeseriesCollectorPlugin):
+    """This timeseries plugin reports the CPU frequenzy in kHz periodically."""
 
     def __init__(self, interval_mins: float):
         super().__init__('cpu-frequency', interval_mins, 'kHz')
@@ -20,7 +23,7 @@ class CPUFrequencyPlugin(TimeseriesCollectorPlugin):
         for cpu_dir in self.cpu_directories:
             freq_path = f'/sys/devices/system/cpu/{cpu_dir}/cpufreq/scaling_cur_freq'
 
-            with open(freq_path, 'r') as freq_file:
+            with open(freq_path, 'r', encoding='utf-8') as freq_file:
                 scaling_cur_freq = int(freq_file.read().strip())
 
             frequencies.append(scaling_cur_freq)

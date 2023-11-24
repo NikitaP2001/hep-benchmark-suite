@@ -1,7 +1,7 @@
 code_quality:
   stage: test-components
   image: gitlab-registry.cern.ch/linuxsupport/alma8-base
-  dependencies: []
+  needs: []
   before_script:
     - dnf install -y -q python3.11 python3.11-pip git
     - python3 -m pip install -U pip tox pylint_gitlab
@@ -32,7 +32,7 @@ code_quality:
 python_supported_versions:
   image: gitlab-registry.cern.ch/linuxsupport/alma8-base
   stage: test-components
-  dependencies: []
+  needs: []
   script:
     - dnf install -y -q python3-pip
     - python3 -m pip install -U pip vermin
@@ -45,14 +45,13 @@ python_supported_versions:
 coverage:
   stage: test-components
   image: gitlab-registry.cern.ch/linuxsupport/alma8-base
-  dependencies: []
+  needs: []
   script:
+    # This tests python3.6; move it to a matrix with python >= 3.8 versions [BMK-1206, 742]
     - dnf install -y -q python3-pip git
     - python3 -m pip install -U pip tox
     - tox
   coverage: '/TOTAL.*\s+(\d+%)$/'
-  rules:
-    - when: always
   artifacts:
     reports:
       junit: report.xml
@@ -64,7 +63,7 @@ coverage:
 YAML_lint:
   stage: test-components
   image: gitlab-registry.cern.ch/linuxsupport/alma8-base
-  dependencies: []
+  needs: []
   before_script:
     - dnf install -y -q epel-release
     - dnf install -y -q yamllint
@@ -82,7 +81,7 @@ YAML_lint:
 db12_benchmark:
   stage: test-components
   image: gitlab-registry.cern.ch/linuxsupport/alma8-base
-  dependencies: []
+  needs: []
   variables:
     PYTHON_VERSION: python36
   before_script:
@@ -112,7 +111,7 @@ db12_benchmark:
 security:
   stage: test-components
   image: gitlab-registry.cern.ch/linuxsupport/alma8-base
-  dependencies: []
+  needs: []
   allow_failure: true
   script:
     - dnf install -y -q python3.11 python3.11-pip git

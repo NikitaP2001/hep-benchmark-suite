@@ -23,6 +23,7 @@ coverage.xml
 .python-version
 htmlcov*
 result_dump
+hepbenchmarksuite/plugins/CA
 
 # Editors
 *~

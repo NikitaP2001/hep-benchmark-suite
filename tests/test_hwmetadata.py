@@ -8,6 +8,7 @@
 """
 
 import json
+import os
 import unittest
 from pathlib import Path
 from hepbenchmarksuite.plugins.extractor import Extractor
@@ -21,6 +22,8 @@ class TestHWExtractor(unittest.TestCase):
      Testing the extraction of Hardware Metadata.
 
     *********************************************************"""
+
+    maxDiff = None
 
     def test_command_success(self):
         """
@@ -54,7 +57,9 @@ class TestHWExtractor(unittest.TestCase):
         result = hw.exec_cmd("grep 'def' nofile")
         self.assertEqual(result, "not_available")
         result = hw.exec_cmd("grep -c hypervisor /proc/cpuinfo")
-        self.assertGreater(int(result), 0)
+        # Make test pass on real nodes
+        if result != "not_available":
+            self.assertGreater(int(result), 0)
 
     def test_parser_bios(self):
         """
@@ -83,7 +88,6 @@ class TestHWExtractor(unittest.TestCase):
             cpu_text = cpu_file.read()
             
         cpu_output = hw.get_cpu_parser(cpu_text)
-        self.maxDiff = None
         self.assertEqual(cpu_output, expected_output, "CPU parser mismatch!")
         
     def test_parser_cpu_Intel(self):
@@ -150,9 +154,15 @@ class TestHWExtractor(unittest.TestCase):
         """
         Test the parser for an AMD CPU output.
         """
+
+        # The BIOS Model name will only be checked with root access
+        cpu_model = "Neoverse-N1"
+        if os.geteuid() == 0:
+            cpu_model += " - Ampere(R) Altra(R) Processor"
+
         CPU_OK = {
             "Architecture": "aarch64",
-            "CPU_Model": "Neoverse-N1 - Ampere(R) Altra(R) Processor",
+            "CPU_Model": cpu_model,
             "CPU_Family": "not_available",
             "CPU_num": 160,
             "Online_CPUs_list": "0-159",

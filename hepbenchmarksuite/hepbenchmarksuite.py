@@ -21,6 +21,7 @@ from hepbenchmarksuite.exceptions import BenchmarkFullFailure
 from hepbenchmarksuite.exceptions import PreFlightError
 from hepbenchmarksuite.plugins.construction.config_builder import ConfigPluginBuilder
 from hepbenchmarksuite.plugins.construction.dynamic_metadata_provider import DynamicPluginMetadataProvider
+from hepbenchmarksuite.plugins.extractor import Extractor
 from hepbenchmarksuite.plugins.runner import PluginRunner
 from hepbenchmarksuite.preflight import Preflight
 
@@ -132,7 +133,8 @@ class HepBenchmarkSuite:
         self._check_for_workload_errors()
 
     def _compile_benchmark_results(self):
-        self._result = utils.prepare_metadata(self._config_full, self._extra)
+        extractor = Extractor(self._config)
+        self._result = utils.prepare_metadata(self._config_full, self._extra, extractor)
         self._result.update({'plugins': self.plugin_runner.get_results()})
         self._result.update({'profiles': {}})
 
