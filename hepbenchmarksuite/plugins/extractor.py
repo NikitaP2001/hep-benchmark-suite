@@ -180,29 +180,18 @@ class Extractor():
         """Collect all relevant BIOS information."""
         _log.info("Collecting BIOS information.")
 
-        # get common parser
+        # Add several BIOS parsers if available
+        bios_parsers = [Extractor.parse_bios_sysfs]
         if self.pkg['dmidecode'] and self._permission:
-            parse_bios = self.get_parser(self.exec_cmd("dmidecode -t bios"), "bios")
-        else:
-            def parse_bios(sysfs_entry):
-                """
-                Read from syfs - BIOS Board entries readable for users on most systems
-                """
-                sysfs_base_path="/sys/class/dmi/id/"
-                sysfs_dict = {
-                    'Version':'bios_version',
-                    'Vendor':'bios_vendor',
-                    'Release Date':'bios_date',
-                    'Board Version':'board_version',
-                    'Board Vendor':'board_vendor',
-                }
+            bios_parsers.append(self.get_parser(self.exec_cmd("dmidecode -t bios"), "bios"))
 
-                try:
-                    file = os.path.join(sysfs_base_path, sysfs_dict[sysfs_entry])
-                    with open(file, 'r', encoding='utf-8') as f:
-                        return(f.read().strip())
-                except OSError:
-                    return "not_available"
+        # Try all available BIOS parsers
+        def parse_bios(entry: str):
+            for parser in bios_parsers:
+                result = parser(entry)
+                if result != 'not_available':
+                    return result
+            return result    
 
         bios = {
             'Vendor'      : parse_bios("Vendor"),
@@ -211,6 +200,27 @@ class Extractor():
         }
 
         return bios
+    
+    def parse_bios_sysfs(sysfs_entry):
+        """
+        Read from syfs - BIOS Board entries readable for users on most systems
+        """
+
+        sysfs_base_path="/sys/class/dmi/id/"
+        sysfs_dict = {
+            'Version':'bios_version',
+            'Vendor':'bios_vendor',
+            'Release Date':'bios_date',
+            'Board Version':'board_version',
+            'Board Vendor':'board_vendor',
+        }
+
+        try:
+            file = os.path.join(sysfs_base_path, sysfs_dict[sysfs_entry])
+            with open(file, 'r', encoding='utf-8') as f:
+                return(f.read().strip())
+        except OSError:
+            return "not_available"
 
     def collect_system(self):
         """Collect relevant BIOS information."""
