@@ -46,7 +46,7 @@ def download_file(url, outfile):
             return 0
 
     except (ValueError, RequestException):
-        _log.error('Failed to download file from provided link: %s', url)
+        _log.warning('Failed to download file from provided link: %s', url)
         return 1
 
 
@@ -144,7 +144,7 @@ def exec_cmd(cmd_str, env=None):
     # Check for errors
     if return_code != 0:
         reply = "not_available"
-        _log.error(error)
+        _log.warning(error)
     # Force not_available when command return is empty
     elif len(reply) == 0:
         _log.debug('Result is empty: %s', reply)
@@ -175,13 +175,13 @@ def run_piped_commands(cmd_str, env=None):
                 _log.debug("No input")
                 output = subprocess.run(cmd_split, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, env=env)
         except FileNotFoundError as e:
-            _log.error("Command not found: %s", e.filename)
+            _log.warning("Command not found: %s", e.filename)
             return None, None, f"Command not found: {e.filename}"
         except subprocess.CalledProcessError as e:
-            _log.error("Error executing command: %s\nReturn code: %s\nOutput: %s", e.cmd, e.returncode, e.output.decode())
+            _log.warning("Error executing command: %s\nReturn code: %s\nOutput: %s", e.cmd, e.returncode, e.output.decode())
             return e.returncode, e.output.decode(), e.stderr.decode()
         except Exception as e:
-            _log.error("Error executing command: %s", str(e))
+            _log.warning("Error executing command: %s", str(e))
             return None, None, None
 
     # Return the output, error, and returncode (if the command sequence was executed without errors)
