@@ -3,17 +3,15 @@ hepscore_benchmark:
     name: HEPscoreCI
     reference_machine: 'Unknown'
     registry: docker://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
+    addarch: true
     scaling: 10
-    repetitions: 1  # number of repetitions of the same benchmark
+    repetitions: 2  # number of repetitions of the same benchmark
     method: geometric_mean # or any other algorithm
   benchmarks:
-    atlas-kv-bmk:
-      results_file: atlas-kv_summary.json
-      version: ci2.0
+    hello-world-c7-ma-bmk:
+      results_file: hello-world-c7-ma_summary.json
+      version: ci-v1.0
       ref_scores:
-        sim: 1
+        gen: 1
       args:
-        events: 3
-        threads: 1
-        copies: 2
         debug: true

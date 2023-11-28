@@ -8,6 +8,7 @@ from hepbenchmarksuite.plugins.stateful_plugin import StatefulPlugin
 
 
 class TestPlugin(StatefulPlugin):
+    __test__ = False
 
     def __init__(self):
         super().__init__()

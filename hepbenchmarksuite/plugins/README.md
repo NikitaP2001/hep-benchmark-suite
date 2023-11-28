@@ -12,22 +12,59 @@ Plugins are executed by the suite in three major phases:
 2. During each benchmark
 3. After benchmarking finishes (post)
 
-“Pre” and “post” phases run only for a brief moment, giving a chance to retrieve
-a single measurement.
+The duration of the “pre” and “post” phases can be configured. By default, they run only for a brief moment, 
+giving a chance to retrieve a single measurement. See the [Configuration](#Configuration) section.
 
 ## Usage
 
 Using a plugin requires the following actions:
 * checking the necessary plugin exists
 * configuring the plugin in the configuration file of the suite
+* (optional) configuring the duration of the “pre” and “post” phases
 
 ### Configuration 
 
-The suite configuration should include a section `plugins`, which lists all plugins that should be used.
+The suite configuration should include a `plugins` section, which lists all plugins that should be used.
 The plugin names in the configuration must match the class names of the plugins (case-insensitively) in the
 plugin registry `hepbenchmarksuite/plugins/registry`. 
 The suite searches for plugins in this location. 
 All non-default parameters of the plugin's constructor must be specified in the configuration.
+
+Example: Run the CommandExecutor plugin to collect CPU frequency every minute.
+```yaml
+global:
+  ...
+activemq:
+  ...
+hepscore:
+  ...
+plugins:
+    CommandExecutor:
+        metrics:
+            cpu-frequency:
+                command: cpupower frequency-info -f
+                regex: 'current CPU frequency: (?P<value>\d+).*'
+                unit: kHz
+                interval_mins: 1
+```
+
+The duration of the “pre” and “post” phases can be configured by adding the following configuration options 
+under the `global` section: 
+* `pre-stage-duration` 
+* `post-stage-duration`  
+
+Example:
+Stay five minutes in both the “pre” and “post” stage.
+```yaml
+global:
+  rundir: ...
+  benchmarks: 
+    ...
+  tags:
+    ...
+  pre-stage-duration: 5
+  post-stage-duration: 5
+```
 
 ### Results
 

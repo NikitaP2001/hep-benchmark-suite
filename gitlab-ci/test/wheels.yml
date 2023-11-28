@@ -4,13 +4,20 @@
   tags:
     - $ARCH
   variables:
-    WHEELS_PATH: "suite_wheels_${PYTHON_VERSION}_${ARCH}"
+    WHEELS_PATH: !reference [.build_wheels, variables, WHEELS_PATH]
+    HEPSCORE_VER: v1.5
+    bmk_volume: !reference [.test_benchmarks, variables, bmk_volume]
+    suite_config: !reference [.test_benchmarks, variables, suite_config]
+    HEPSCORE_CONFIG: !reference [.test_benchmarks, variables, HEPSCORE_CONFIG]
   before_script:
     - !reference [db12_benchmark, before_script]
+    - envsubst < $suite_config | sponge $suite_config   # Replace env variables in the config file
   script:
     - python3 -m pip install --user ${WHEELS_PATH}/*.whl
-    - bmkrun --config default --rundir . --benchmarks db12
-  artifacts: !reference [db12_benchmark, artifacts]
+    - bmkrun --mode=singularity --config=$suite_config --rundir=$bmk_volume --benchmarks=hepscore | tee log
+    - grep "with return code 0" log
+  after_script: !reference [apptainer, after_script]
+  artifacts: !reference [apptainer, artifacts]
   rules:
     - !reference [.build_wheels, rules]
 
@@ -19,14 +26,11 @@ test_wheels_rhel7:
   needs: [build_wheels_rhel7]
   image: gitlab-registry.cern.ch/linuxsupport/cc7-base
   variables:
-    ARCH: x86_64
-    PYTHON_VERSION: python36
+    ARCH: !reference [build_wheels_rhel7, variables, ARCH]
+    PYTHON_VERSION: !reference [build_wheels_rhel7, variables, PYTHON_VERSION]
 
 test_wheels_rhel8:
   extends: .test_wheels
   needs: [build_wheels_rhel8]
   image: gitlab-registry.cern.ch/linuxsupport/alma8-base
-  parallel:
-    matrix:
-      - ARCH: [x86_64, aarch64]
-        PYTHON_VERSION: [python36, python38, python39]
+  parallel: !reference [build_wheels_rhel8, parallel]

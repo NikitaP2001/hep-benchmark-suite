@@ -15,6 +15,7 @@ import tarfile
 import tempfile
 import unittest
 from unittest.mock import patch
+from hepbenchmarksuite.plugins.extractor import Extractor
 
 import pytest
 import yaml
@@ -43,7 +44,8 @@ def test_prepare_metadata():
     }
 
     # Generate metadata
-    meta_json = utils.prepare_metadata(sample_config, extra=extra)
+    extractor = Extractor(sample_config['global'])
+    meta_json = utils.prepare_metadata(sample_config, extra, extractor)
 
     # Drop HW and SW metadata keys sinc this json structure
     # is already covered in another test hw_metadata

@@ -20,7 +20,6 @@ import requests
 from requests import RequestException
 
 from hepbenchmarksuite import __version__
-from hepbenchmarksuite.plugins.extractor import Extractor
 
 _log = logging.getLogger(__name__)
 
@@ -262,7 +261,7 @@ def bench_versions(conf):
     return bench_versions
 
 
-def prepare_metadata(full_conf, extra):
+def prepare_metadata(full_conf, extra, extractor):
     """Construct a json with cli inputs and extra fields.
 
     Args:
@@ -289,11 +288,8 @@ def prepare_metadata(full_conf, extra):
         'ip'      : get_host_ips(),
     })
 
-    for i in ['tags']:
-        try:
-            result['host'].update({"{}".format(i): params[i]})
-        except:
-            result['host'].update({"{}".format(i): "not_defined"})
+    tags = params['tags'] if 'tags' in params else 'not_defined'
+    result['host'].update({'tags': tags})
 
     # Hep-benchmark-suite flags
     flags = {
@@ -308,11 +304,9 @@ def prepare_metadata(full_conf, extra):
     })
 
     # Collect Software and Hardware metadata from hwmetadata plugin
-    hw_data = Extractor(params)
-
     result['host'].update({
-        'SW': hw_data.collect_sw(),
-        'HW': hw_data.collect_hw(),
+        'SW': extractor.collect_sw(),
+        'HW': extractor.collect_hw(),
     })
 
     return result
