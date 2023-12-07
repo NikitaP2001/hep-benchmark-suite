@@ -17,6 +17,7 @@ import textwrap
 import time
 import yaml
 
+from hepbenchmarksuite import benchmarks
 from hepbenchmarksuite.hepbenchmarksuite import HepBenchmarkSuite
 
 from hepbenchmarksuite import utils
@@ -41,8 +42,23 @@ class Color:
     WHITE     = "\033[97m"
 
 
-def main():
-    """ bmkrun cli. """
+class ExitStatus:
+    """ bmkrun exit status """
+    NO_CONFIG_FILE = 1
+    FILE_NOT_FOUND = 2
+    MISSING_BENCHMARK = 3
+    INVALID_BENCHMARK = 4
+    INVALID_CPU_NUMBER = 5
+    SUITE_FAILS = 6
+
+
+# Define logger as a global variable
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)  # Set the default log level
+
+
+def parse_arguments():
+    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         prog='bmkrun',
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -122,34 +138,37 @@ def main():
                         action='version',
                         version='{version}'.format(version=__version__))
 
-    args = parser.parse_args()
+    return parser
 
+def load_configuration(parser):
     # Select the config file to load
     # load default configuration shipped with hep-benchmark-suite
-    if args.config == "default":
-        load_config = os.path.join(config.__path__[0], 'benchmarks.yml')
+    args = parser.parse_args()
 
-    # No configuration file was provided
+    if args.config == "default":
+        config_file = os.path.join(config.__path__[0], 'benchmarks.yml')
     elif args.config is None:
+    # No configuration file was provided
         parser.print_help()
         print("{}No configuration file specified.{}".format(Color.RED,Color.END))
         print("{}Please specify a configuration or run with the default: bmkrun -c default {}".format(Color.RED,Color.END))
-        sys.exit(1)
-
+        sys.exit(ExitStatus.NO_CONFIG_FILE)
     else:
-        load_config = args.config
+        config_file = args.config
 
     # Load configuration file
     try:
-        with open(load_config, 'r') as yam:
-            active_config = yaml.full_load(yam)
-
+        with open(config_file, 'r') as yam:
+            config_dict =  yaml.full_load(yam)
+            print("# The following configuration was loaded: {}".format(config_file))
+            return config_dict
     except FileNotFoundError:
-        print("{0}Failed to load configuration file: {1} {2}".format(Color.RED, load_config, Color.END))
-        sys.exit(1)
+        print("{0}Failed to load configuration file: {1} {2}".format(Color.RED, config_file, Color.END))
+        sys.exit(ExitStatus.FILE_NOT_FOUND)
 
-    # Check for cli overrides
-    # Convert arguments to dict
+def check_and_override_config(active_config, parser):
+    """Check for CLI overrides and update the active configuration."""
+    args = parser.parse_args()
     temp_config = vars(args)
     del temp_config['config']
 
@@ -165,10 +184,10 @@ def main():
             active_config['global'][i] = non_empty[i]
 
     # Check if user provided a benchmark
-    if active_config['global']['benchmarks'] is None:
+    if 'benchmarks' not in active_config['global'] or active_config['global']['benchmarks'] is None:
         parser.print_help()
         print("{}No benchmarks were selected. {}".format(Color.YELLOW, Color.END))
-        sys.exit(1)
+        sys.exit(ExitStatus.MISSING_BENCHMARK)
 
     # Check if user provided valid benchmark
     AVAILABLE_BENCHMARKS = ("db12", "hepscore", "spec2017", "hs06")
@@ -176,25 +195,28 @@ def main():
     for bench in active_config['global']['benchmarks']:
         if bench not in AVAILABLE_BENCHMARKS:
             print('{}Benchmark "{}" is not a valid benchmark.{}'.format(Color.RED, bench, Color.END))
-            print('Please select one of the following benchmarks:\n- {}'.format('\n- '.join(AVAILABLE_BENCHMARKS)))
-            sys.exit(1)
-
-    # use all CPUs found if invalid parameter provided
-    if ('ncores' not in active_config['global'].keys()
-            or active_config['global']['ncores'] is None
-            or int(active_config['global']['ncores']) > os.cpu_count()):
-        active_config['global']['ncores'] = os.cpu_count()
+            print('Please select one of the following benchmarks:\n- {}'.format(
+                '\n- '.join(AVAILABLE_BENCHMARKS)))
+            sys.exit(ExitStatus.INVALID_BENCHMARK)
 
     # Check if cpu count in config is integer
-    if not isinstance(active_config['global']['ncores'], int):
-        print("{}CPU number (ncores) is not an integer.{}".format(Color.RED, Color.END))
-        sys.exit(1)
+    if 'ncores' in active_config['global'].keys():
+        if not isinstance(active_config['global']['ncores'], int):
+            print("{}CPU number (ncores) is not an integer.{}".format(Color.RED, Color.END))
+            sys.exit(ExitStatus.INVALID_CPU_NUMBER)
+        elif (active_config['global']['ncores'] is None or
+                int(active_config['global']['ncores']) > os.cpu_count()):
+                active_config['global']['ncores'] = os.cpu_count()
+    else:
+        #ncores is not defined in global, adding it
+        # use all CPUs found if invalid parameter provided
+        active_config['global']['ncores'] = os.cpu_count()
+
 
     # Set default duration of pre- and post-stage
     active_config['global'].setdefault('pre-stage-duration', 0)
     active_config['global'].setdefault('post-stage-duration', 0)
 
-    print("# The following configuration was loaded: {}".format(load_config))
     if len(non_empty):
         print("# The configuration was overridden by the following CLI args: {}".format(non_empty))
 
@@ -203,27 +225,26 @@ def main():
         print(yaml.dump(active_config))
         sys.exit(0)
 
-    # Create another dict key to mark the user specified rundir as parent_dir
-    # Append the date to the rundir in order to group the results per date
-    # Create parent_dir, example: /tmp/hep-benchmark-suite
+
+def create_run_directory(active_config):
+    """Create run directories based on configuration."""
     active_config['global']['parent_dir'] = active_config['global']['rundir']
     os.makedirs(active_config['global']['parent_dir'], exist_ok=True)
-
-    # Create rundir, example: /tmp/hep-benchmark-suite/run_date
-    active_config['global']['rundir'] = os.path.join(active_config['global']['rundir'],
-                                                     'run_{}'.format(time.strftime('%Y-%m-%d_%H%M', time.gmtime())))
-
+    active_config['global']['rundir'] = os.path.join(
+        active_config['global']['rundir'],
+        'run_{}'.format(time.strftime('%Y-%m-%d_%H%M', time.gmtime())))
     os.makedirs(active_config['global']['rundir'], exist_ok=True)
 
-    # Configure logging
-    # Log verbosity
+
+def configure_logging(active_config, args):
+    """Configure logging based on the configuration."""
     if args.verbose:
         log_level = logging.DEBUG
     else:
         log_level = logging.INFO
 
+    global logger
     # Enable logging
-    logger = logging.getLogger()
     logger.setLevel(log_level)
 
     # Log format
@@ -235,6 +256,7 @@ def main():
     stream_handler.setLevel(log_level)
 
     # Handler to write logs to file
+    global LOG_PATH
     LOG_PATH = os.path.join(active_config['global']['rundir'], 'hep-benchmark-suite.log')
     file_handler = logging.FileHandler(LOG_PATH)
     file_handler.setFormatter(log_formatter)
@@ -244,33 +266,43 @@ def main():
     logger.addHandler(stream_handler)
     logger.addHandler(file_handler)
 
-    # Save running config
+
+def save_running_config(active_config):
+    """Save the running configuration."""
     with open(os.path.join(active_config['global']['rundir'], 'run_config.yaml'), 'w') as conf_file:
         yaml.dump(active_config, conf_file)
 
-    # Configure hep-benchmark-suite
+def run_benchmarks(active_config):
+    """Run benchmarks based on the provided configuration."""
+
     logger.debug("Active configuration in use: %s", active_config)
     suite = HepBenchmarkSuite(config=active_config)
-
     try:
         suite.start()
     except PreFlightError:
         logger.error("HEP-Benchmark Suite failed.")
-        sys.exit(1)
+        sys.exit(ExitStatus.SUITE_FAILS)
     except (BenchmarkFailure, BenchmarkFullFailure):
         logger.warning("HEP-Benchmark Suite ran with failed benchmarks. Please be aware of the results.")
 
-    # Export logs and json to a compressed tarball
+def export_results(args, active_config):
+    """Export logs and results."""
     # format of export: dirname_hostname_datetime.tar.gz
     if args.export:
-        utils.export(active_config['global']['rundir'], '{}_{}_{}.tar.gz'.format(os.path.split(active_config['global']['rundir'])[-1],
-                                                                                 socket.gethostname(),
-                                                                                 datetime.datetime.now().strftime("%Y-%m-%d_%H%M")))
+        utils.export(active_config['global']['rundir'], '{}_{}_{}.tar.gz'.format(
+            os.path.split(active_config['global']['rundir'])[-1],
+            socket.gethostname(),
+            datetime.datetime.now().strftime("%Y-%m-%d_%H%M")))
 
-    # Display results
+def display_results(active_config):
+    """Display benchmarking results."""
     FULL_PATH = os.path.join(active_config['global']['rundir'], "bmkrun_report.json")
     utils.print_results_from_file(FULL_PATH)
+    print("\n{}Full results can be found in {} {}".format(Color.CYAN, FULL_PATH, Color.END))
+    print("{}Full run log can can be found in {} {}".format(Color.CYAN, LOG_PATH, Color.END))
 
+def publish_results(active_config):
+    """Publish results if needed."""    
     # Publish to AMQ broker if provided
     if active_config['global'].get('publish'):
         try:
@@ -280,8 +312,20 @@ def main():
             logger.error("Results may not have been correctly transmitted.")
             logger.exception(err)
 
-    print("\n{}Full results can be found in {} {}".format(Color.CYAN, FULL_PATH, Color.END))
-    print("{}Full run log can can be found in {} {}".format(Color.CYAN, LOG_PATH, Color.END))
+def main():
+    """Main function."""
+    parser = parse_arguments()
+    args = parser.parse_args()
+    active_config = load_configuration(parser)
+    check_and_override_config(active_config, parser)
+    create_run_directory(active_config)
+    configure_logging(active_config, args)
+    save_running_config(active_config)
+    run_benchmarks(active_config)
+    export_results(args, active_config)
+    display_results(active_config)
+    publish_results(active_config)
+
 
 
 if __name__ == "__main__":

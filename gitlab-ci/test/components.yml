@@ -10,7 +10,8 @@ code_quality:
   script:
     - tox -e pylint | tee /tmp/pylint.txt
     - sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' /tmp/pylint.txt > public/badges/$CI_JOB_NAME.score
-    - PYLINT_EXIT_CODE=$(pylint -j 0 --output-format=pylint_gitlab.GitlabCodeClimateReporter $(find . \( -path ./.tox -o -path ./tests \) -prune -false -o -name "*.py") bin/bmkrun bin/bmk_show_metadata > codeclimate.json; echo $?)
+    - PYLINT_EXIT_CODE=$(pylint -j 0 --output-format=pylint_gitlab.GitlabCodeClimateReporter $(find . \( -path ./.tox -o -path ./tests \) -prune -false -o -name "*.py") > codeclimate.json; echo $?)
+    - echo "PYLINT_EXIT_CODE=${PYLINT_EXIT_CODE}"
     # Only fail in case of fatal errors
     - if [[ $((PYLINT_EXIT_CODE%2)) -eq 1 ]]; then exit 1; fi
   after_script:

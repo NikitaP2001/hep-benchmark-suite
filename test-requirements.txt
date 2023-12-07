@@ -10,3 +10,4 @@ pytest
 requests
 schema
 stomp.py<=7.0.0
+parameterized
