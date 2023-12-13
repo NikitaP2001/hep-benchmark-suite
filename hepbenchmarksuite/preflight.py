@@ -3,14 +3,14 @@
 import logging
 import shutil
 
-from os import makedirs, path
+from os import makedirs, path, cpu_count
 from hepbenchmarksuite import benchmarks, utils
 from hepbenchmarksuite.plugins.send_queue import is_key_password_protected
 
 _log = logging.getLogger(__name__)
 
-# Required disk space (in GB) for all benchmarks
-DISK_THRESHOLD = 20.0
+# Required disk space (in GB per core) for all benchmarks
+DISK_THRESHOLD = 1.0
 
 class Preflight:
     """ Contains several suite-requirement checks that are performed over a given config """
@@ -64,15 +64,33 @@ class Preflight:
     def check_disk_space(self):
         """ Check if the rundir has enough free space """
         _log.info(" - Checking if rundir has enough space...")
+        _log.info(" - Getting cpu core count from configuration")
+        cpus = self.global_config.get('ncores')
+        if not cpus:
+            # problem getting CPUs from config or it's unconfigured try again with nproc
+            _log.info(" - ncores not found in configuration, gathering core count from nproc")
+            cpus, _ = utils.exec_cmd('nproc')
+        if not cpus:
+            # if the config is empty and nproc fails we'll try one last time with os.cpu_count()
+            _log.info(" - nproc unable to determine core count, trying again with os.cpu_count")
+            cpus = cpu_count()
+        if not cpus:
+            # unable to determine number of cpus from any source
+            _log.error(" - Unable to determine number of cores from system or configuration.")
+            self.failed_checks.append(1)
+            return
+        _log.info(" - core count: %i", int(cpus))
 
-        disk_stats    = shutil.disk_usage(self.global_config['rundir'])
-        disk_space_gb = round(disk_stats.free * (10 ** -9), 2)
-        _log.debug("Calculated disk space: %s GB", disk_space_gb)
+        disk_stats          = shutil.disk_usage(self.global_config['rundir'])
+        disk_space_gb       = round(disk_stats.free * (10 ** -9), 2)
+        disk_space_per_core = disk_space_gb/int(cpus)
+        _log.info("Calculated disk space: %s GB, GB per core: %s",
+                   *(disk_space_gb, disk_space_per_core))
 
         running_only_db12 = len(self.benchmarks_to_run) == 1 and 'db12' in self.benchmarks_to_run
-        if disk_space_gb <= DISK_THRESHOLD and not running_only_db12:
-            _log.error("Not enough disk space on %s, free: %s GB, required: %s GB",
-                       self.global_config['rundir'], disk_space_gb, DISK_THRESHOLD)
+        if disk_space_per_core <= DISK_THRESHOLD and not running_only_db12:
+            _log.error("Not enough disk space on %s, free: %s GB per core, required: %s GB/core",
+                       self.global_config['rundir'], disk_space_per_core, DISK_THRESHOLD)
 
             # Flag for a failed check
             self.failed_checks.append(1)
