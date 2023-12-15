@@ -271,6 +271,7 @@ def prepare_metadata(full_conf, extra, extractor):
     Returns:
       A dict containing hardware metadata, tags, flags & extra fields
     """
+
     # Create output metadata
 
     params = full_conf['global']
