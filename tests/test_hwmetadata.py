@@ -245,17 +245,25 @@ class TestHWExtractor(unittest.TestCase):
 
         self.assertEqual(mem_output, MEM_OK, "Memory parser mismatch!")
 
+
+    def base_parser_storage(self, input_to_parse, expected_output, lsblk):
+        hw = Extractor(extra={})
+ 
+        with open(input_to_parse, "r") as storage_file:
+            storage_text = storage_file.read()
+ 
+        if lsblk:
+            storage_output = hw.get_storage_parser_lsblk(storage_text)
+        else:
+            storage_output = hw.get_storage_parser(storage_text)
+ 
+        self.assertEqual(storage_output, expected_output, "Storage parser mismatch!")
+
+
     def test_parser_storage(self):
         """
         Test the parser for a storage output.
         """
-
-        hw = Extractor(extra={})
-
-        with open("tests/data/STORAGE.sample", "r") as storage_file:
-            storage_text = storage_file.read()
-
-        storage_output = hw.get_storage_parser(storage_text)
 
         STORAGE_OK = {
             "disk1": "/dev/sda | INTEL SSDSC2CW24 | 223GiB (240GB)",
@@ -263,7 +271,144 @@ class TestHWExtractor(unittest.TestCase):
             "disk3": "/dev/sdc | INTEL SSDSC2CW24 | 223GiB (240GB)",
         }
 
-        self.assertEqual(storage_output, STORAGE_OK, "Storage parser mismatch!")
+        self.base_parser_storage("tests/data/STORAGE.sample", STORAGE_OK, False)
+
+    def test_parser_storage_missing_values(self):
+        """ 
+        Test the parser for a storage output with several missing values
+        """
+        STORAGE_OK = {
+            "disk1": "/dev/ng0n1 | n/a | n/a",
+            "disk2": "/dev/nvme0n1 | n/a | 1788GiB (1920GB)",
+            "disk3": "/dev/ng1n1 | n/a | n/a",
+            "disk4": "/dev/nvme1n1 | n/a | 1788GiB (1920GB)"
+        }
+        
+        self.base_parser_storage("tests/data/STORAGE.sample.2", STORAGE_OK, False)
+
+    def test_parser_storage_one_disk(self):
+        """
+        Test the parser for a storage output with one disk
+        """
+        
+        STORAGE_OK = {
+            "disk1": "/dev/sda | Samsung SSD 840 | 111GiB (120GB)"
+        }
+        
+        self.base_parser_storage("tests/data/STORAGE.sample.3", STORAGE_OK, False)
+
+    def test_parser_storage_missing_value(self):
+        """
+        Test the parser for a storage output with missing product name
+        """
+        
+        STORAGE_OK = {
+            "disk1": "/dev/vda | n/a | 100GiB (107GB)"
+        }
+        
+        self.base_parser_storage("tests/data/STORAGE.sample.4", STORAGE_OK, False)
+
+    def test_parser_storage_missing_size(self):
+        """
+        Test the parser for a storage output with missing size
+        """
+        
+        STORAGE_OK = {
+            "disk1": "/dev/sda | PERC 6/i | 931GiB (999GB)",
+            "disk2": "/dev/sdc | PERC 6/i | 931GiB (999GB)",
+            "disk3": "/dev/sdd | PERC 6/i | 931GiB (999GB)",
+            "disk4": "/dev/cdrom | DVD-ROM DV28SV | n/a"
+        }
+
+        self.base_parser_storage("tests/data/STORAGE.sample.5", STORAGE_OK, False)
+
+    def test_parser_storage_seven_disks(self):
+        """
+        Test the parser for a storage output with seven disks
+        """
+        
+        STORAGE_OK = {
+            "disk1":"/dev/sda | PERC H710 | 232GiB (249GB)", 
+            "disk2":"/dev/sdb | PERC H710 | 232GiB (249GB)",
+            "disk3":"/dev/sdc | PERC H710 | 232GiB (249GB)",
+            "disk4":"/dev/sdd | PERC H710 | 232GiB (249GB)",
+            "disk5":"/dev/sde | PERC H710 | 232GiB (249GB)",
+            "disk6":"/dev/sdf | PERC H710 | 232GiB (249GB)",
+            "disk7":"/dev/sdg | PERC H710 | 232GiB (249GB)"
+        }
+        
+        self.base_parser_storage("tests/data/STORAGE.sample.6", STORAGE_OK, False)
+
+    def test_parser_storage_two_disks(self):
+        """
+        Test the parser for a storage output with two disks"
+        """
+        
+        STORAGE_OK = {
+            "disk1": "/dev/sda | INTEL SSDSC2BX20 | 186GiB (200GB)",
+            "disk2": "/dev/sdb | INTEL SSDSC2BX01 | 1490GiB (1600GB)"
+        }
+        
+        self.base_parser_storage("tests/data/STORAGE.sample.7", STORAGE_OK, False)
+
+    def test_parser_storage_lsblk(self):
+        """
+        Test the parser for a storage output using lsblk
+        """
+        
+        STORAGE_OK = {
+            "disk1": "/dev/sda | ATA Samsung SSD 850 (scsi) | 120GB",
+            "disk2": "/dev/vda | Virtio Block Device (virtblk) | 107GB",
+        }
+    
+        self.base_parser_storage("tests/data/STORAGE.sample.8", STORAGE_OK, True)
+    
+    def test_parser_storage_one_disk_lsblk(self):
+        """
+        Test the parser for a storage output with one disk using lsblk
+        """
+        
+        STORAGE_OK = {
+            "disk1": "/dev/sda | ATA Samsung SSD 840 (scsi) | 120GB"
+        }
+        
+        self.base_parser_storage("tests/data/STORAGE.sample.9", STORAGE_OK, True)
+        
+    def test_parser_storage_two_disks_lsblk(self):
+        """
+        Test the parser for a storage output with two disks using lsblk
+        """
+        STORAGE_OK = {
+            "disk1": "/dev/sda | ATA INTEL SSDSC2BX20 (scsi) | 200GB",
+            "disk2": "/dev/sdb | ATA INTEL SSDSC2BX01 (scsi) | 1600GB"
+        }
+        
+        self.base_parser_storage("tests/data/STORAGE.sample.10", STORAGE_OK, True)
+
+    def test_parser_storage_three_disks_lsblk(self):
+        """
+        Test the parser for a storage output with three disks using lsblk
+        """
+        
+        STORAGE_OK = {
+            "disk1": "/dev/sda | DELL PERC 6/i (scsi) | 1000GB",
+            "disk2": "/dev/sdc | DELL PERC 6/i (scsi) | 1000GB",
+            "disk3": "/dev/sdd | DELL PERC 6/i (scsi) | 1000GB"
+        }
+        
+        self.base_parser_storage("tests/data/STORAGE.sample.11", STORAGE_OK, True)
+    
+    def test_parser_storage_error_message_lsblk(self):
+        """
+        Test the parser for a storage output with an error message present using lsblk
+        """
+        
+        STORAGE_OK = {
+            "disk1": "/dev/sda | DELL PERC 6/E Adapter (scsi) | 1000GB",
+            "disk2": "/dev/sdb | Dell VIRTUAL DISK (scsi) | 299GB"
+        }
+        
+        self.base_parser_storage("tests/data/STORAGE.sample.12", STORAGE_OK, True)
 
     def test_full_metadata(self):
         """
@@ -284,9 +429,10 @@ class TestHWExtractor(unittest.TestCase):
                                          "SYSTEM" : {  str   : str,
                                                       "isVM" : bool,
                                                     },
-                                         "MEMORY" : { "Mem_Available" : int,
-                                                      "Mem_Total"     : int,
-                                                      "Mem_Swap"      : int,
+                                         "MEMORY" : { "Mem_Available"   : int,
+                                                      "Mem_Total"       : int,
+                                                      "Mem_Swap"        : int,
+                                                      Optional("dimm1") : str,
                                                     },
                                          "STORAGE": { Optional(str) : Optional(str) },
                                          "CPU"    : { str : str,

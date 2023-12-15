@@ -312,26 +312,63 @@ class Extractor():
 
         else:
             storage = {}
+            # Execute command and get output to parse
+            cmd_output = self.exec_cmd("lsblk -d -n -o NAME --exclude 7 |"
+                                       " xargs -I {} parted /dev/{} print unit s") 
+            # Get storage parser
+            storage = Extractor.get_storage_parser_lsblk(cmd_output)
 
         return storage
 
     @staticmethod
     def get_storage_parser(cmd_output):
         """Storage parser for lshw -c disk."""
+        disks = cmd_output.split("*-")[1:]
+
         # Regex for matches
         reg_logic   = re.compile(r'\n\s*(?P<Field>logical name:\s*\s)(?P<value>.*)')
         reg_product = re.compile(r'\n\s*(?P<Field>product:\s*\s)(?P<value>.*)')
         reg_size    = re.compile(r'\n\s*(?P<Field>size:\s*\s)(?P<value>.*)')
 
-        # Return iterators containing matches
-        result_logic   = [entry.group('value') for entry in re.finditer(reg_logic, cmd_output)]
-        result_product = [entry.group('value') for entry in re.finditer(reg_product, cmd_output)]
-        result_size    = [entry.group('value') for entry in re.finditer(reg_size, cmd_output)]
-
         count = 1
         storage = {}
-        for logic, product, size in zip(result_logic, result_product, result_size):
+        for disk in disks:
+            # return matches
+            result_product = re.search(reg_product, disk)
+            result_size = re.search(reg_size, disk)
+            result_logic = re.search(reg_logic, disk)
+
+            # replace empty values to avoid zipping error
+            product = result_product.group('value') if result_product else 'n/a'
+            size = result_size.group('value') if result_size else 'n/a'
+            logic = result_logic.group('value') if result_logic else 'n/a'
+
             storage["disk" + str(count)] = f"{logic} | {product} | {size}"
+            count += 1
+
+        return storage
+
+    @staticmethod
+    def get_storage_parser_lsblk(cmd_output):
+        """
+        Storage parser using the command:
+        lsblk -d -n -o NAME --exclude 7 | args -I {} parted /dev/{} print unit s
+        """
+
+        # Regex for matches
+        reg_logic   = re.compile(r'(?P<Field>Disk /dev)(?P<value>.*)')
+        reg_product = re.compile(r'(?P<Field>Model:\s*\s)(?P<value>.*)')
+
+        # Get iterators containing matches
+        result_logic   = re.finditer(reg_logic,   cmd_output)
+        result_product = re.finditer(reg_product, cmd_output)
+
+        storage = {}
+        count = 1
+        for log, prod in zip(result_logic, result_product):
+            log_value = log.group('value')
+            logic, size = log_value.split(': ')
+            storage["disk" + str(count)] = f"/dev{logic} | {prod.group('value')} | {size}"
             count += 1
 
         return storage
