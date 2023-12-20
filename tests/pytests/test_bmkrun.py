@@ -47,26 +47,6 @@ class TestBenchmarkRunnerExitStatus(unittest.TestCase):
             bmkrun.main()
             self.assertEqual(cm.exception.code, expected_exit_code)
 
-    # def test_exit_suite_fails(self):
-    #     # This test case may require mocking and patching to simulate the scenario where the suite fails.
-    #     # For example, you can mock a failing scenario within the suite and then test the exit code.
-    #     # Here's a general structure without actual mocking for the failing suite.
-    #     with patch('hepbenchmarksuite.hepbenchmarksuite.HepBenchmarkSuite.start', side_effect=PreFlightError):
-    #         with self.assertRaises(SystemExit) as cm:
-    #             sys.argv = ['bmkrun.py', '-c', 'default']
-    #             main()
-
-
-    #     # with patch.object(hepscore.HEPscore, 'run') as mock_run, \
-    #     #        patch.object(hepscore.HEPscore, 'gen_score') as mock_gen_score, \
-    #     #         patch.object(hepscore.HEPscore, 'write_output') as mock_write_output:
-        
-    #     #     # Prepare the mock HEPscore object
-    #     #     mock_run.return_value=0
-    #     #     mock_gen_score.return_value=0
-    #     #     mock_write_output.return_value=0
-    #     self.assertEqual(cm.exception.code, bmkrun.ExitStatus.SUITE_FAILS)
-
     @patch('hepbenchmarksuite.plugins.send_queue.send_message')
     def test_main_success(self, mock_send_message):
   

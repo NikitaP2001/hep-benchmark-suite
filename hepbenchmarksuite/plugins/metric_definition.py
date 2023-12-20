@@ -31,7 +31,7 @@ class MetricDefinition:
         Checks that only the required or optional parameters were set.
         """
         required_params = {'command', 'regex', 'unit', 'interval_mins'}
-        optional_params = {'aggregation'}
+        optional_params = {'aggregation', 'description', 'expected-value', 'example-output'}
 
         given_params = set(params.keys())
         required_given = given_params - optional_params

@@ -32,6 +32,7 @@
         ID: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
         FULL_RELEASE_PATH: $CI_EOS_RELEASES/dev/$ID
 
+
 build_wheels_rhel7:
   extends: .build_wheels
   image: gitlab-registry.cern.ch/linuxsupport/cc7-base
