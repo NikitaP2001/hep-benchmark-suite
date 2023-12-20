@@ -5,7 +5,7 @@ from typing import List
 from hepbenchmarksuite.plugins.construction.builder import PluginBuilder
 from hepbenchmarksuite.plugins.runner import PluginRunner
 from hepbenchmarksuite.plugins.stateful_plugin import StatefulPlugin
-from tests.plugins.dummy_timeseries_plugin import DummyTimeseriesPlugin
+from tests.pytests.plugins.dummy_timeseries_plugin import DummyTimeseriesPlugin
 
 
 class DummyPluginBuilder(PluginBuilder):

@@ -5,8 +5,8 @@ import yaml
 from hepbenchmarksuite.exceptions import PluginBuilderException, PluginMetadataException
 from hepbenchmarksuite.plugins.construction.config_builder import ConfigPluginBuilder
 from hepbenchmarksuite.plugins.construction.dynamic_metadata_provider import DynamicPluginMetadataProvider
-from tests.plugins.registry.optional.plugin import PluginWithOptionalParameter
-from tests.plugins.registry.valid.plugin1 import PluginMultipleParameters, PluginParameterless
+from tests.pytests.plugins.registry.optional.plugin import PluginWithOptionalParameter
+from tests.pytests.plugins.registry.valid.plugin1 import PluginMultipleParameters, PluginParameterless
 
 
 class TestConfigPluginBuilder(unittest.TestCase):
@@ -20,7 +20,7 @@ class TestConfigPluginBuilder(unittest.TestCase):
                     param2: value
         """
         config = yaml.safe_load(raw_config)
-        plugin_registry = DynamicPluginMetadataProvider('tests/plugins/registry/valid')
+        plugin_registry = DynamicPluginMetadataProvider('tests/pytests/plugins/registry/valid')
         plugin_builder = ConfigPluginBuilder(config['plugins'], plugin_registry)
 
         plugins = plugin_builder.build()
@@ -43,7 +43,7 @@ class TestConfigPluginBuilder(unittest.TestCase):
                 UnregisteredPlugin: {}
         """
         config = yaml.safe_load(raw_config)
-        plugin_registry = DynamicPluginMetadataProvider('tests/plugins/registry/valid')
+        plugin_registry = DynamicPluginMetadataProvider('tests/pytests/plugins/registry/valid')
         plugin_builder = ConfigPluginBuilder(config['plugins'], plugin_registry)
 
         self.assertRaises(PluginMetadataException, plugin_builder.build)
@@ -55,7 +55,7 @@ class TestConfigPluginBuilder(unittest.TestCase):
                     param: 42
         """
         config = yaml.safe_load(raw_config)
-        plugin_registry = DynamicPluginMetadataProvider('tests/plugins/registry/valid')
+        plugin_registry = DynamicPluginMetadataProvider('tests/pytests/plugins/registry/valid')
         plugin_builder = ConfigPluginBuilder(config['plugins'], plugin_registry)
 
         self.assertRaises(PluginBuilderException, plugin_builder.build)
@@ -67,7 +67,7 @@ class TestConfigPluginBuilder(unittest.TestCase):
                     unrecognized: 42
         """
         config = yaml.safe_load(raw_config)
-        plugin_registry = DynamicPluginMetadataProvider('tests/plugins/registry/valid')
+        plugin_registry = DynamicPluginMetadataProvider('tests/pytests/plugins/registry/valid')
         plugin_builder = ConfigPluginBuilder(config['plugins'], plugin_registry)
 
         self.assertRaises(PluginBuilderException, plugin_builder.build)
@@ -78,7 +78,7 @@ class TestConfigPluginBuilder(unittest.TestCase):
                    PluginSingleParameter: {}
            """
         config = yaml.safe_load(raw_config)
-        plugin_registry = DynamicPluginMetadataProvider('tests/plugins/registry/valid')
+        plugin_registry = DynamicPluginMetadataProvider('tests/pytests/plugins/registry/valid')
         plugin_builder = ConfigPluginBuilder(config['plugins'], plugin_registry)
 
         self.assertRaises(PluginBuilderException, plugin_builder.build)
@@ -90,7 +90,7 @@ class TestConfigPluginBuilder(unittest.TestCase):
                    
            """
         config = yaml.safe_load(raw_config)
-        plugin_registry = DynamicPluginMetadataProvider('tests/plugins/registry/valid')
+        plugin_registry = DynamicPluginMetadataProvider('tests/pytests/plugins/registry/valid')
         plugin_builder = ConfigPluginBuilder(config['plugins'], plugin_registry)
 
         plugins = plugin_builder.build()
@@ -103,7 +103,7 @@ class TestConfigPluginBuilder(unittest.TestCase):
                        mandatory: 42
            """
         config = yaml.safe_load(raw_config)
-        plugin_registry = DynamicPluginMetadataProvider('tests/plugins/registry/optional')
+        plugin_registry = DynamicPluginMetadataProvider('tests/pytests/plugins/registry/optional')
         plugin_builder = ConfigPluginBuilder(config['plugins'], plugin_registry)
 
         plugins = plugin_builder.build()

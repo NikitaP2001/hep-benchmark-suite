@@ -14,6 +14,7 @@
     - envsubst < $suite_config | sponge $suite_config   # Replace env variables in the config file
   script:
     - python3 -m pip install --user ${WHEELS_PATH}/*.whl
+    - bmk_show_metadata
     - bmkrun --mode=singularity --config=$suite_config --rundir=$bmk_volume --benchmarks=hepscore | tee log
     - grep "with return code 0" log
   after_script: !reference [apptainer, after_script]

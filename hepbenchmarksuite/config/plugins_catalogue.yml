@@ -8,16 +8,19 @@ plugins:
         description: "Retrieves the current frequency of the first CPU."
         command: "cpupower frequency-info -f"
         regex: "current CPU frequency: (?P<value>\\d+).*"
+        interval_mins: 1
         unit: "kHz"
         example-output: |
           analyzing CPU 0:
             current CPU frequency: 1380559 (asserted by call to kernel)
         expected-value: 1380559
 
+
       load:
         description: "Retrieves the one minute system load average. Note that load of 1 on a 4-CPU system means that it was idle 75% of the time."
         command: "uptime"
         regex: "load average: (?P<value>\\d+.\\d+),"
+        interval_mins: 1
         unit: ""
         aggregation: ""
         example-output: " 11:02:47 up  3:03,  1 user,  load average: 0.18, 0.38, 0.25"
@@ -27,6 +30,7 @@ plugins:
         description: "Retrieves input power consumption of the system. The command takes a long time to execute (it can take half a minute). Use one of the alternatives if possible. Requires elevated privileges."
         command: "ipmitool sdr elist"
         regex: "PS\\d Power In.* (?P<value>\\d+) Watts"
+        interval_mins: 1
         unit: "W"
         aggregation: "sum"
         example-output: |
@@ -106,6 +110,7 @@ plugins:
         description: "Retrieves power consumption of the system. Requires elevated privileges."
         command: "ipmitool dcmi power reading"
         regex: "Instantaneous power reading:\\s*(?P<value>\\d+) Watts"
+        interval_mins: 1
         unit: "W"
         example-output: |
           Instantaneous power reading:                   124 Watts
@@ -121,6 +126,7 @@ plugins:
         description: "Retrieves power consumption of the system. It collects the power readings from two power lines. Requires elevated privileges."
         command: "ipmitool sensor get 'PS1 Power In' ; ipmitool sensor get 'PS2 Power In'"
         regex: "Sensor Reading\\s+:\\s*(?P<value>\\d+).*"
+        interval_mins: 1
         unit: "W"
         example-output: |
           Locating sensor record...
@@ -164,6 +170,7 @@ plugins:
         description: "Retrieves the current memory usage (without swap)."
         command: "free -m"
         regex: "Mem: *\\d+ *(?P<value>\\d+).*"
+        interval_mins: 1
         unit: "MiB"
         example-output: |
           total        used        free      shared  buff/cache   available
@@ -175,6 +182,7 @@ plugins:
         description: "Retrieves the current swap memory usage."
         command: "free -m"
         regex: "Swap: *\\d+ *(?P<value>\\d+).*"
+        interval_mins: 1
         unit: "MiB"
         example-output: |
           total        used        free      shared  buff/cache   available
@@ -186,6 +194,7 @@ plugins:
         description: "Returns the total power consumption of all GPUs in the system."
         command: "nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits "
         regex: "(?P<value>\\d+(.\\d+)?).*"
+        interval_mins: 1
         unit: "W"
         aggregation: "sum"
         example-output: "105.07\n52.08"

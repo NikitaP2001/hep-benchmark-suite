@@ -69,6 +69,7 @@ Options:
   -p            Publish the results to AMQ
   -s site       Site name to tag the results with
   -e executor   Container executor to use (singularity or docker)
+  -d workdir    Set the working directory to workdir
   -w            Install the suite from wheels rather than the repository"
       exit 1
       ;;
