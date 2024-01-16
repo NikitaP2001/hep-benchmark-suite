@@ -294,19 +294,18 @@ def export_results(args, active_config):
             socket.gethostname(),
             datetime.datetime.now().strftime("%Y-%m-%d_%H%M")))
 
-def display_results(active_config):
+def display_results(report_path):
     """Display benchmarking results."""
-    FULL_PATH = os.path.join(active_config['global']['rundir'], "bmkrun_report.json")
-    utils.print_results_from_file(FULL_PATH)
-    print("\n{}Full results can be found in {} {}".format(Color.CYAN, FULL_PATH, Color.END))
+    utils.print_results_from_file(report_path)
+    print("\n{}Full results can be found in {} {}".format(Color.CYAN, report_path, Color.END))
     print("{}Full run log can can be found in {} {}".format(Color.CYAN, LOG_PATH, Color.END))
 
-def publish_results(active_config):
+def publish_results(active_config, report_path):
     """Publish results if needed."""    
     # Publish to AMQ broker if provided
     if active_config['global'].get('publish'):
         try:
-            send_queue.send_message(FULL_PATH, active_config['activemq'])
+            send_queue.send_message(report_path, active_config['activemq'])
         except Exception as err:
             logger.error("Something went wrong attempting to report via AMQ.")
             logger.error("Results may not have been correctly transmitted.")
@@ -317,15 +316,17 @@ def main():
     parser = parse_arguments()
     args = parser.parse_args()
     active_config = load_configuration(parser)
+    
     check_and_override_config(active_config, parser)
     create_run_directory(active_config)
     configure_logging(active_config, args)
     save_running_config(active_config)
     run_benchmarks(active_config)
+    
+    report_path = os.path.join(active_config['global']['rundir'], "bmkrun_report.json")
     export_results(args, active_config)
-    display_results(active_config)
-    publish_results(active_config)
-
+    display_results(report_path)
+    publish_results(active_config, report_path)
 
 
 if __name__ == "__main__":
