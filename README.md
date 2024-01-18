@@ -14,9 +14,10 @@
 
 ## Feedback/Support
 
-Feedback, and support questions are welcome in the HEP Benchmarks project [Discourse Forum](https://wlcg-discourse.web.cern.ch/c/hep-benchmarks).
+Feedback and support questions are welcome primarily through [GGUS tickets](https://w3.hepix.org/benchmarking/how_to_run_HS23.html#how-to-open-a-ggus-ticket) or in the HEP Benchmarks Project
+[Discourse Forum](https://wlcg-discourse.web.cern.ch/c/hep-benchmarks).
 
-Alternatively, you can [create an issue on gitlab](https://gitlab.cern.ch/groups/hep-benchmarks/-/issues).
+For instructions on how to run the HEPScore23 benchmark, please refer to the [dedicated HEPiX Benchmark page](https://w3.hepix.org/benchmarking/how_to_run_HS23.html). The HEPScore23 scores for the benchmarked servers are reported in this [table](https://w3.hepix.org/benchmarking/scores_HS23.html).
 
 ## About
 
