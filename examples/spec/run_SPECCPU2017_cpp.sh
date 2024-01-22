@@ -15,7 +15,7 @@
 #####################################################################
 
 
-while getopts ':c:k:iprs:e:wd:' OPTION; do
+while getopts ':c:k:iprs:e:wd:b:v:' OPTION; do
 
   case "$OPTION" in
     c)
@@ -56,6 +56,14 @@ while getopts ':c:k:iprs:e:wd:' OPTION; do
       workdir="$(realpath $OPTARG)"
       echo "Setting the working directory to $workdir"
       ;;
+    b)
+      plugin_keys="$OPTARG"
+      echo "Requesting to enable the following plugin keys ${plugin_keys}"
+      ;;
+    v)
+      suite_version="$OPTARG"
+      echo "Using suite version ${suite_version} instead of latest"
+      ;;
 
     ?)
       echo "
@@ -94,9 +102,9 @@ SERVER=dashb-mb.cern.ch
 PORT=61123
 TOPIC=/topic/vm.spec
 
-SCRIPT_VERSION="1.4"
+SCRIPT_VERSION="3.0"
 HEPSCORE_VERSION="v1.5"
-SUITE_VERSION="latest" # Use "latest" for the latest stable release
+SUITE_VERSION=${suite_version-latest} # Use "latest" for the latest stable release
 
 RUNDIR=$WORKDIR/suite_results
 MYENV=$WORKDIR/env_bmk        # Define the name of the python environment
@@ -188,6 +196,8 @@ global:
   rundir: /tmp/suite_results
   tags:
     site: $SITE
+  pre-stage-duration: 2
+  post-stage-duration: 2
 
 spec2017:
   # Use the docker registry
@@ -216,10 +226,123 @@ spec2017:
   # config: a_spec_config_file_in_the_spec_repo_config
   # Default is https://gitlab.cern.ch/hep-benchmarks/hep-spec/-/blob/master/scripts/spec2017/cern-gcc-linux-x86.cfg
   # config: cern-gcc-linux-x86.cfg
+
+$SUITE_PLUGINS_CONFIG
 EOF2
 
     if [ -f $HEPSCORE_CONFIG_FILE ]; then
         cat $HEPSCORE_CONFIG_FILE
+    fi
+}
+
+create_plugin_configuration() {
+    # Skip if version is lower than 3.0
+
+    [[ -z $plugin_keys ]] && return
+
+    # Allowed plugin keys
+    ALLOWED_PLUGIN_KEYS="f l m s p"
+
+    # Check if the suite version is above a given version
+    if [[ ! "$SUITE_VERSION" =~ ^[3-9]\.[[:alnum:]]*$ && ! "$SUITE_VERSION" =~ ^qa$ ]]; then
+      echo "Suite version ${SUITE_VERSION} is not adequate to run plugins. Exiting."
+      return 1
+    fi
+
+    collect_cpu_frequency=false
+    collect_load=false
+    collect_memory_usage=false
+    collect_swap_usage=false
+    collect_power_consumption=false
+
+    for pkey in ${ALLOWED_PLUGIN_KEYS[@]}; do
+      if [[ "$plugin_keys" =~ (^|.*,)"$pkey"(,.*|$) ]]; then
+        case $pkey in
+          f)
+            collect_cpu_frequency=true
+            ;;
+          l)
+            collect_load=true
+            ;;
+          m)
+            collect_memory_usage=true
+            ;;
+          s)
+            collect_swap_usage=true
+            ;;
+          p)
+            collect_power_consumption=true
+            ;;
+          *)
+            echo "Unexpected plugin key $pkey. Ignoring it"
+            ;;
+        esac
+      fi
+    done
+
+    # Print the status of each collection flag
+    echo "collect_cpu_frequency: $collect_cpu_frequency"
+    echo "collect_load: $collect_load"
+    echo "collect_memory_usage: $collect_memory_usage"
+    echo "collect_swap_usage: $collect_swap_usage"
+    echo "collect_power_consumption: $collect_power_consumption"
+
+
+    METRICS_CONFIG=""
+
+    if [ "$collect_cpu_frequency" = true ]; then
+      METRICS_CONFIG="$METRICS_CONFIG
+      cpu-frequency:
+        command: cpupower frequency-info -f
+        regex: 'current CPU frequency: (?P<value>\d+).*'
+        unit: kHz
+        interval_mins: 1"
+    fi
+
+    if [ "$collect_load" = true ]; then
+      METRICS_CONFIG="$METRICS_CONFIG
+      load:
+        command: uptime
+        regex: 'load average: (?P<value>\d+.\d+),'
+        unit: ''
+        interval_mins: 1"
+    fi
+
+    if [ "$collect_memory_usage" = true ]; then
+      METRICS_CONFIG="$METRICS_CONFIG
+      used-memory:
+        command: free -m
+        regex: 'Mem: *(\d+) *(?P<value>\d+).*'
+        unit: MiB
+        interval_mins: 1"
+    fi
+
+    if [ "$collect_swap_usage" = true ]; then
+      METRICS_CONFIG="$METRICS_CONFIG
+      used-swap-memory:
+        command: free -m
+        regex: 'Swap: *\d+ *(?P<value>\d+).*'
+        unit: MiB
+        interval_mins: 1"
+    fi
+
+    if [ "$collect_power_consumption" = true ]; then
+      METRICS_CONFIG="$METRICS_CONFIG
+      power-consumption1:
+        description: 'Retrieves power consumption of the system. Requires elevated privileges.'
+        command: 'ipmitool dcmi power reading'
+        regex: 'Instantaneous power reading:\\s*(?P<value>\\d+) Watts'
+        interval_mins: 1
+        unit: 'W'"
+    fi
+
+    #  If plugins are requested include them in the config
+    if [ -n "$METRICS_CONFIG" ]; then
+        SUITE_PLUGINS_CONFIG="
+plugins:
+  CommandExecutor:
+    metrics: $METRICS_CONFIG
+"
     fi
 }
 
