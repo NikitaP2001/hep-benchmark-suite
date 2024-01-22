@@ -79,7 +79,7 @@ Options:
   -e executor   Container executor to use (singularity or docker)
   -d workdir    Set the working directory to workdir
   -w            Install the suite from wheels rather than the repository
-  -b plugin_keys  Bundle time series plugins listed by key "f,l,m,s,p" where 
+  -b plugin_keys  Bundle time series plugins listed by key 'f,l,m,s,p' where 
                     f enables cpu_frequency
                     l enables load
                     m enables memory usage
