@@ -1,4 +1,4 @@
-bats_test_docker_compose_qa:
+.bats_test_docker_compose_qa:
   stage: test-parsing-and-injection
   needs: []
   image:

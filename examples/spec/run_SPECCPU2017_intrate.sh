@@ -78,7 +78,14 @@ Options:
   -s site       Site name to tag the results with
   -e executor   Container executor to use (singularity or docker)
   -d workdir    Set the working directory to workdir
-  -w            Install the suite from wheels rather than the repository"
+  -w            Install the suite from wheels rather than the repository
+  -b plugin_keys  Bundle time series plugins listed by key "f,l,m,s,p" where 
+                    f enables cpu_frequency
+                    l enables load
+                    m enables memory usage
+                    s enables memory swap
+                    p power consumption
+  -v version      Suite version. Default is latest"
       exit 1
       ;;
   esac
