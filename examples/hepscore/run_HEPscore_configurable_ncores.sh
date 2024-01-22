@@ -15,7 +15,7 @@
 #####################################################################
 
 
-while getopts ':c:k:iprs:e:wd:n:' OPTION; do
+while getopts ':c:k:iprs:e:wd:b:v:n:' OPTION; do
 
   case "$OPTION" in
     c)
@@ -56,6 +56,14 @@ while getopts ':c:k:iprs:e:wd:n:' OPTION; do
       workdir="$(realpath $OPTARG)"
       echo "Setting the working directory to $workdir"
       ;;
+    b)
+      plugin_keys="$OPTARG"
+      echo "Requesting to enable the following plugin keys ${plugin_keys}"
+      ;;
+    v)
+      suite_version="$OPTARG"
+      echo "Using suite version ${suite_version} instead of latest"
+      ;;
     n)
       ncores="$OPTARG"
       if [ $ncores -gt `nproc` ] || [ $(echo "$ncores%4" | bc) -ne 0 ]; then
@@ -73,15 +81,23 @@ while getopts ':c:k:iprs:e:wd:n:' OPTION; do
 Usage: $(basename $0) [OPTIONS]
 
 Options:
-  -c path       Path to the certificate to use to authenticate to AMQ
-  -k path       Path to the key of the certificate used for AMQ
-  -i            Install only, don't run the suite
-  -r            Run only, skip installation
-  -p            Publish the results to AMQ
-  -s site       Site name to tag the results with
-  -e executor   Container executor to use (singularity or docker)
-  -w            Install the suite from wheels rather than the repository
-  -n            Max number of cores of the server that will be used by the benchmark"
+  -c path         Path to the certificate to use to authenticate to AMQ
+  -k path         Path to the key of the certificate used for AMQ
+  -i              Install only, don't run the suite
+  -r              Run only, skip installation
+  -p              Publish the results to AMQ
+  -s site         Site name to tag the results with
+  -e executor     Container executor to use (singularity or docker)
+  -d workdir      Set the working directory to workdir
+  -w              Install the suite from wheels rather than the repository
+  -b plugin_keys  Bundle time series plugins listed by key "f,l,m,s,p" where 
+                    f enables cpu_frequency
+                    l enables load
+                    m enables memory usage
+                    s enables memory swap
+                    p power consumption
+  -v version      Suite version. Default is latest"
+  -n              Max number of cores of the server that will be used by the benchmark
       exit 1
       ;;
   esac
@@ -106,9 +122,10 @@ SERVER=dashb-mb.cern.ch
 PORT=61123
 TOPIC=/topic/vm.spec
 
-SCRIPT_VERSION="1.4"
+SCRIPT_VERSION="3.0"
 HEPSCORE_VERSION="v1.5"
-SUITE_VERSION="latest" # Use "latest" for the latest stable release
+SUITE_VERSION=${suite_version-latest} # Use "latest" for the latest stable release
+
 
 RUNDIR=$WORKDIR/suite_results
 MYENV=$WORKDIR/env_bmk        # Define the name of the python environment
@@ -272,6 +289,7 @@ hepscore_benchmark:
     container_exec: $EXECUTOR
 EOF
 
+    SUITE_PLUGINS_CONFIG=""
     create_plugin_configuration
 
     cat > $SUITE_CONFIG_FILE <<EOF2
@@ -293,6 +311,8 @@ global:
   tags:
     site: $SITE
     ncores: $NCORES
+  pre-stage-duration: 2
+  post-stage-duration: 2
 
 hepscore:
   version: $HEPSCORE_VERSION
@@ -304,17 +324,60 @@ hepscore:
 $SUITE_PLUGINS_CONFIG
 EOF2
 
-    if [ -f $HEPSCORE_CONFIG_FILE ]; then
-        cat $HEPSCORE_CONFIG_FILE
-    fi
 }
 
 create_plugin_configuration() {
-    # TODO: Change these conditions to check whether they are contained within the script arguments
-    collect_cpu_frequency=true
-    collect_load=true
-    collect_memory_usage=true
-    collect_swap_usage=true
+    # Skip if version is lower than 3.0 or any rc
+
+    [[ -z $plugin_keys ]] && return
+
+    # Allowed plugin keys
+    ALLOWED_PLUGIN_KEYS="f l m s p"
+
+    # Check if the suite version is above a given version
+    if [[ ! "$SUITE_VERSION" =~ ^3\.[[:alnum:]]*$ && ! "$SUITE_VERSION" =~ ^qa$ ]]; then
+      echo "Suite version ${SUITE_VERSION} is not adequate to run plugins. Exiting."
+      return 1
+    fi
+
+    collect_cpu_frequency=false
+    collect_load=false
+    collect_memory_usage=false
+    collect_swap_usage=false
+    collect_power_consumption=false
+
+    for pkey in ${ALLOWED_PLUGIN_KEYS[@]}; do
+      if [[ "$plugin_keys" =~ (^|.*,)"$pkey"(,.*|$) ]]; then
+        case $pkey in
+          f)
+            collect_cpu_frequency=true
+            ;;
+          l)
+            collect_load=true
+            ;;
+          m)
+            collect_memory_usage=true
+            ;;
+          s)
+            collect_swap_usage=true
+            ;;
+          p)
+            collect_power_consumption=true
+            ;;
+          *)
+            # Handle unexpected key
+            ;;
+        esac
+      fi
+    done
+
+    # Print the status of each collection flag
+    echo "collect_cpu_frequency: $collect_cpu_frequency"
+    echo "collect_load: $collect_load"
+    echo "collect_memory_usage: $collect_memory_usage"
+    echo "collect_swap_usage: $collect_swap_usage"
+    echo "collect_power_consumption: $collect_power_consumption"
+
 
     METRICS_CONFIG=""
 
@@ -352,6 +415,16 @@ create_plugin_configuration() {
         regex: 'Swap: *\d+ *(?P<value>\d+).*'
         unit: MiB
         interval_mins: 1"
+    fi
+
+    if [ "$collect_power_consumption" = true ]; then
+      METRICS_CONFIG="$METRICS_CONFIG
+      power-consumption1:
+              description: 'Retrieves power consumption of the system. Requires elevated privileges.'
+              command: 'ipmitool dcmi power reading'
+              regex: 'Instantaneous power reading:\\s*(?P<value>\\d+) Watts'
+              interval_mins: 1
+              unit: 'W'"
     fi
 
     #  If no plugin were requested
