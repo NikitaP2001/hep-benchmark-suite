@@ -12,6 +12,7 @@
 #
 # The only requirements to run are
 # git python3-pip singularity
+#
 #####################################################################
 
 
@@ -186,6 +187,9 @@ validate_container_executor(){
 
 create_config_file(){
     # CONFIG_FILE_CREATION
+    SUITE_PLUGINS_CONFIG=""
+    create_plugin_configuration
+    
     cat > $SUITE_CONFIG_FILE <<EOF2
 activemq:
   server: $SERVER

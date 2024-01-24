@@ -12,6 +12,7 @@
 #
 # The only requirements to run are
 # git python3-pip singularity
+#
 #####################################################################
 
 
@@ -227,6 +228,9 @@ hepscore_benchmark:
     container_exec: $EXECUTOR
 EOF
 
+    SUITE_PLUGINS_CONFIG=""
+    create_plugin_configuration
+    
     cat > $SUITE_CONFIG_FILE <<EOF2
 activemq:
   server: $SERVER
@@ -251,6 +255,8 @@ hepscore:
   options:
       userns: True
       clean: True
+
+$SUITE_PLUGINS_CONFIG
 EOF2
 
     if [ -f $HEPSCORE_CONFIG_FILE ]; then

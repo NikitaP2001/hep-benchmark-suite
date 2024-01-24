@@ -12,14 +12,7 @@ test_examples:
   before_script:
     - !reference [db12_benchmark, before_script]
   script:
-    - mkdir -p $WORKDIR
-    - cp ${EXEC_SCRIPT} $WORKDIR/test_script.sh
-    - envsubst '${SUITE_VERSION}' < $WORKDIR/test_script.sh | sponge $WORKDIR/test_script.sh
-    # Let's make the test faster, running hello-world
-    - sed -e 's@\(\s*config:\s*\)default@\1$CI_PROJECT_DIR/tests/ci/hepscore.yaml@' examples/hepscore/run_HEPscore.sh | sponge $WORKDIR/test_script.sh
-    - chmod u+x $WORKDIR/test_script.sh
-    - $WORKDIR/test_script.sh -s dummy -d $WORKDIR ${sversion} ${splugins} | tee log 
-    - grep "with return code 0" log
+    - source $CI_PROJECT_DIR/gitlab-ci/test/test_examples.sh; run_script
   after_script:
     - tar -czf $CI_PROJECT_DIR/${CI_JOB_NAME_SLUG}_${CI_JOB_ID}.tgz $WORKDIR/
     - rm -rf $WORKDIR
