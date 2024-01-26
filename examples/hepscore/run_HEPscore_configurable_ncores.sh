@@ -96,8 +96,8 @@ Options:
                     m enables memory usage
                     s enables memory swap
                     p power consumption
-  -v version      Suite version. Default is latest"
-  -n              Max number of cores of the server that will be used by the benchmark
+  -v version      Suite version. Default is latest
+  -n              Max number of cores of the server that will be used by the benchmark"
       exit 1
       ;;
   esac
