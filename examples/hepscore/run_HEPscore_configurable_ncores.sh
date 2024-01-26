@@ -90,12 +90,14 @@ Options:
   -e executor     Container executor to use (singularity or docker)
   -d workdir      Set the working directory to workdir
   -w              Install the suite from wheels rather than the repository
-  -b plugin_keys  Bundle time series plugins listed by key "f,l,m,s,p" where 
+  -b plugin_keys  Bundle time series plugins listed by key 'f,l,m,s,p' where 
                     f enables cpu_frequency
                     l enables load
                     m enables memory usage
                     s enables memory swap
                     p power consumption
+                  -b needs a suite version >= 3.0rc5 
+                  Use it in combination with -v <suite_version> 
   -v version      Suite version. Default is latest
   -n              Max number of cores of the server that will be used by the benchmark"
       exit 1

@@ -86,6 +86,8 @@ Options:
                     m enables memory usage
                     s enables memory swap
                     p power consumption
+                  -b needs a suite version >= 3.0rc5. 
+                  Use it in combination with -v <suite_version>  
   -v version      Suite version. Default is latest"
       exit 1
       ;;
