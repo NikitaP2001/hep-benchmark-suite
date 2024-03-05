@@ -133,8 +133,12 @@ class Extractor():
 
             res = parse_lscpu(arg)
 
-            if res == 'not_available' and (req_typ in (float, int)):
-                return req_typ(-1)
+            if req_typ in (float, int):
+                try:
+                    return req_typ(res)
+                except (TypeError, ValueError):
+                    _log.debug("Unable to cast %s as a number, setting default to -1", res)
+                    return req_typ(-1)
             try:
                 return req_typ(res)
             except ValueError:
