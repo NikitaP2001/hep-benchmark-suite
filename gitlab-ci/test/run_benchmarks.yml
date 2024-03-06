@@ -40,7 +40,7 @@
         ncores: [4, 8]
       - benchmark: [hepscore]
         ncores: [4, 8]
-        hepscore_ver: [latest, latest_rc]
+        hepscore_ver: latest_rc # [BMK-1389] Set it to [latest, latest_rc] once latest > v1.5
 
 apptainer:
   extends: .test_benchmarks
