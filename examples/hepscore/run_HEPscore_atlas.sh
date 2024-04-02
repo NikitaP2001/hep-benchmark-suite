@@ -257,9 +257,13 @@ hepscore:
   options:
       userns: True
       clean: True
+hw_requirements:
+  min_memory_per_core: 2.0
+  min_disk_per_core: 1.0
 
 $SUITE_PLUGINS_CONFIG
 EOF2
+
 
     if [ -f $HEPSCORE_CONFIG_FILE ]; then
         cat $HEPSCORE_CONFIG_FILE
