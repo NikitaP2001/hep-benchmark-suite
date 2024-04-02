@@ -10,6 +10,7 @@
 import json
 import os
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 from hepbenchmarksuite.plugins.extractor import Extractor
 from schema import Schema, And, Use, Optional, Or
@@ -42,7 +43,7 @@ class TestHWExtractor(unittest.TestCase):
         hw = Extractor(extra={})
         result = hw.exec_cmd("echofail 1")
         self.assertEqual(result, "not_available")
-        
+
     def test_command_success_with_grep(self):
         """
         Test if the execution of a command fails.
@@ -86,10 +87,10 @@ class TestHWExtractor(unittest.TestCase):
 
         with open(input_to_parse, "r") as cpu_file:
             cpu_text = cpu_file.read()
-            
+
         cpu_output = hw.get_cpu_parser(cpu_text)
         self.assertEqual(cpu_output, expected_output, "CPU parser mismatch!")
-        
+
     def test_parser_cpu_Intel(self):
         """
         Test the parser for an Intel CPU output.
@@ -173,7 +174,7 @@ class TestHWExtractor(unittest.TestCase):
             "Stepping": "r3p1",
             "CPU_MHz": -1.0,
             "CPU_Max_Speed_MHz": 3000.0000,
-            "CPU_Min_Speed_MHz":  1000.0000,
+            "CPU_Min_Speed_MHz": 1000.0000,
             "BogoMIPS": 50.00,
             "L2_cache": "160 MiB (160 instances)",
             "L3_cache": "not_available",
@@ -245,20 +246,18 @@ class TestHWExtractor(unittest.TestCase):
 
         self.assertEqual(mem_output, MEM_OK, "Memory parser mismatch!")
 
-
     def base_parser_storage(self, input_to_parse, expected_output, lsblk):
         hw = Extractor(extra={})
- 
+
         with open(input_to_parse, "r") as storage_file:
             storage_text = storage_file.read()
- 
+
         if lsblk:
             storage_output = hw.get_storage_parser_lsblk(storage_text)
         else:
             storage_output = hw.get_storage_parser(storage_text)
- 
-        self.assertEqual(storage_output, expected_output, "Storage parser mismatch!")
 
+        self.assertEqual(storage_output, expected_output, "Storage parser mismatch!")
 
     def test_parser_storage(self):
         """
@@ -274,50 +273,50 @@ class TestHWExtractor(unittest.TestCase):
         self.base_parser_storage("tests/data/STORAGE.sample", STORAGE_OK, False)
 
     def test_parser_storage_missing_values(self):
-        """ 
+        """
         Test the parser for a storage output with several missing values
         """
         STORAGE_OK = {
             "disk1": "/dev/ng0n1 | n/a | n/a",
             "disk2": "/dev/nvme0n1 | n/a | 1788GiB (1920GB)",
             "disk3": "/dev/ng1n1 | n/a | n/a",
-            "disk4": "/dev/nvme1n1 | n/a | 1788GiB (1920GB)"
+            "disk4": "/dev/nvme1n1 | n/a | 1788GiB (1920GB)",
         }
-        
+
         self.base_parser_storage("tests/data/STORAGE.sample.2", STORAGE_OK, False)
 
     def test_parser_storage_one_disk(self):
         """
         Test the parser for a storage output with one disk
         """
-        
+
         STORAGE_OK = {
             "disk1": "/dev/sda | Samsung SSD 840 | 111GiB (120GB)"
         }
-        
+
         self.base_parser_storage("tests/data/STORAGE.sample.3", STORAGE_OK, False)
 
     def test_parser_storage_missing_value(self):
         """
         Test the parser for a storage output with missing product name
         """
-        
+
         STORAGE_OK = {
             "disk1": "/dev/vda | n/a | 100GiB (107GB)"
         }
-        
+
         self.base_parser_storage("tests/data/STORAGE.sample.4", STORAGE_OK, False)
 
     def test_parser_storage_missing_size(self):
         """
         Test the parser for a storage output with missing size
         """
-        
+
         STORAGE_OK = {
             "disk1": "/dev/sda | PERC 6/i | 931GiB (999GB)",
             "disk2": "/dev/sdc | PERC 6/i | 931GiB (999GB)",
             "disk3": "/dev/sdd | PERC 6/i | 931GiB (999GB)",
-            "disk4": "/dev/cdrom | DVD-ROM DV28SV | n/a"
+            "disk4": "/dev/cdrom | DVD-ROM DV28SV | n/a",
         }
 
         self.base_parser_storage("tests/data/STORAGE.sample.5", STORAGE_OK, False)
@@ -326,96 +325,182 @@ class TestHWExtractor(unittest.TestCase):
         """
         Test the parser for a storage output with seven disks
         """
-        
+
         STORAGE_OK = {
-            "disk1":"/dev/sda | PERC H710 | 232GiB (249GB)", 
-            "disk2":"/dev/sdb | PERC H710 | 232GiB (249GB)",
-            "disk3":"/dev/sdc | PERC H710 | 232GiB (249GB)",
-            "disk4":"/dev/sdd | PERC H710 | 232GiB (249GB)",
-            "disk5":"/dev/sde | PERC H710 | 232GiB (249GB)",
-            "disk6":"/dev/sdf | PERC H710 | 232GiB (249GB)",
-            "disk7":"/dev/sdg | PERC H710 | 232GiB (249GB)"
+            "disk1": "/dev/sda | PERC H710 | 232GiB (249GB)",
+            "disk2": "/dev/sdb | PERC H710 | 232GiB (249GB)",
+            "disk3": "/dev/sdc | PERC H710 | 232GiB (249GB)",
+            "disk4": "/dev/sdd | PERC H710 | 232GiB (249GB)",
+            "disk5": "/dev/sde | PERC H710 | 232GiB (249GB)",
+            "disk6": "/dev/sdf | PERC H710 | 232GiB (249GB)",
+            "disk7": "/dev/sdg | PERC H710 | 232GiB (249GB)",
         }
-        
+
         self.base_parser_storage("tests/data/STORAGE.sample.6", STORAGE_OK, False)
 
     def test_parser_storage_two_disks(self):
         """
         Test the parser for a storage output with two disks"
         """
-        
+
         STORAGE_OK = {
             "disk1": "/dev/sda | INTEL SSDSC2BX20 | 186GiB (200GB)",
-            "disk2": "/dev/sdb | INTEL SSDSC2BX01 | 1490GiB (1600GB)"
+            "disk2": "/dev/sdb | INTEL SSDSC2BX01 | 1490GiB (1600GB)",
         }
-        
+
         self.base_parser_storage("tests/data/STORAGE.sample.7", STORAGE_OK, False)
 
     def test_parser_storage_lsblk(self):
         """
         Test the parser for a storage output using lsblk
         """
-        
+
         STORAGE_OK = {
             "disk1": "/dev/sda | ATA Samsung SSD 850 (scsi) | 120GB",
             "disk2": "/dev/vda | Virtio Block Device (virtblk) | 107GB",
         }
-    
+
         self.base_parser_storage("tests/data/STORAGE.sample.8", STORAGE_OK, True)
-    
+
     def test_parser_storage_one_disk_lsblk(self):
         """
         Test the parser for a storage output with one disk using lsblk
         """
-        
+
         STORAGE_OK = {
             "disk1": "/dev/sda | ATA Samsung SSD 840 (scsi) | 120GB"
         }
-        
+
         self.base_parser_storage("tests/data/STORAGE.sample.9", STORAGE_OK, True)
-        
+
     def test_parser_storage_two_disks_lsblk(self):
         """
         Test the parser for a storage output with two disks using lsblk
         """
         STORAGE_OK = {
             "disk1": "/dev/sda | ATA INTEL SSDSC2BX20 (scsi) | 200GB",
-            "disk2": "/dev/sdb | ATA INTEL SSDSC2BX01 (scsi) | 1600GB"
+            "disk2": "/dev/sdb | ATA INTEL SSDSC2BX01 (scsi) | 1600GB",
         }
-        
+
         self.base_parser_storage("tests/data/STORAGE.sample.10", STORAGE_OK, True)
 
     def test_parser_storage_three_disks_lsblk(self):
         """
         Test the parser for a storage output with three disks using lsblk
         """
-        
+
         STORAGE_OK = {
             "disk1": "/dev/sda | DELL PERC 6/i (scsi) | 1000GB",
             "disk2": "/dev/sdc | DELL PERC 6/i (scsi) | 1000GB",
-            "disk3": "/dev/sdd | DELL PERC 6/i (scsi) | 1000GB"
+            "disk3": "/dev/sdd | DELL PERC 6/i (scsi) | 1000GB",
         }
-        
+
         self.base_parser_storage("tests/data/STORAGE.sample.11", STORAGE_OK, True)
-    
+
     def test_parser_storage_error_message_lsblk(self):
         """
         Test the parser for a storage output with an error message present using lsblk
         """
-        
+
         STORAGE_OK = {
             "disk1": "/dev/sda | DELL PERC 6/E Adapter (scsi) | 1000GB",
-            "disk2": "/dev/sdb | Dell VIRTUAL DISK (scsi) | 299GB"
+            "disk2": "/dev/sdb | Dell VIRTUAL DISK (scsi) | 299GB",
         }
-        
+
         self.base_parser_storage("tests/data/STORAGE.sample.12", STORAGE_OK, True)
+
+    @patch("hepbenchmarksuite.plugins.extractor.Extractor.exec_cmd")
+    def test_collect_gpu(self, mock_exec_cmd):
+        """
+        Test the collect_gpu method
+        """
+        # Collect no rocm-smi or nvidia-smi
+        hw = Extractor(extra={})
+        result = hw.collect_gpu()
+
+        self.assertEqual(result, {})
+        # case nvidia-smi
+        hw.pkg = {"nvidia-smi": True, "rocm-smi": False}
+
+        with open("tests/data/nvidia-smi.sample", "r") as smi_file:
+            mock_exec_cmd.return_value = smi_file.read()
+
+        result = hw.collect_gpu()
+
+        nvresult = {
+            "nvidia0": {
+                "name": "NVIDIA H100 PCIe",
+                "memory_total": "81559 MiB",
+                "memory_used": "4 MiB",
+                "clock_graphics": "345 MHz",
+                "clock_sm": "345 MHz",
+                "pci_bus": "00000000:19:00.0",
+                "power_avg": "28.9 W",
+            },
+            "nvidia1": {
+                "name": "NVIDIA H100 PCIe",
+                "memory_total": "81559 MiB",
+                "memory_used": "4 MiB",
+                "clock_graphics": "345 MHz",
+                "clock_sm": "345 MHz",
+                "pci_bus": "00000000:1A:00.0",
+                "power_avg": "28.9 W",
+            },
+            "nvidia2": {
+                "name": "NVIDIA H100 PCIe",
+                "memory_total": "81559 MiB",
+                "memory_used": "4 MiB",
+                "clock_graphics": "345 MHz",
+                "clock_sm": "345 MHz",
+                "pci_bus": "00000000:33:00.0",
+                "power_avg": "28.9 W",
+            },
+            "nvidia3": {
+                "name": "NVIDIA H100 PCIe",
+                "memory_total": "81559 MiB",
+                "memory_used": "4 MiB",
+                "clock_graphics": "345 MHz",
+                "clock_sm": "345 MHz",
+                "pci_bus": "00000000:34:00.0",
+                "power_avg": "28.9 W",
+            },
+        }
+        self.assertEqual(result, nvresult)
+        # case rocm-smi
+        hw.pkg = {"nvidia-smi": False, "rocm-smi": True}
+        with open("tests/data/rocm-smi.json", "r") as smi_file:
+            mock_exec_cmd.return_value = smi_file.read()
+
+        result = hw.collect_gpu()
+
+        rocm_result = {
+            "card0": {
+                "name": "0x0b0c SKU: D65201",
+                "memory_total": "65520 MiB",
+                "memory_used": "11 MiB",
+                "clock_graphics": "800Mhz",
+                "clock_sm": "1090Mhz",
+                "pci_bus": "0000:D1:00.0",
+                "power_avg": "85.0 W",
+            },
+            "card1": {
+                "name": "0x0b0c SKU: D65201",
+                "memory_total": "65520 MiB",
+                "memory_used": "11 MiB",
+                "clock_graphics": "800Mhz",
+                "clock_sm": "1090Mhz",
+                "pci_bus": "0000:D8:00.0",
+                "power_avg": "90.0 W",
+            },
+        }
+        self.assertEqual(result, rocm_result)
 
     def test_full_metadata(self):
         """
         Test the metadata schema
         """
         # Collect data
-        hw = Extractor(extra={'mode': 'docker'})
+        hw = Extractor(extra={"mode": "docker"})
         hw.collect()
 
         # Print the output to stdout and save metadata to json file
@@ -423,35 +508,56 @@ class TestHWExtractor(unittest.TestCase):
         hw.dump(stdout=True, outfile=TMP_FILE)
 
         # Define Hardware metadata schema
-        metadata_schema = Schema(And(Use(json.loads),
-                                {
-                                 "HW": { "BIOS"   : { str : str },
-                                         "SYSTEM" : {  str   : str,
-                                                      "isVM" : bool,
-                                                    },
-                                         "MEMORY" : { "Mem_Available"   : int,
-                                                      "Mem_Total"       : int,
-                                                      "Mem_Swap"        : int,
-                                                      Optional("dimm1") : str,
-                                                    },
-                                         "STORAGE": { Optional(str) : Optional(str) },
-                                         "CPU"    : { str : str,
-                                                      "SMT_Enabled"      : str,
-                                                      "CPU_num"          : int,
-                                                      "Threads_per_core" : int,
-                                                      "Cores_per_socket" : int,
-                                                      "Sockets"          : int,
-                                                      "BogoMIPS"         : float,
-                                                      "CPU_MHz"          : float,
-                                                      "CPU_Max_Speed_MHz": Or(int, float),
-                                                      "CPU_Min_Speed_MHz": Or(int, float),
-                                                      "NUMA_nodes"       : int,
-                                                      "Stepping"         : str,
-                                                    }
-                                 },
-                                 "SW" : { str : str },
-                                 "Hostname" : str,
-                                }))
+        metadata_schema = Schema(
+            And(
+                Use(json.loads),
+                {
+                    "HW": {
+                        "BIOS": {str: str},
+                        "SYSTEM": {
+                            str: str,
+                            "isVM": bool,
+                        },
+                        "MEMORY": {
+                            "Mem_Available": int,
+                            "Mem_Total": int,
+                            "Mem_Swap": int,
+                            Optional("dimm1"): str,
+                        },
+                        "STORAGE": {Optional(str): Optional(str)},
+                        "CPU": {
+                            str: str,
+                            "SMT_Enabled": str,
+                            "CPU_num": int,
+                            "Threads_per_core": int,
+                            "Cores_per_socket": int,
+                            "Sockets": int,
+                            "BogoMIPS": float,
+                            "CPU_MHz": float,
+                            "CPU_Max_Speed_MHz": Or(int, float),
+                            "CPU_Min_Speed_MHz": Or(int, float),
+                            "NUMA_nodes": int,
+                            "Stepping": str,
+                        },
+                        "GPU": Or(
+                            {},  # empty dict (no GPUs)
+                            {
+                                str: {  # dict of gpus by address
+                                    "name": str,
+                                    "mem_total": str,
+                                    "memory_used": str,
+                                    "clock_graphics": str,
+                                    "clock_sm": str,
+                                    "pci_bus": str,
+                                }
+                            },
+                        ),
+                    },
+                    "SW": {str: str},
+                    "Hostname": str,
+                },
+            )
+        )
 
         # Validate schema from extractor
         with open(TMP_FILE, "r") as fin:
