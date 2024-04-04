@@ -4,6 +4,7 @@ function before_script(){
     set -x
     yum install -y -q gettext moreutils git python3-pip lzo jq
     python3 -m pip install -U pip wheel
+    python3 -m pip install -r requirements.txt
     # Translate 'latest' or 'latest_rc' to the actual HS versions
     declare -A version_regex=( ["latest"]="[0-9]+.([0-9]+.?)+$" ["latest_rc"]="rc[0-9]+$" ["default"]="v1.5")
     export HEPSCORE_VER=$(curl --header "PRIVATE-TOKEN: ${CI_API_TOKEN}" "https://gitlab.cern.ch/api/v4/projects/72493/releases" | jq -r --arg regex ${version_regex[${hepscore_ver:-default}]} 'first(.[].name | select(. | test($regex)))')

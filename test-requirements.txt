@@ -3,6 +3,7 @@ beautifulsoup4
 coverage
 # latest tagged HEPscore
 git+https://gitlab.cern.ch/hep-benchmarks/hep-score.git@qa-v1.0
+numpy
 pem
 pyOpenSSL>=21.0.0
 pylint
@@ -10,5 +11,6 @@ pylint
 pytest<=7.0.1
 requests
 schema
+statistics
 stomp.py<=7.0.0
 parameterized

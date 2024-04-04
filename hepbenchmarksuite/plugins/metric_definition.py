@@ -1,6 +1,7 @@
 import operator
 import re
 import statistics
+import numpy as np
 from functools import reduce
 from typing import Dict, Callable, List
 
@@ -23,8 +24,14 @@ class MetricDefinition:
         self.command: str = params['command'].strip()
         self.regex: str = params['regex']
         self.unit: str = params['unit']
-        self.aggregation: str = params.get('aggregation', 'sum').strip()
-        self.agg_func = self._parse_aggregation(self.aggregation)
+        if len(params.get('aggregation', 'sum').split(","))<=1:
+            self.aggregation: str = params.get('aggregation', 'sum').strip()
+        else:
+            self.aggregation: List =[x.strip() for x in params.get('aggregation', 'sum').split(",")]
+        if isinstance(self.aggregation, str):
+            self.agg_func = self._parse_aggregation(self.aggregation) 
+        else:
+             self.agg_func = [self._parse_aggregation(agg) for agg in self.aggregation]
 
     def _check_params(self, params: Dict):
         """
@@ -62,12 +69,13 @@ class MetricDefinition:
             'average': statistics.mean,
             'minimum': min,
             'maximum': max,
+            'q25': lambda x: np.quantile(x, 0.25),
+            'q75': lambda x: np.quantile(x, 0.75),
             'count': len,
             'product': lambda x: reduce(operator.mul, x, 1),
             'median': statistics.median,
             'mode': statistics.mode,
             'standard_deviation': statistics.stdev,
-            'variance': statistics.variance
         }
         return aggregation_functions[aggregation_function_name]
 
@@ -84,8 +92,8 @@ class MetricDefinition:
         for match in compiled_pattern.finditer(command_output):
             value = match['value']
             matches.append(float(value))
-
-        result = self.agg_func(matches)
+        result = [agg(matches) for agg in self.agg_func] if isinstance(self.agg_func, list) else self.agg_func(matches)
+        
         return result
 
     def serialize_to_dict(self) -> Dict:

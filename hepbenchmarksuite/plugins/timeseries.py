@@ -1,5 +1,5 @@
 from datetime import datetime
-from statistics import mean
+import numpy as np
 from typing import Dict, Any
 
 
@@ -34,13 +34,16 @@ class Timeseries:
         self.values[timestamp_utc_string] = value
 
     def calculate_statistics(self) -> Dict[str, float]:
-        # TODO: add desired statistics
         timeseries_data = self.values.values()
+        timeseries_array = np.array(list(timeseries_data))
         if len(timeseries_data) > 0:
             return {
-                'min': min(timeseries_data),
-                'mean': mean(timeseries_data),
-                'max': max(timeseries_data)
+                'min': np.min(timeseries_array),
+                'q25': np.quantile(timeseries_array, 0.25),
+                'mean': np.mean(timeseries_array),
+                'median': np.mean(timeseries_array),
+                'q75': np.quantile(timeseries_array, 0.75),
+                'max': np.max(timeseries_array)
             }
         return {}
 
