@@ -42,7 +42,8 @@ build_examples:
       variables:
         EXAMPLES_TO_BUILD: all_examples
     - changes:
-      - examples/example_generator/**.cfg
+      - examples/example_generator/*/*.cfg
+      - examples/example_generator/*.cfg
       variables:
         EXAMPLES_TO_BUILD: changed_examples
   artifacts:

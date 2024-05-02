@@ -304,6 +304,9 @@ activemq:
   cert: $CERTIFCRT
 
 global:
+  hw_requirements:
+    min_memory_per_core: 2.0
+    min_disk_per_core: 1.0
   benchmarks:
   - hepscore
   mode: $EXECUTOR
