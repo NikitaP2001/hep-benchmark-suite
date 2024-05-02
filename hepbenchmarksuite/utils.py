@@ -119,7 +119,7 @@ def exec_live_output(cmd_str, env=None):
     # Output stdout from child process
     line = cmd.stdout.readline()
     while line:
-        sys.stdout.write(line.decode('utf-8'))
+        sys.stdout.write(line.decode('utf-8', errors='replace'))
         line = cmd.stdout.readline()
 
     cmd.wait()
@@ -178,15 +178,15 @@ def run_piped_commands(cmd_str, env=None):
             _log.warning("Command not found: %s", e.filename)
             return None, None, f"Command not found: {e.filename}"
         except subprocess.CalledProcessError as e:
-            _log.warning("Error executing command: %s\nReturn code: %s\nOutput: %s", e.cmd, e.returncode, e.output.decode())
-            return e.returncode, e.output.decode(), e.stderr.decode()
+            _log.warning("Error executing command: %s\nReturn code: %s\nOutput: %s", e.cmd, e.returncode, e.output.decode(errors='replace'))
+            return e.returncode, e.output.decode(errors='replace'), e.stderr.decode(errors='replace')
         except Exception as e:
             _log.warning("Error executing command: %s", str(e))
             return None, None, None
 
     # Return the output, error, and returncode (if the command sequence was executed without errors)
     if output:
-        return output.returncode, output.stdout.decode().rstrip(), output.stderr.decode()
+        return output.returncode, output.stdout.decode(errors='replace').rstrip(), output.stderr.decode(errors='replace')
     else:
         return None, None, None
 
