@@ -16,7 +16,7 @@ class Preflight:
     def __init__(self, config):
         self.benchmarks_to_run = config['global']['benchmarks']
         self.global_config       = config['global']
-        self.hw_config           = config['hw_requirements']
+        self.hw_config           = config['global']['hw_requirements']
         self.full_config         = config
         self.failed_checks              = []
 

@@ -214,9 +214,9 @@ global:
   pre-stage-duration: 2
   post-stage-duration: 2
 
-hw_requirements:
-  min_memory_per_core: 2.0
-  min_disk_per_core: 1.0
+  hw_requirements:
+    min_memory_per_core: 2.0
+    min_disk_per_core: 1.0
 
 
 $SUITE_PLUGINS_CONFIG

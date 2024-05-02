@@ -12,9 +12,9 @@ global:
     vo: "Some VM"
     other_tag: "Some text"
 
-hw_requirements:
-  min_memory_per_core: 2.0
-  min_disk_per_core: 1.0
+  hw_requirements:
+    min_memory_per_core: 2.0
+    min_disk_per_core: 1.0
 
 hs06:
   image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:qa"
