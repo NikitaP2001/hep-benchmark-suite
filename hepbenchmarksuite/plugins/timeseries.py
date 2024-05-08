@@ -41,7 +41,7 @@ class Timeseries:
                 'min': np.min(timeseries_array),
                 'q25': np.quantile(timeseries_array, 0.25),
                 'mean': np.mean(timeseries_array),
-                'median': np.mean(timeseries_array),
+                'median': np.median(timeseries_array),
                 'q75': np.quantile(timeseries_array, 0.75),
                 'max': np.max(timeseries_array)
             }
