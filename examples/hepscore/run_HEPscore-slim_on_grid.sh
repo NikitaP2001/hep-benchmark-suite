@@ -244,9 +244,6 @@ activemq:
   cert: $CERTIFCRT
 
 global:
-  hw_requirements:
-    min_memory_per_core: 2.0
-    min_disk_per_core: 1.0
   benchmarks:
   - hepscore
   mode: $EXECUTOR
@@ -255,6 +252,9 @@ global:
   show: true
   tags:
     site: $SITE
+  hw_requirements:
+    min_memory_per_core: 2.0
+    min_disk_per_core: 1.0
 
 hepscore:
   config: $HEPSCORE_CONFIG_FILE
@@ -262,6 +262,7 @@ hepscore:
   options:
       userns: True
       clean: True
+
 
 
 $SUITE_PLUGINS_CONFIG

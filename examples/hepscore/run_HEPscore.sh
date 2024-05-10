@@ -202,6 +202,8 @@ activemq:
   cert: $CERTIFCRT
 
 global:
+  # Hardware requirements to check in preflight before running the suite
+  # all values are in GB unless otherwise stated.
   hw_requirements:
     min_memory_per_core: 2.0
     min_disk_per_core: 1.0

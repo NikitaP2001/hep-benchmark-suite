@@ -202,9 +202,6 @@ activemq:
   cert: $CERTIFCRT
 
 global:
-  hw_requirements:
-    min_memory_per_core: 2.0
-    min_disk_per_core: 1.0
   benchmarks:
   - hepscore
   - db12
@@ -218,6 +215,9 @@ global:
     site: $SITE
   pre-stage-duration: 2
   post-stage-duration: 2
+  hw_requirements:
+    min_memory_per_core: 2.0
+    min_disk_per_core: 1.0
 
 hepscore:
   version: $HEPSCORE_VERSION

@@ -198,10 +198,14 @@ def run_hepscore(suite_conf):
     ncores_version = parse_version('v1.6rc2')
     
     if 'ncores' in suite_conf['global']:        
-        if hepscore_version < ncores_version and int(suite_conf['global']['ncores']) != os.cpu_count():
-            _log.error("The number of cores cannot be configured in the current version of hepscore: %s. Please, update \
-                hepscore to v2.0 or above, or remove this parameter from the configuration.", hepscore_version)
-            return -1
+        if hepscore_version < ncores_version:
+            if int(suite_conf['global']['ncores']) != os.cpu_count():
+                _log.error("The number of cores cannot be configured in the current version of hepscore: %s. Please, update \
+                            hepscore to v2.0 or above, or remove this parameter from the configuration.", hepscore_version)
+                return -1
+            else:
+                _log.info("The current version of hepscore cannot run on a number of cores different from the total. \
+                          If you wish to use this feature (ncores), please update hepscore to v2.0 or above.")
         else:
             hepscore_conf[hs_key]['settings']['ncores'] = suite_conf['global']['ncores']
 
