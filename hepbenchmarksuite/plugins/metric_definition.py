@@ -24,14 +24,8 @@ class MetricDefinition:
         self.command: str = params['command'].strip()
         self.regex: str = params['regex']
         self.unit: str = params['unit']
-        if len(params.get('aggregation', 'sum').split(","))<=1:
-            self.aggregation: str = params.get('aggregation', 'sum').strip()
-        else:
-            self.aggregation: List =[x.strip() for x in params.get('aggregation', 'sum').split(",")]
-        if isinstance(self.aggregation, str):
-            self.agg_func = self._parse_aggregation(self.aggregation) 
-        else:
-             self.agg_func = [self._parse_aggregation(agg) for agg in self.aggregation]
+        self.aggregation: str = params.get('aggregation', 'sum').strip()
+        self.agg_func = self._parse_aggregation(self.aggregation) 
 
     def _check_params(self, params: Dict):
         """
