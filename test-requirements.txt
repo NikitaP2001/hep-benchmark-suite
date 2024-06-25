@@ -1,8 +1,8 @@
 bandit
 beautifulsoup4
 coverage
-# latest tagged HEPscore
-git+https://gitlab.cern.ch/hep-benchmarks/hep-score.git@qa-v1.0
+importlib-metadata
+git+https://gitlab.cern.ch/hep-benchmarks/hep-score.git@v1.5
 numpy
 pem
 pyOpenSSL>=21.0.0
