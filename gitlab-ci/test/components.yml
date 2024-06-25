@@ -47,10 +47,12 @@ coverage:
   stage: test-components
   image: gitlab-registry.cern.ch/linuxsupport/alma8-base
   needs: []
+  before_script:
+    - dnf install -y -q python3.11 python3-pip python3.11-pip git
+    - python3.11 -m pip install -U pip tox
+    - python3.6 -m pip install -U pip tox
   script:
     # This tests python3.6; move it to a matrix with python >= 3.8 versions [BMK-1206, 742]
-    - dnf install -y -q python3-pip git
-    - python3 -m pip install -U pip tox
     - tox
   coverage: '/TOTAL.*\s+(\d+%)$/'
   artifacts:

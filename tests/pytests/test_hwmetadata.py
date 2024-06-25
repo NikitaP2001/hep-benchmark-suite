@@ -544,11 +544,12 @@ class TestHWExtractor(unittest.TestCase):
                             {
                                 str: {  # dict of gpus by address
                                     "name": str,
-                                    "mem_total": str,
+                                    "memory_total": str,
                                     "memory_used": str,
                                     "clock_graphics": str,
                                     "clock_sm": str,
                                     "pci_bus": str,
+                                    "power_avg": str,
                                 }
                             },
                         ),

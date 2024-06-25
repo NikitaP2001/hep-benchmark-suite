@@ -115,8 +115,7 @@ class Extractor:
 
         if self.pkg["nvidia-smi"]:
             nvidia_smi = self.exec_cmd(
-                "nvidia-smi --format=csv,noheader --query-gpu=name,memory.total,memory.used,\
-                    clocks.current.graphics,clocks.current.sm,pci.bus_id,index,power.draw"
+                "nvidia-smi --format=csv,noheader --query-gpu=name,memory.total,memory.used,clocks.current.graphics,clocks.current.sm,pci.bus_id,index,power.draw"
             )
             for gpu_info in nvidia_smi.splitlines():
                 gpu_data = gpu_info.split(",")
