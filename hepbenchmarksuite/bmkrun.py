@@ -140,25 +140,25 @@ def parse_arguments():
 
     return parser
 
-def load_configuration(parser):
-    # Select the config file to load
-    # load default configuration shipped with hep-benchmark-suite
-    args = parser.parse_args()
+def load_configuration(args):
+    '''Select the config file to load
+    load default configuration shipped with hep-benchmark-suite
+    '''
 
-    if args.config == "default":
+    if args['config'] == "default":
         config_file = os.path.join(config.__path__[0], 'benchmarks.yml')
-    elif args.config is None:
+    elif args['config'] is None:
     # No configuration file was provided
-        parser.print_help()
+        parse_arguments().print_help()
         print("{}No configuration file specified.{}".format(Color.RED,Color.END))
         print("{}Please specify a configuration or run with the default: bmkrun -c default {}".format(Color.RED,Color.END))
         sys.exit(ExitStatus.NO_CONFIG_FILE)
     else:
-        config_file = args.config
+        config_file = args['config']
 
     # Load configuration file
     try:
-        with open(config_file, 'r') as yam:
+        with open(config_file, encoding='utf-8') as yam:
             config_dict =  yaml.full_load(yam)
             print("# The following configuration was loaded: {}".format(config_file))
             return config_dict
@@ -166,14 +166,19 @@ def load_configuration(parser):
         print("{0}Failed to load configuration file: {1} {2}".format(Color.RED, config_file, Color.END))
         sys.exit(ExitStatus.FILE_NOT_FOUND)
 
-def check_and_override_config(active_config, parser):
+def check_and_override_config(active_config, args):
     """Check for CLI overrides and update the active configuration."""
-    args = parser.parse_args()
-    temp_config = vars(args)
-    del temp_config['config']
+    del args['config']
 
     # Get non-None cli arguments to override config file
-    non_empty = {k: v for k, v in temp_config.items() if v is not None}
+    non_empty = {k: v for k, v in args.items() if v is not None}
+
+    if 'global' not in active_config:
+        print("{}No global section found in configuration.{}".format(Color.RED,Color.END))
+        print("Please refer to https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite\
+            /-/blob/{}/hepbenchmarksuite/config/benchmarks.yml for a working example \
+            for your version of the suite ({})".format(__version__, __version__))
+        sys.exit(ExitStatus.NO_CONFIG_FILE)
 
     # Populate active config with cli override
     for i in non_empty.keys():
@@ -185,7 +190,7 @@ def check_and_override_config(active_config, parser):
 
     # Check if user provided a benchmark
     if 'benchmarks' not in active_config['global'] or active_config['global']['benchmarks'] is None:
-        parser.print_help()
+        parse_arguments().print_help()
         print("{}No benchmarks were selected. {}".format(Color.YELLOW, Color.END))
         sys.exit(ExitStatus.MISSING_BENCHMARK)
 
@@ -221,7 +226,7 @@ def check_and_override_config(active_config, parser):
         print("# The configuration was overridden by the following CLI args: {}".format(non_empty))
 
     # Print running configuration and exit
-    if args.show:
+    if args['show']:
         print(yaml.dump(active_config))
         sys.exit(0)
 
@@ -238,7 +243,7 @@ def create_run_directory(active_config):
 
 def configure_logging(active_config, args):
     """Configure logging based on the configuration."""
-    if args.verbose:
+    if args['verbose']:
         log_level = logging.DEBUG
     else:
         log_level = logging.INFO
@@ -288,7 +293,7 @@ def run_benchmarks(active_config):
 def export_results(args, active_config):
     """Export logs and results."""
     # format of export: dirname_hostname_datetime.tar.gz
-    if args.export:
+    if args['export']:
         utils.export(active_config['global']['rundir'], '{}_{}_{}.tar.gz'.format(
             os.path.split(active_config['global']['rundir'])[-1],
             socket.gethostname(),
@@ -313,11 +318,10 @@ def publish_results(active_config, report_path):
 
 def main():
     """Main function."""
-    parser = parse_arguments()
-    args = parser.parse_args()
-    active_config = load_configuration(parser)
+    args = vars(parse_arguments().parse_args())
+    active_config = load_configuration(args)
     
-    check_and_override_config(active_config, parser)
+    check_and_override_config(active_config, args)
     create_run_directory(active_config)
     configure_logging(active_config, args)
     save_running_config(active_config)

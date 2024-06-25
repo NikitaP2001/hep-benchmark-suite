@@ -1,3 +1,4 @@
+import argparse
 import unittest
 from parameterized import parameterized
 from unittest.mock import patch, MagicMock
@@ -72,6 +73,26 @@ class TestBenchmarkRunnerExitStatus(unittest.TestCase):
                 mock_print_results_from_file.assert_called_once()
 
 
+    def test_check_and_override_config(self):
+        
+        args = {'config':'test.yml',
+                'show': False,
+                'tags': None,
+                'rundir':None,
+                'loglevel':None,
+                'benchmarks': None,
+                'ncores':None
+}
+
+        with self.assertRaises(SystemExit) as cm:
+            bmkrun.check_and_override_config({'global': {'ncores': 4}},args.copy())
+            self.assertEqual(cm.exception.code, bmkrun.ExitStatus.MISSING_BENCHMARK)
+        with self.assertRaises(SystemExit) as cm:
+            bmkrun.check_and_override_config({'hepscore':{'benchmarks':1}},args.copy())
+            self.assertEqual(cm.exception.code, bmkrun.ExitStatus.NO_CONFIG_FILE)
+        with self.assertRaises(SystemExit) as cm:
+            bmkrun.check_and_override_config({'global': {'benchmarks': {'hepspec06':1}}},args.copy())
+            self.assertAlmostEqual(cm.exception.code, bmkrun.ExitStatus.INVALID_BENCHMARK)
 
 if __name__ == '__main__':
     unittest.main()
