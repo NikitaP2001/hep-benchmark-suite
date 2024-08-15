@@ -1,5 +1,6 @@
-.build_wheels:
+build_wheels:
   stage: deploy
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
   retry: 2
   tags:
     - $ARCH
@@ -31,18 +32,6 @@
       variables:
         ID: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
         FULL_RELEASE_PATH: $CI_EOS_RELEASES/dev/$ID
-
-
-build_wheels_rhel7:
-  extends: .build_wheels
-  image: gitlab-registry.cern.ch/linuxsupport/cc7-base
-  variables:
-    ARCH: x86_64
-    PYTHON_VERSION: python36
-
-build_wheels_rhel8:
-  extends: .build_wheels
-  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
   parallel:
     matrix:
       - ARCH: [x86_64, aarch64]

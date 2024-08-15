@@ -1,7 +1,7 @@
 # Build the base image which is used to test installation and build the final hep-benchmark-suite image
 .build_image:
   image: # NB enable shared runners and do not specify a CI tag
-    name: gitlab-registry.cern.ch/ci-tools/docker-image-builder # CERN version of the Kaniko image
+    name: gcr.io/kaniko-project/executor:debug # use the debug version which has a shell (required for an image to be used with GitLab CI/CD)
     entrypoint: [""]
   script:
     # Prepare Kaniko configuration file
@@ -64,16 +64,29 @@ build_suite_prior_image:
 
 # Build image that containts docker compose to test pipelines in docker compose in privileged runner
 build_docker_compose_image:
-    stage: build-base-image
-    extends: .build_image
-    before_script:
-        - ls -lta $CI_PROJECT_DIR
-        - export DOCKERFILE=$CI_PROJECT_DIR/docker-images/docker-compose/Dockerfile
-        - export CONTEXT=$CI_PROJECT_DIR/
-        - export IMAGE_NAME=docker-compose
-        - export IMAGE_TAG=latest
-        - export DESTINATIONS="--destination $CI_REGISTRY_IMAGE/$IMAGE_NAME:$IMAGE_TAG --destination $CI_REGISTRY_IMAGE/$IMAGE_NAME:ci-${CI_COMMIT_BRANCH}-${CI_COMMIT_SHORT_SHA}"
-    rules:
-      - if: '$CI_COMMIT_BRANCH =~ /^qa.*$/'
-        changes:
-          - docker-images/docker-compose/*
+  stage: build-base-image
+  extends: .build_image
+  before_script:
+      - ls -lta $CI_PROJECT_DIR
+      - export DOCKERFILE=$CI_PROJECT_DIR/docker-images/docker-compose/Dockerfile
+      - export CONTEXT=$CI_PROJECT_DIR/
+      - export IMAGE_NAME=docker-compose
+      - export IMAGE_TAG=latest
+      - export DESTINATIONS="--destination $CI_REGISTRY_IMAGE/$IMAGE_NAME:$IMAGE_TAG --destination $CI_REGISTRY_IMAGE/$IMAGE_NAME:ci-${CI_COMMIT_BRANCH}-${CI_COMMIT_SHORT_SHA}"
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^qa.*$/'
+      changes:
+        - docker-images/docker-compose/*
+
+# An image with docker installed
+build_docker_image:
+  stage: build-base-image
+  extends: .build_image
+  before_script:
+    - export DOCKERFILE=$CI_PROJECT_DIR/docker-images/docker/Dockerfile
+    - export CONTEXT=$CI_PROJECT_DIR/docker-images/docker
+    - export DESTINATIONS="--destination $CI_REGISTRY_IMAGE/docker:${CI_COMMIT_BRANCH} --destination $CI_REGISTRY_IMAGE/docker:ci-${CI_COMMIT_SHORT_SHA} --destination $CI_REGISTRY_IMAGE/docker:latest"
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^qa.*$/'
+      changes:
+        - docker-images/docker/*

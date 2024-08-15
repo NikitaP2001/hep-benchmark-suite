@@ -62,7 +62,10 @@ apptainer:
 
 docker:
   extends: .test_benchmarks
-  image: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads-builder/dind:v1.0 # Use an image that has docker installed
+  needs:
+    - job: build_docker_image
+      optional: true
+  image: gitlab-registry.cern.ch/hep-benchmarks/hep-benchmark-suite/docker:latest # Use an image that has docker installed
   variables:
     executor: docker
 
