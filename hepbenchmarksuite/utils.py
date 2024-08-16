@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tarfile
 import uuid
+import re
 
 import requests
 from requests import RequestException
@@ -201,7 +202,10 @@ def run_separated_commands(cmd_str):
     """
     return_code = 0
     error = None
-    commands = cmd_str.split(";")
+
+    pattern = re.compile(r';(?=(?:[^\'"]*[\'"][^\'"]*[\'"])*[^\'"]*$)')
+    commands = pattern.split(cmd_str)
+    commands = [cmd.strip() for cmd in commands if cmd.strip()]
 
     outputs = []
     for cmd in commands:
