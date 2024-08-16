@@ -34,9 +34,9 @@ class CommandExecutor(StatefulPlugin):
         CommandExecutor:
             metrics:
                 cpu-frequency:
-                    command: cpupower frequency-info -f
-                    regex: "current CPU frequency: (?P<value>\d+).*"
-                    unit: kHz
+                    command: cpupower -c all frequency-info -f | grep 'current CPU frequency:' | grep -o '[0-9]\{7,\}' | awk '{s+=\$1; c++} END {print (s/c)/1000}'
+                    regex: '(?P<value>\d+.\d+).*'
+                    unit: MHz
                     interval_mins: 1
                 power-consumption:
                     command: ipmitool sdr elist
