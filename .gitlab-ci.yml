@@ -2,7 +2,7 @@ stages:
   - build-base-image
   - test-components
   - test-benchmarks
-  #- test-parsing-and-injection
+  - test-parsing-and-injection
   - deploy
   - test-wheels
   - build-examples

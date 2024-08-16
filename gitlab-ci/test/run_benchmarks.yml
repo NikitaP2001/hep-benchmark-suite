@@ -8,7 +8,7 @@
   retry: 1  # tmp to workaround worker with user namespace issues
   tags:
     - hep-benchmarks  # Requires a machine with 20GB free
-    - x86_64          # CC7 and wl-builder/dind images are only available for x86
+    - x86_64          # docker-compose image only available for x86
   variables:
     bmk_volume: /tmp/${CI_JOB_NAME_SLUG}_${CI_JOB_ID}
     suite_config: tests/ci/benchmarks.yml
@@ -62,10 +62,11 @@ apptainer:
 
 docker:
   extends: .test_benchmarks
+  # Use an image that has docker installed
+  image: gitlab-registry.cern.ch/hep-benchmarks/hep-benchmark-suite/docker-compose:latest
   needs:
-    - job: build_docker_image
+    - job: build_docker_compose_image
       optional: true
-  image: gitlab-registry.cern.ch/hep-benchmarks/hep-benchmark-suite/docker:latest # Use an image that has docker installed
   variables:
     executor: docker
 
