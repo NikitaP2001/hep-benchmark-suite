@@ -77,16 +77,3 @@ build_docker_compose_image:
     - if: '$CI_COMMIT_BRANCH =~ /^qa.*$/'
       changes:
         - docker-images/docker-compose/*
-
-# An image with docker installed
-build_docker_image:
-  stage: build-base-image
-  extends: .build_image
-  before_script:
-    - export DOCKERFILE=$CI_PROJECT_DIR/docker-images/docker/Dockerfile
-    - export CONTEXT=$CI_PROJECT_DIR/docker-images/docker
-    - export DESTINATIONS="--destination $CI_REGISTRY_IMAGE/docker:${CI_COMMIT_BRANCH} --destination $CI_REGISTRY_IMAGE/docker:ci-${CI_COMMIT_SHORT_SHA} --destination $CI_REGISTRY_IMAGE/docker:latest"
-  rules:
-    - if: '$CI_COMMIT_BRANCH =~ /^qa.*$/'
-      changes:
-        - docker-images/docker/*

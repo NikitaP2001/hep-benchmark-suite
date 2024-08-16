@@ -3,7 +3,6 @@ test_examples:
   needs: [ build_wheels ]
   tags:
     - hep-benchmarks  # Requires a machine with 20GB free
-    - x86_64          # CC7 and wl-builder/dind images are only available for x86
   image: gitlab-registry.cern.ch/linuxsupport/alma8-base
   variables:
     EXEC_SCRIPT: $CI_PROJECT_DIR/examples/hepscore/run_HEPscore.sh 
