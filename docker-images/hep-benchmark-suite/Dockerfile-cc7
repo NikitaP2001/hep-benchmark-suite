@@ -1,3 +1,5 @@
+# [BMK-1511] Legacy; kept for documentation purposes
+
 FROM gitlab-registry.cern.ch/linuxsupport/cc7-base:latest
 
 # Configure docker-ce repo
