@@ -554,7 +554,14 @@ class TestHWExtractor(unittest.TestCase):
                             },
                         ),
                     },
-                    "SW": {str: str},
+                    "SW": {
+                        str: str,
+                        "OS": {
+                            str: str,
+                            "version": {str: str},
+                        },
+                        "kernel": {str: str},
+                    },
                     "Hostname": str,
                 },
             )
