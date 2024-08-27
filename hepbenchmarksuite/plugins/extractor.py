@@ -11,6 +11,7 @@ import json
 import logging
 import os
 import platform
+import distro
 import re
 import socket
 import sys
@@ -97,9 +98,62 @@ class Extractor:
         elif self.extra["mode"] == "singularity":
             sw_cmd.update({"singularity": "singularity version"})
 
+
+        dist = distro.LinuxDistribution()
+        dist_version_info = dist.info()
+        plat = platform.release()
+        plat_parts = plat.split("-")
+        kernel_parts = plat_parts[0].split(".")
+
+        # https://en.wikipedia.org/wiki/Linux_kernel_version_history
+        try:
+            kernel_version = kernel_parts[0]
+        except (ValueError, IndexError):
+            _log.debug("unable to determine kernel version: setting -1 default")
+            kernel_version = -1
+        try:
+            major = kernel_parts[1]
+        except (ValueError, IndexError):
+            _log.debug("unable to determine major kernel revision: setting -1 default")
+            major = -1
+        try:
+            minor = kernel_parts[2]
+        except (ValueError, IndexError):
+            _log.debug("unable to determine minor kernel revision: setting -1 default")
+            minor = -1
+        try:
+            abi_parts = plat_parts[1].split(".")
+            abi = ""
+            for abi_part in abi_parts:
+                if abi_part.isnumeric():
+                    abi += abi_part + "."
+                else:
+                    break
+            abi = abi.rstrip(".")
+        except IndexError:
+            _log.debug("unable to determine ABI, setting -1 default")
+            abi=-1
+        kernel = {
+            "version": kernel_version,
+            "major": major,
+            "minor": minor,
+            "ABI": abi
+        }
+        operating_system = {
+            "id": dist_version_info['id'],
+            "id_like": dist_version_info['like'],
+            "version": {
+                "major": dist_version_info['version_parts']['major'],
+                "minor": dist_version_info['version_parts']['minor'],
+                "build": dist_version_info['version_parts']['build_number']
+            }
+        }
+
         software = {
             "python_version": sys.version.split()[0],
             "platform": platform.platform(),
+            "OS": operating_system,
+            "kernel": kernel
         }
 
         # Execute commands and append result to a dict
