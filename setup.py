@@ -37,7 +37,8 @@ setup(
     package_data={'hepbenchmarksuite': ['config/*.yml']},
     python_requires='~=3.6',
     install_requires=['beautifulsoup4', 'importlib-metadata', 'pem', 'pip>=21.3.1',
-                      'pyOpenSSL>=21.0.0', 'pyyaml>=5.1', 'requests', 'stomp.py<=7.0.0', 'numpy'],
+                      'pyOpenSSL>=21.0.0', 'pyyaml>=5.1', 'requests', 'stomp.py<=7.0.0', 'numpy',
+                      'distro'],
     # Add 'entry_points' for console scripts
     entry_points={
         'console_scripts': [
