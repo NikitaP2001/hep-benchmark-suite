@@ -11,11 +11,11 @@ import json
 import logging
 import os
 import platform
-import distro
 import re
 import socket
 import sys
 import shutil
+import distro
 
 from hepbenchmarksuite import utils
 
@@ -102,8 +102,8 @@ class Extractor:
         dist = distro.LinuxDistribution()
         dist_version_info = dist.info()
         plat = platform.release()
-        plat_parts = plat.split("-")
-        kernel_parts = plat_parts[0].split(".")
+        plat = plat.split("-")
+        kernel_parts = plat[0].split(".")
 
         # https://en.wikipedia.org/wiki/Linux_kernel_version_history
         try:
@@ -122,7 +122,7 @@ class Extractor:
             _log.debug("unable to determine minor kernel revision: setting -1 default")
             minor = -1
         try:
-            abi_parts = plat_parts[1].split(".")
+            abi_parts = plat[1].split(".")
             abi = ""
             for abi_part in abi_parts:
                 if abi_part.isnumeric():
