@@ -383,11 +383,29 @@ class Extractor:
         else:
             mem = {}
 
+        memt = self.exec_cmd("free | awk 'NR==2{print $2}'")
+        mema = self.exec_cmd("free | awk 'NR==2{print $7}'")
+        mems = self.exec_cmd("free | awk 'NR==3{print $2}'")
+        try:
+            memt = int(memt)
+        except (TypeError, ValueError):
+            _log.debug("Total memory not available, collected output: %s", memt)
+            memt = "not_available"
+        try:
+            mema = int(mema)
+        except (TypeError, ValueError):
+            _log.debug("Active memory not available, collected output: %s", mema)
+            mema = "not_available"
+        try:
+            mems = int(mems)
+        except (TypeError, ValueError):
+            _log.debug("Swap memory not available, collected output: %s", mems)
+            mems = "not_available"
         mem.update(
             {
-                "Mem_Total"     : int(self.exec_cmd("free | awk 'NR==2{print $2}'")),
-                "Mem_Available" : int(self.exec_cmd("free | awk 'NR==2{print $7}'")),
-                "Mem_Swap"      : int(self.exec_cmd("free | awk 'NR==3{print $2}'")),
+                "Mem_Total"     : memt,
+                "Mem_Available" : mema,
+                "Mem_Swap"      : mems,
             }
         )
 
