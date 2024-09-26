@@ -81,6 +81,20 @@ YAML_lint:
       - "**/*.yaml"
       - "**/*.yml"
 
+shellscript_lint:
+  stage: test-components
+  image: gitlab-registry.cern.ch/linuxsupport/alma9-base
+  needs: []
+  before_script:
+    - dnf install -y -q epel-release
+    - dnf install -y -q shellcheck
+  script:
+    - shellcheck examples/hepscore/*.sh examples/multiple_benchmarks/*.sh
+  rules:
+    - changes:
+      - "examples/hepscore/*.sh"
+      - "examples/multiple_benchmarks/*.sh"
+
 db12_benchmark:
   stage: test-components
   image: gitlab-registry.cern.ch/linuxsupport/alma8-base
