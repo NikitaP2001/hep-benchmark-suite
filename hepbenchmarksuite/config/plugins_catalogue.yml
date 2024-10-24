@@ -1,0 +1,201 @@
+plugins:
+  CPUFrequencyPlugin:
+    interval_mins: 1
+    
+  CommandExecutor:
+    metrics:
+      cpu-frequency:
+        description: "Retrieves the current frequency of the first CPU."
+        command: "cpupower frequency-info -f"
+        regex: "current CPU frequency: (?P<value>\\d+).*"
+        interval_mins: 1
+        unit: "kHz"
+        example-output: |
+          analyzing CPU 0:
+            current CPU frequency: 1380559 (asserted by call to kernel)
+        expected-value: 1380559
+
+
+      load:
+        description: "Retrieves the one minute system load average. Note that load of 1 on a 4-CPU system means that it was idle 75% of the time."
+        command: "uptime"
+        regex: "load average: (?P<value>\\d+.\\d+),"
+        interval_mins: 1
+        unit: ""
+        aggregation: ""
+        example-output: " 11:02:47 up  3:03,  1 user,  load average: 0.18, 0.38, 0.25"
+        expected-value: 0.18
+
+      power-consumption:
+        description: "Retrieves input power consumption of the system. The command takes a long time to execute (it can take half a minute). Use one of the alternatives if possible. Requires elevated privileges."
+        command: "ipmitool sdr elist"
+        regex: "PS\\d Power In.* (?P<value>\\d+) Watts"
+        interval_mins: 1
+        unit: "W"
+        aggregation: "sum"
+        example-output: |
+          Pwr Unit Status  | 01h | ok  | 21.1 | 
+          Pwr Unit Redund  | 02h | ok  | 21.1 | Fully Redundant
+          IPMI Watchdog    | 03h | ok  |  7.1 | 
+          Physical Scrty   | 04h | ok  | 23.1 | 
+          SMI Timeout      | 06h | ok  |  7.1 | 
+          System Event Log | 07h | ok  |  7.1 | 
+          System Event     | 08h | ok  |  7.1 | 
+          Button           | 09h | ok  | 12.1 | 
+          BMC Watchdog     | 0Ah | ok  | 46.1 | 
+          VR Watchdog      | 0Bh | ok  |  7.1 | 
+          SSB Therm Trip   | 0Dh | ok  |  7.1 | 
+          BMC FW Health    | 10h | ok  | 46.1 | 
+          System Airflow   | 11h | ok  | 23.1 | 12 CFM
+          BB CPU2 VR Temp  | 14h | ok  |  7.1 | 31 degrees C
+          BB Inlet Temp    | 20h | ok  |  7.1 | 29 degrees C
+          HSBP Temp        | 21h | ok  | 15.1 | 25 degrees C
+          SSB Temp         | 22h | ok  |  7.1 | 46 degrees C
+          BB BMC Temp      | 23h | ok  |  7.1 | 41 degrees C
+          BB CPU1 VR Temp  | 24h | ok  |  7.1 | 37 degrees C
+          BB REAR Temp     | 25h | ok  |  7.1 | 37 degrees C
+          HSBP PSOC Temp   | 29h | ok  | 15.1 | 32 degrees C
+          Exit Air Temp    | 2Eh | ok  |  7.1 | 37 degrees C
+          LAN NIC Temp     | 2Fh | ok  |  7.1 | 53 degrees C
+          Sys Fan 1A       | 30h | ok  | 29.1 | 9768 RPM
+          Sys Fan 1B       | 31h | ok  | 29.2 | 10080 RPM
+          Sys Fan 2A       | 32h | ok  | 29.3 | 9416 RPM
+          Sys Fan 2B       | 33h | ok  | 29.4 | 10080 RPM
+          Sys Fan 3A       | 34h | ok  | 29.5 | 9416 RPM
+          Sys Fan 3B       | 35h | ok  | 29.6 | 9920 RPM
+          PS1 Status       | 50h | ok  | 10.1 | Presence detected
+          PS2 Status       | 51h | ok  | 10.2 | Presence detected
+          PS1 Power In     | 54h | ok  | 10.1 | 210 Watts
+          PS2 Power In     | 55h | ok  | 10.2 | 200 Watts
+          PS1 Curr Out %   | 58h | ok  | 10.1 | 12 percent
+          PS2 Curr Out %   | 59h | ok  | 10.2 | 11 percent
+          PS1 Temperature  | 5Ch | ok  | 10.1 | 31 degrees C
+          PS2 Temperature  | 5Dh | ok  | 10.2 | 30 degrees C
+          P1 Status        | 70h | ok  |  3.1 | Presence detected
+          P2 Status        | 71h | ok  |  3.2 | Presence detected
+          P1 Therm Margin  | 74h | ok  |  3.1 | -49 degrees C
+          P2 Therm Margin  | 75h | ok  |  3.2 | -51 degrees C
+          P1 Therm Ctrl %  | 78h | ok  |  3.1 | 0 percent
+          P2 Therm Ctrl %  | 79h | ok  |  3.2 | 0 percent
+          CPU ERR2         | 7Ch | ok  |  3.1 | 
+          IERR             | 80h | ok  |  3.1 | 
+          CPU Missing      | 82h | ok  |  3.1 | 
+          P1 DTS Therm Mgn | 83h | ok  |  3.1 | -39 degrees C
+          P2 DTS Therm Mgn | 84h | ok  |  3.2 | -41 degrees C
+          VRD Hot          | 90h | ok  |  7.1 | 
+          PS1 Fan1 Fail    | A0h | ok  | 10.1 | 
+          PS1 Fan2 Fail    | A1h | ok  | 10.2 | 
+          PS2 Fan1 Fail    | A4h | ok  | 10.1 | 
+          PS2 Fan2 Fail    | A5h | ok  | 10.2 | 
+          DIMM Thrm Mrgn 1 | B0h | ok  |  8.1 | -50 degrees C
+          DIMM Thrm Mrgn 2 | B1h | ok  |  8.2 | -50 degrees C
+          DIMM Thrm Mrgn 3 | B2h | ok  |  8.3 | -52 degrees C
+          DIMM Thrm Mrgn 4 | B3h | ok  |  8.4 | -52 degrees C
+          Auto Shutdown    | B8h | ok  | 21.3 | 
+          P1 Mem Thrm Trip | C0h | ok  | 32.1 | 
+          P2 Mem Thrm Trip | C1h | ok  | 32.2 | 
+          Agg Therm Mgn 1  | C8h | ok  |  7.1 | -33 degrees C
+          BB +12.0V        | D0h | ok  |  7.1 | 12.10 Volts
+          Voltage Fault    | D1h | ok  |  7.1 | 
+          BB +3.3V Vbat    | DEh | ok  |  7.1 | 3.01 Volts
+          HDD 0 Status     | F0h | ok  |  4.1 | Drive Present
+          HDD 1 Status     | F1h | ok  |  4.2 | Drive Present
+          HDD 2 Status     | F2h | ok  |  4.3 | 
+          NM Capabilities  | 1Ah | ok  | 46.1 | 
+          MTT CPU1         | 34h | ok  |  3.1 | 0 percent
+          MTT CPU2         | 35h | ok  |  3.2 | 0 percent
+        expected-value: 410
+
+      power-consumption1:
+        description: "Retrieves power consumption of the system. Requires elevated privileges."
+        command: "ipmitool dcmi power reading"
+        regex: "Instantaneous power reading:\\s*(?P<value>\\d+) Watts"
+        interval_mins: 1
+        unit: "W"
+        example-output: |
+          Instantaneous power reading:                   124 Watts
+          Minimum during sampling period:                110 Watts
+          Maximum during sampling period:                475 Watts
+          Average power reading over sample period:      122 Watts
+          IPMI timestamp:                           Wed Jun 14 10:50:07 2023
+          Sampling period:                          00000005 Seconds.
+          Power reading state is:                   activated
+        expected-value: 124
+
+      power-consumption2:
+        description: "Retrieves power consumption of the system. It collects the power readings from two power lines. Requires elevated privileges."
+        command: "ipmitool sensor get 'PS1 Power In' ; ipmitool sensor get 'PS2 Power In'"
+        regex: "Sensor Reading\\s+:\\s*(?P<value>\\d+).*"
+        interval_mins: 1
+        unit: "W"
+        example-output: |
+          Locating sensor record...
+          Sensor ID              : PS1 Power In (0x54)
+          Entity ID             : 10.1
+          Sensor Type (Threshold)  : Other
+          Sensor Reading        : 210 (+/- 0) Watts
+          Status                : ok
+          Lower Non-Recoverable : na
+          Lower Critical        : na
+          Lower Non-Critical    : na
+          Upper Non-Critical    : 2030.000
+          Upper Critical        : 2300.000
+          Upper Non-Recoverable : na
+          Positive Hysteresis   : Unspecified
+          Negative Hysteresis   : Unspecified
+          Assertion Events      : 
+          Assertions Enabled    : unc+ ucr+ 
+          Deassertions Enabled  : unc+ ucr+ 
+
+          Locating sensor record...
+          Sensor ID              : PS2 Power In (0x55)
+          Entity ID             : 10.2
+          Sensor Type (Threshold)  : Other
+          Sensor Reading        : 210 (+/- 0) Watts
+          Status                : ok
+          Lower Non-Recoverable : na
+          Lower Critical        : na
+          Lower Non-Critical    : na
+          Upper Non-Critical    : 2030.000
+          Upper Critical        : 2300.000
+          Upper Non-Recoverable : na
+          Positive Hysteresis   : Unspecified
+          Negative Hysteresis   : Unspecified
+          Assertion Events      : 
+          Assertions Enabled    : unc+ ucr+ 
+          Deassertions Enabled  : unc+ ucr+ 
+        expected-value: 420
+
+      used-memory:
+        description: "Retrieves the current memory usage (without swap)."
+        command: "free -m"
+        regex: "Mem: *\\d+ *(?P<value>\\d+).*"
+        interval_mins: 1
+        unit: "MiB"
+        example-output: |
+          total        used        free      shared  buff/cache   available
+          Mem:          63791        1473       58132         508        4185       61156
+          Swap:         32223        2277       29946
+        expected-value: 1473
+
+      used-swap-memory:
+        description: "Retrieves the current swap memory usage."
+        command: "free -m"
+        regex: "Swap: *\\d+ *(?P<value>\\d+).*"
+        interval_mins: 1
+        unit: "MiB"
+        example-output: |
+          total        used        free      shared  buff/cache   available
+          Mem:          63791        1473       58132         508        4185       61156
+          Swap:         32223        2277       29946
+        expected-value: 2277
+
+      gpu-power-consumption:
+        description: "Returns the total power consumption of all GPUs in the system."
+        command: "nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits "
+        regex: "(?P<value>\\d+(.\\d+)?).*"
+        interval_mins: 1
+        unit: "W"
+        aggregation: "sum"
+        example-output: "105.07\n52.08"
+        expected-value: 157.15

@@ -1,0 +1,21 @@
+Model: DELL PERC 6/E Adapter (scsi)
+Disk /dev/sda: 1000GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags: 
+
+Number  Start   End     Size    File system  Name                  Flags
+ 1      1049kB  1000GB  1000GB               zfs-847ed2d5afc8ddec
+ 9      1000GB  1000GB  8389kB
+
+Model: Dell VIRTUAL DISK (scsi)
+Disk /dev/sdb: 299GB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags: 
+
+Number  Start   End    Size   Type     File system  Flags
+ 1      1049kB  525MB  524MB  primary  ext4         boot
+ 2      525MB   299GB  299GB  primary               lvm
+
+Error: Error opening /dev/sr0: No medium found
