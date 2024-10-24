@@ -42,7 +42,7 @@ This is a short list of configuration examples to run the suite.
 For an in depth understanding of the installation and configuration options refer to the dedicated [section](##installation)
 
 1. HEPscore example runscripts:
-   - [HEPscore default configuration](examples/hepscore/run_HEPscore.sh)
+   - [HEPscore default configuration](examples/hepscore/run_HEPscore_default.sh)
    - [Run HEPscore custom configuration](examples/hepscore/run_HEPscore-slim_on_grid.sh)
    - [Run HEPscore default configuration on HPC via SLURM](examples/hepscore/run_HEPscore_on_HPC_slurm.sh)
 1. HEP SPEC example runscripts:

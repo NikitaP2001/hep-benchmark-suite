@@ -193,21 +193,13 @@ def run_hepscore(suite_conf):
     # ensure same runmode as suite
     hepscore_conf[hs_key]['settings']['container_exec'] = suite_conf['global']['mode']
 
-    # BMK-1389: ncores is now always passed to compatible hepscore versions if present
-    hepscore_version = parse_version(version('hep-score'))
-    ncores_version = parse_version('v1.6rc2')
-    
-    if 'ncores' in suite_conf['global']:        
-        if hepscore_version < ncores_version:
-            if int(suite_conf['global']['ncores']) != os.cpu_count():
-                _log.error("The number of cores cannot be configured in the current version of hepscore: %s. Please, update \
-                            hepscore to v2.0 or above, or remove this parameter from the configuration.", hepscore_version)
-                return -1
-            else:
-                _log.info("The current version of hepscore cannot run on a number of cores different from the total. \
-                          If you wish to use this feature (ncores), please update hepscore to v2.0 or above.")
-        else:
-            hepscore_conf[hs_key]['settings']['ncores'] = suite_conf['global']['ncores']
+    # BMK-363:
+    # ncores is always available in the suite_conf['global'].
+    # It defaults to cpu_count when not explicitly set to a different value
+    # Explicitly pass the parameter to hepscore only in case it differs from cpu_count
+    # Otherwise hepscore will generate a different hash for that configuration
+    if 'ncores' in suite_conf['global'] and int(suite_conf['global']['ncores']) != os.cpu_count():
+        hepscore_conf[hs_key]['settings']['ncores'] = suite_conf['global']['ncores']
 
     if 'options' in suite_conf['hepscore'].keys():
         hepscore_conf[hs_key]['options'] = suite_conf['hepscore']['options']

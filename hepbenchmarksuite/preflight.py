@@ -3,12 +3,14 @@
 import logging
 import shutil
 
-from os import makedirs, path, cpu_count
+from os import makedirs, path
 from hepbenchmarksuite import benchmarks, utils
 from hepbenchmarksuite.plugins.send_queue import is_key_password_protected
 
 _log = logging.getLogger(__name__)
 
+# Required disk space (in GB) for all benchmarks
+DISK_THRESHOLD = 20.0
 
 class Preflight:
     """ Contains several suite-requirement checks that are performed over a given config """
@@ -16,7 +18,6 @@ class Preflight:
     def __init__(self, config):
         self.benchmarks_to_run = config['global']['benchmarks']
         self.global_config       = config['global']
-        self.hw_config           = config['global']['hw_requirements']
         self.full_config         = config
         self.failed_checks              = []
 
@@ -63,55 +64,18 @@ class Preflight:
     def check_disk_space(self):
         """ Check if the rundir has enough free space """
         _log.info(" - Checking if rundir has enough space...")
-        _log.info(" - Getting cpu core count from configuration")
-        cpus = self.get_ncores()
-        if not cpus:
-            self.failed_checks.append(1)
-            return
-        _log.info(" - core count: %i", int(cpus))
 
-        disk_stats          = shutil.disk_usage(self.global_config['rundir'])
-        disk_space_gb       = round(disk_stats.free * (10 ** -9), 2)
-        disk_space_per_core = disk_space_gb/int(cpus)
-        _log.info("Calculated disk space: %s GB, GB per core: %s",
-                   *(disk_space_gb, disk_space_per_core))
-
-        if 'min_disk_per_core' not in self.hw_config:
-            #_log.warning("Hardware requirement configuration missing: 'min_disk_per_core'")
-            _log.error("Hardware requirement configuration missing: 'min_disk_per_core'")
-            # either set a default so it runs or return an error
-            # for now we'll fail the check
-            self.failed_checks.append(1)
+        disk_stats    = shutil.disk_usage(self.global_config['rundir'])
+        disk_space_gb = round(disk_stats.free * (10 ** -9), 2)
+        _log.debug("Calculated disk space: %s GB", disk_space_gb)
 
         running_only_db12 = len(self.benchmarks_to_run) == 1 and 'db12' in self.benchmarks_to_run
-        if disk_space_per_core <= self.hw_config.get('min_disk_per_core') and not running_only_db12:
-            _log.error("Not enough disk space on %s, free: %s GB per core, required: %s GB/core",
-                       self.global_config['rundir'], disk_space_per_core, self.hw_config.get('min_disk_per_core'))
+        if disk_space_gb <= DISK_THRESHOLD and not running_only_db12:
+            _log.error("Not enough disk space on %s, free: %s GB, required: %s GB",
+                       self.global_config['rundir'], disk_space_gb, DISK_THRESHOLD)
 
             # Flag for a failed check
             self.failed_checks.append(1)
-    def check_mem_per_core(self):
-        """ Check if the system has enough memory based on config requirements """
-        _log.info(" - Checking if system has enough memory")
-        _log.info(" - Getting cpu core count from configuration")
-        cpus = self.get_ncores()
-        if not cpus:
-            self.failed_checks.append(1)
-            return
-       
-        if 'min_memory_per_core' not in self.hw_config:
-            #_log.warning("Hardware requirement configuration missing: 'min_memory_per_core'")
-            _log.error("Hardware requirement configuration missing: 'min_memory_per_core'")
-            # either set a default so it runs or return an error
-            # for now we'll fail the check
-            self.failed_checks.append(1)
-
-        # self.hw_config.get('min_memory_per_core')
-        # possible methods to get memory:
-        #  1. crossplatform compatible: psutil, requires pypi install
-        #  2. linux only: read /proc/meminfo and parse output
-        #  3. linux only: use os.sysconf and manually multiply SC_PAGE_SIZE with SC_PHYS_PAGES
-        
 
     def validate_spec_config(self):
         """ Validate [HEP]Spec configuration """
@@ -166,19 +130,3 @@ class Preflight:
         else:
             _log.error("Invalid run mode specified: %s.", mode)
             self.failed_checks.append(1)
-
-    def get_ncores(self):
-        cpus = self.global_config.get('ncores')
-        if not cpus:
-            # problem getting CPUs from config or it's unconfigured try again with nproc
-            _log.info(" - ncores not found in configuration, gathering core count from nproc")
-            cpus, _ = utils.exec_cmd('nproc')
-        if not cpus:
-            # if the config is empty and nproc fails we'll try one last time with os.cpu_count()
-            _log.info(" - nproc unable to determine core count, trying again with os.cpu_count")
-            cpus = cpu_count()
-        if not cpus:
-            # unable to determine number of cpus from any source
-            _log.error(" - Unable to determine number of cores from system or configuration.")
-            return None
-        return cpus

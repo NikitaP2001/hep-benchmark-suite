@@ -1,8 +1,5 @@
 bats_test_docker_compose_qa:
   stage: test-parsing-and-injection
-  needs:
-    - job: build_docker_compose_image
-      optional: true
   image:
     name: gitlab-registry.cern.ch/hep-benchmarks/hep-benchmark-suite/docker-compose:latest
     entrypoint: [""]
@@ -21,6 +18,4 @@ bats_test_docker_compose_qa:
     expire_in: 1 week
     when: always
   rules:
-    - if: $CI_COMMIT_BRANCH =~ /^qa.*$/ 
-    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/ 
-    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /^qa.*$/
+   - if: $CI_COMMIT_BRANCH =~ /^qa.*$/ || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/

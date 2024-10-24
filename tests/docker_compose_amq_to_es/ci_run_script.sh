@@ -63,7 +63,7 @@ function start_docker_compose() {
 
 function run_amq_bats_test() {
     # Run bats tests that publish data into a given AMQ broker
-    # Tests are coded in the file tests/docker_compose_amq_to_es/qa_send_queue.bat
+    # Tests are coded in the file tests/qa_send_queue.bat
     echo "[$FUNCNAME]"
     # go to main project dir
     this_work_dir=$CI_PROJECT_DIR
@@ -71,7 +71,8 @@ function run_amq_bats_test() {
     sleep 30s
     docker run --rm --net=amq_to_es_${CI_COMMIT_SHORT_SHA}_default --name mytester_write \
         -v $this_work_dir:$this_work_dir -w $this_work_dir \
-        ${CI_REGISTRY_IMAGE}/docker-compose:latest bats tests/docker_compose_amq_to_es/qa_send_queue.bat
+        ${CI_REGISTRY_IMAGE}/docker-compose:latest bats tests/qa_send_queue.bat
+    # bats /opt/hep-benchmark-suite/tests/qa_send_queue.bat
 }
 
 function run_es_reader() {

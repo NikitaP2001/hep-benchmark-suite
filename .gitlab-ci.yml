@@ -1,13 +1,11 @@
 stages:
   - build-base-image
+  - test-parsing-and-injection
   - test-components
   - test-benchmarks
-  - test-parsing-and-injection
   - deploy
   - test-wheels
   - build-examples
-  - test-examples
-
 
 variables:
   GIT_DEPTH: 3

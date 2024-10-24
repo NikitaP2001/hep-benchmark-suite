@@ -1,13 +1,12 @@
 import datetime
 import time
 import unittest
-import math
 from multiprocessing import Event
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 
 from hepbenchmarksuite.plugins.execution.strategy import ThreadExecutionStrategy
-from hepbenchmarksuite.plugins.registry.command_executor import CommandExecutor, BashCommandFailedException
-from hepbenchmarksuite.utils import run_separated_commands
+from hepbenchmarksuite.plugins.registry.command_executor import CommandExecutor
+
 
 class TestCommandExecutor(unittest.TestCase):
 

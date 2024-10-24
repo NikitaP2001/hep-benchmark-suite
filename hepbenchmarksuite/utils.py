@@ -15,7 +15,6 @@ import subprocess
 import sys
 import tarfile
 import uuid
-import re
 
 import requests
 from requests import RequestException
@@ -47,7 +46,7 @@ def download_file(url, outfile):
             return 0
 
     except (ValueError, RequestException):
-        _log.warning('Failed to download file from provided link: %s', url)
+        _log.error('Failed to download file from provided link: %s', url)
         return 1
 
 
@@ -120,7 +119,7 @@ def exec_live_output(cmd_str, env=None):
     # Output stdout from child process
     line = cmd.stdout.readline()
     while line:
-        sys.stdout.write(line.decode('utf-8', errors='replace'))
+        sys.stdout.write(line.decode('utf-8'))
         line = cmd.stdout.readline()
 
     cmd.wait()
@@ -145,7 +144,7 @@ def exec_cmd(cmd_str, env=None):
     # Check for errors
     if return_code != 0:
         reply = "not_available"
-        _log.warning(error)
+        _log.error(error)
     # Force not_available when command return is empty
     elif len(reply) == 0:
         _log.debug('Result is empty: %s', reply)
@@ -176,18 +175,18 @@ def run_piped_commands(cmd_str, env=None):
                 _log.debug("No input")
                 output = subprocess.run(cmd_split, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, env=env)
         except FileNotFoundError as e:
-            _log.warning("Command not found: %s", e.filename)
+            _log.error("Command not found: %s", e.filename)
             return None, None, f"Command not found: {e.filename}"
         except subprocess.CalledProcessError as e:
-            _log.warning("Error executing command: %s\nReturn code: %s\nOutput: %s", e.cmd, e.returncode, e.output.decode(errors='replace'))
-            return e.returncode, e.output.decode(errors='replace'), e.stderr.decode(errors='replace')
+            _log.error("Error executing command: %s\nReturn code: %s\nOutput: %s", e.cmd, e.returncode, e.output.decode())
+            return e.returncode, e.output.decode(), e.stderr.decode()
         except Exception as e:
-            _log.warning("Error executing command: %s", str(e))
+            _log.error("Error executing command: %s", str(e))
             return None, None, None
 
     # Return the output, error, and returncode (if the command sequence was executed without errors)
     if output:
-        return output.returncode, output.stdout.decode(errors='replace').rstrip(), output.stderr.decode(errors='replace')
+        return output.returncode, output.stdout.decode().rstrip(), output.stderr.decode()
     else:
         return None, None, None
 
@@ -202,10 +201,7 @@ def run_separated_commands(cmd_str):
     """
     return_code = 0
     error = None
-
-    pattern = re.compile(r';(?=(?:[^\'"]*[\'"][^\'"]*[\'"])*[^\'"]*$)')
-    commands = pattern.split(cmd_str)
-    commands = [cmd.strip() for cmd in commands if cmd.strip()]
+    commands = cmd_str.split(";")
 
     outputs = []
     for cmd in commands:
@@ -275,7 +271,6 @@ def prepare_metadata(full_conf, extra, extractor):
     Returns:
       A dict containing hardware metadata, tags, flags & extra fields
     """
-
     # Create output metadata
 
     params = full_conf['global']
