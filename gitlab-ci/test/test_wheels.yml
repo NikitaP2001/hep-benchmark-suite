@@ -1,10 +1,12 @@
-.test_wheels:
+test_wheels:
   stage: test-wheels
-  retry: 2
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
+  needs: [build_wheels]
   tags:
     - $ARCH
+  retry: 2
   variables:
-    WHEELS_PATH: !reference [.build_wheels, variables, WHEELS_PATH]
+    WHEELS_PATH: !reference [build_wheels, variables, WHEELS_PATH]
     HEPSCORE_VER: v1.5
     bmk_volume: !reference [.test_benchmarks, variables, bmk_volume]
     suite_config: !reference [.test_benchmarks, variables, suite_config]
@@ -14,23 +16,11 @@
     - envsubst < $suite_config | sponge $suite_config   # Replace env variables in the config file
   script:
     - python3 -m pip install --user ${WHEELS_PATH}/*.whl
+    - bmk_show_metadata
     - bmkrun --mode=singularity --config=$suite_config --rundir=$bmk_volume --benchmarks=hepscore | tee log
     - grep "with return code 0" log
   after_script: !reference [apptainer, after_script]
   artifacts: !reference [apptainer, artifacts]
   rules:
-    - !reference [.build_wheels, rules]
-
-test_wheels_rhel7:
-  extends: .test_wheels
-  needs: [build_wheels_rhel7]
-  image: gitlab-registry.cern.ch/linuxsupport/cc7-base
-  variables:
-    ARCH: !reference [build_wheels_rhel7, variables, ARCH]
-    PYTHON_VERSION: !reference [build_wheels_rhel7, variables, PYTHON_VERSION]
-
-test_wheels_rhel8:
-  extends: .test_wheels
-  needs: [build_wheels_rhel8]
-  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
-  parallel: !reference [build_wheels_rhel8, parallel]
+    - !reference [build_wheels, rules]
+  parallel: !reference [build_wheels, parallel]

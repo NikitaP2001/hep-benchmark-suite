@@ -6,7 +6,7 @@ from typing import List
 
 from hepbenchmarksuite.plugins.execution.strategy import ExecutionStrategy, ThreadExecutionStrategy, \
     ProcessExecutionStrategy
-from tests.plugins.dummy_timeseries_plugin import DummyTimeseriesPlugin
+from tests.pytests.plugins.dummy_timeseries_plugin import DummyTimeseriesPlugin
 
 
 def measure_time(function) -> float:

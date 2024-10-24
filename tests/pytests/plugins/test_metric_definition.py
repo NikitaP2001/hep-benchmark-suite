@@ -1,5 +1,4 @@
 import unittest
-
 from hepbenchmarksuite.exceptions import PluginBuilderException
 from hepbenchmarksuite.plugins.metric_definition import MetricDefinition
 
@@ -24,7 +23,7 @@ class TestMetricDefinition(unittest.TestCase):
         expected_value = 25
 
         self.assertEqual(expected_value, value)
-
+    
     def test_parse__ignores_everything_but_value(self):
         """
         The parsing function extracts a value denoted as "value".

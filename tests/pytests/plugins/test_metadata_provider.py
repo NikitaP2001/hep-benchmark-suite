@@ -2,8 +2,8 @@ import unittest
 
 from hepbenchmarksuite.plugins.construction.metadata_provider import PluginParameter
 from hepbenchmarksuite.plugins.construction.dynamic_metadata_provider import DynamicPluginMetadataProvider
-from tests.plugins.registry.valid.plugin1 import PluginParameterless, PluginMultipleParameters
-from tests.plugins.registry.valid.plugin2 import PluginSingleParameter
+from tests.pytests.plugins.registry.valid.plugin1 import PluginParameterless, PluginMultipleParameters
+from tests.pytests.plugins.registry.valid.plugin2 import PluginSingleParameter
 
 
 class TestDynamicPluginMetadataProvider(unittest.TestCase):
@@ -13,7 +13,7 @@ class TestDynamicPluginMetadataProvider(unittest.TestCase):
         Tests that all plugins in the directory in multiple
         files are all loaded including their expected parameters.
         """
-        metadata_path = 'tests/plugins/registry/valid'
+        metadata_path = 'tests/pytests/plugins/registry/valid'
         metadata_provider = DynamicPluginMetadataProvider(metadata_path)
 
         plugins_metadata = metadata_provider.get_items()
@@ -51,7 +51,7 @@ class TestDynamicPluginMetadataProvider(unittest.TestCase):
         Tests that the registrator ignores to parse a class that does not inherit
         from StatefulPlugin.
         """
-        metadata_path = 'tests/plugins/registry/invalid'
+        metadata_path = 'tests/pytests/plugins/registry/invalid'
         metadata_provider = DynamicPluginMetadataProvider(metadata_path)
 
         plugins_metadata = metadata_provider.get_items()

@@ -5,7 +5,7 @@ from typing import List
 from hepbenchmarksuite.plugins.execution.executor import LeafPluginExecutor, CompositePluginExecutor, RootPluginExecutor
 from hepbenchmarksuite.plugins.execution.strategy import ThreadExecutionStrategy, ProcessExecutionStrategy
 from hepbenchmarksuite.plugins.stateful_plugin import StatefulPlugin
-from tests.plugins.dummy_timeseries_plugin import DummyTimeseriesPlugin
+from tests.pytests.plugins.dummy_timeseries_plugin import DummyTimeseriesPlugin
 
 
 class DummyTimeseriesPlugin2(DummyTimeseriesPlugin):
