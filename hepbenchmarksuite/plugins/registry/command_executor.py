@@ -140,17 +140,24 @@ class CommandExecutor(StatefulPlugin):
         unique_commands = self._determine_unique_commands(metrics_to_collect)
         self.command_results.clear()
         for command in unique_commands:
-            result = CommandExecutor.run_command(command)
-            self.command_results[command] = result
+            try:
+                result = CommandExecutor.run_command(command)
+                self.command_results[command] = result
+            except BashCommandFailedException:
+                self.command_results[command] = None  # Command failed, assign None
 
     def _parse_outputs(self, metrics_to_collect):
         """
         The command outputs are searched for relevant values,
         and then they are appended to the corresponding timeseries.
+        If a command result is None (due to failure), appends NaN to the timeseries.
         """
         for metric_definition in metrics_to_collect:
             output = self.command_results[metric_definition.command]
-            value = metric_definition.parse(output)
+            if output is None:
+                value = math.nan  # Failed command, append NaN
+            else:
+                value = metric_definition.parse(output)
             self.timeseries[metric_definition.name].append(value)
 
     def on_end(self) -> Dict:
