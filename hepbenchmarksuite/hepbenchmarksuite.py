@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import time
+import math
 
 import pkg_resources
 
@@ -155,9 +156,23 @@ class HepBenchmarkSuite:
                 _log.warning('Skipping %s because of %s', bench, err)
 
     def _save_complete_report(self):
+
+        def nan2None(obj):
+            if isinstance(obj, dict):
+                return {k:nan2None(v) for k,v in obj.items()}
+            elif isinstance(obj, list):
+                return [nan2None(v) for v in obj]
+            elif isinstance(obj, float) and math.isnan(obj):
+                return None
+            return obj
+
+        class NanConverter(json.JSONEncoder):
+            def encode(self, obj, *args, **kwargs):
+                return super().encode(nan2None(obj), *args, **kwargs)
+
         report_file_path = os.path.join(self._config['rundir'], "bmkrun_report.json")
         with open(report_file_path, 'w', encoding='utf-8') as output_file:
-            dump = json.dumps(self._result)
+            dump = json.dumps(self._result, cls=NanConverter)
             _log.info("Saving final report: %s", report_file_path)
             _log.debug("Report: %s", dump)
             output_file.write(dump)
