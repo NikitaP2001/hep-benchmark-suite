@@ -62,7 +62,7 @@ class CommandExecutor(StatefulPlugin):
         for metric_name, metric_options in metrics.items():
             self.metrics[metric_name] = MetricDefinition(metric_name, metric_options,
                                                          self.interval_granularity_secs)
-            self.timeseries[metric_name] = Timeseries(metric_name)
+            self.timeseries[metric_name] = Timeseries(metric_name, self.metrics[metric_name].statistics)
 
     def _determine_unique_commands(self, metrics: List[MetricDefinition]):
         """

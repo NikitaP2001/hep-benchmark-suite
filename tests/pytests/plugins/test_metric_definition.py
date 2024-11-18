@@ -1,4 +1,5 @@
 import unittest
+import statistics
 from hepbenchmarksuite.exceptions import PluginBuilderException
 from hepbenchmarksuite.plugins.metric_definition import MetricDefinition
 
@@ -23,6 +24,73 @@ class TestMetricDefinition(unittest.TestCase):
         expected_value = 25
 
         self.assertEqual(expected_value, value)
+
+    def test_aggregations(self):
+        agg_list = [
+            'sum',
+            'average',
+            'minimum',
+            'maximum',
+            'q25',
+            'q50',
+            'q75',
+            'q85',
+            'q150',
+            'qnan',
+            'count',
+            'product',
+            'median',
+            'standard_deviation',
+        ]
+
+        params = {
+            'command': 'none',
+            'regex': r'V\d+: (?P<value>\d+).*',
+            'unit': 'none',
+            'aggregation': 'average',
+            'interval_mins': 1
+        }
+
+        command_output = """
+            V1: 10,
+            V2: 40
+        """
+
+        expected_results = {
+            'sum': 50.0,
+            'average': 25.0,
+            'minimum': 10.0,
+            'maximum': 40.0,
+            'q25': 17.5,
+            'q50': 25.0,
+            'q75': 32.5,
+            'q85': 35.5,
+            'q95': 38.5,
+            'count': 2,
+            'product': 400.0,
+            'median': 25.0,
+            'standard_deviation': statistics.stdev([10, 40]),
+        }
+
+        expected_exceptions = {
+            'q150': ValueError,
+            'qnan': ValueError,
+        }
+
+        for agg in agg_list:
+            params['aggregation'] = agg
+            if agg in expected_exceptions:
+                with self.assertRaises(expected_exceptions[agg], msg=f"Aggregation '{agg}' did not raise expected exception"):
+                    definition = MetricDefinition('metric', params)
+                    definition.parse(command_output)
+            else:
+                definition = MetricDefinition('metric', params)
+                value = definition.parse(command_output)
+                expected_value = expected_results[agg]
+                if isinstance(expected_value, float):
+                    self.assertAlmostEqual(expected_value, value, places=5, msg=f"Aggregation '{agg}' failed")
+                else:
+                    self.assertEqual(expected_value, value, msg=f"Aggregation '{agg}' failed")
     
     def test_parse__ignores_everything_but_value(self):
         """
