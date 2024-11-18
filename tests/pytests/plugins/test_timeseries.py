@@ -20,6 +20,41 @@ class TestTimeseries(unittest.TestCase):
         self.assertEqual(35.0, stats['q25'])
         self.assertEqual(50.0, stats['median'])
         self.assertEqual(65.0, stats['q75'])
+        self.assertEqual(71.0, stats['q85'])
+        self.assertEqual(77.0, stats['q95'])
+
+    def test_user_defined_statistics(self):
+        timeseries = Timeseries('load', 'mean,min,max,q70,q85')
+        timeseries.append(20)
+        timeseries.append(80)
+
+        stats = timeseries.calculate_statistics()
+
+        self.assertTrue(isinstance(stats, dict))
+
+        self.assertEqual(20, stats['min'])
+        self.assertEqual(80, stats['max'])
+        self.assertEqual(50.0, stats['mean'])
+        self.assertEqual(62.0, stats['q70'])
+        self.assertEqual(71.0, stats['q85'])
+
+    def test_explicit_default_statistics(self):
+        timeseries = Timeseries('load', 'default')
+        timeseries.append(20)
+        timeseries.append(80)
+
+        stats = timeseries.calculate_statistics()
+
+        self.assertTrue(isinstance(stats, dict))
+
+        self.assertEqual(20, stats['min'])
+        self.assertEqual(80, stats['max'])
+        self.assertEqual(50.0, stats['mean'])
+        self.assertEqual(35.0, stats['q25'])
+        self.assertEqual(50.0, stats['median'])
+        self.assertEqual(65.0, stats['q75'])
+        self.assertEqual(71.0, stats['q85'])
+        self.assertEqual(77.0, stats['q95'])
 
     def test_list_statistics(self):
         timeseries = Timeseries('cpu-frequency')
@@ -36,6 +71,8 @@ class TestTimeseries(unittest.TestCase):
         self.assertEqual(17.5, stats['q25'])
         self.assertEqual(25.0, stats['median'])
         self.assertEqual(32.5, stats['q75'])
+        self.assertEqual(35.5, stats['q85'])
+        self.assertEqual(38.5, stats['q95'])
 
     def test_create_report(self):
         timeseries = Timeseries('cpu-frequency')
@@ -58,6 +95,8 @@ class TestTimeseries(unittest.TestCase):
         self.assertEqual(17.5, report['statistics']['q25'])
         self.assertEqual(25.0, report['statistics']['median'])
         self.assertEqual(32.5, report['statistics']['q75'])
+        self.assertEqual(35.5, report['statistics']['q85'])
+        self.assertEqual(38.5, report['statistics']['q95'])
 
     def test_clear__resets_state(self):
         timeseries = Timeseries('load')
