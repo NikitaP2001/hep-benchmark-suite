@@ -1,5 +1,6 @@
 from datetime import datetime
 import numpy as np
+import math
 from typing import Dict, Any, Optional
 
 
@@ -36,67 +37,87 @@ class Timeseries:
 
     def calculate_statistics(self) -> Dict[str, float]:
         """
-        Computes a set of statistical metrics based on the specified configuration.
-        If no specific statistics are provided, it returns default set of statistics..
+        Computes a set of statistical metrics for the time series data.
+        Handles user-specified statistics or defaults to a predefined set.
         """
-        timeseries_data = self.values.values()
-        timeseries_array = np.array(list(timeseries_data))
+        # Convert values to a NumPy array and filter out NaN values
+        timeseries_array = np.array(list(self.values.values()))
+        valid_values = timeseries_array[~np.isnan(timeseries_array)]
 
-        # Return an empty dictionary if timeseries is empty
+        # Return an empty dictionary if no data is present
         if len(timeseries_array) == 0:
             return {}
+        
+        # Return an empty dictionary if no data is present
+        if len(valid_values) == 0:
+            return {
+                'total_count': len(timeseries_array),
+                'valid_count': 0,
+                'min': math.nan,
+                'max': math.nan,
+                'mean': math.nan,
+                'median': math.nan,
+            }
 
-        predefined_stats_functions = {
-            'min': np.min,
-            'mean': np.mean,
-            'median': np.median,
-            'max': np.max
-        }
+        # Predefined statistical functions
+        predefined_stats = {'min': np.min, 'mean': np.mean, 'median': np.median, 'max': np.max}
 
-        # Determine the list of statistics to compute
-        if self.statistics == 'default':
-            # Default statistics
-            statistics_list = ['min', 'q25', 'mean', 'median', 'q75', 'q85', 'q95', 'max']
-        else:
-            # Parse user-specified statistics
-            statistics_list = [stat.strip() for stat in self.statistics.split(',') if stat.strip()]
+        # Determine the list of statistics to compute (default or user-specified)
+        statistics_list = (
+            ['min', 'q25', 'mean', 'median', 'q75', 'q85', 'q95', 'max']
+            if self.statistics == 'default'
+            else [stat.strip() for stat in self.statistics.split(',') if stat.strip()]
+        )
 
-        user_statistics = {}
+        # Initialize result with basic counts
+        result = {'total_count': len(timeseries_array), 'valid_count': len(valid_values)}
+
+        # Compute statistics
         for stat in statistics_list:
-            if stat in predefined_stats_functions:
-                # Compute predefined statistics
-                user_statistics[stat] = predefined_stats_functions[stat](timeseries_array)
-                continue
-
-            # Handle quantile-based statistics
-            if stat.startswith('q'):
-                q_value_str = stat[1:] # Extract numeric part of quantile
+            if stat in predefined_stats:
+                # Calculate predefined statistics
+                result[stat] = predefined_stats[stat](valid_values) if len(valid_values) > 0 else math.nan
+            elif stat.startswith('q'):
+                # Calculate quantile-based statistics
                 try:
-                    q_value = float(q_value_str) / 100.0 # Convert percentage a to decimal value
-                    if not (0 <= q_value <= 1): # Validate quantile range
-                        raise ValueError
-                except ValueError as e:
-                    # Raise error for invalid quantile format
-                    raise ValueError(f"Invalid quantile value: '{stat}'. Quantile must be between q0 and q100.") from e
-                # Compute quantile
-                user_statistics[stat] = np.quantile(timeseries_array, q_value)
-                continue
-            # Raise an error for unsupported statistics
-            raise ValueError(f"Statistic '{stat}' not supported.")
-
-        return user_statistics
+                    quantile_str = stat[1:]
+                    quantile = float(quantile_str) / 100.0
+                    if not (0 <= quantile <= 1):
+                        raise ValueError(f"Quantile '{quantile_str}' is out of bounds. Must be between q0 and q100.")
+                    result[stat] = np.quantile(valid_values, quantile)
+                except ValueError:
+                    raise ValueError(f"Invalid quantile value: '{stat}'. Must be a valid number between q0 and q100.")
+            else:
+                # Raise an error for unsupported statistics
+                raise ValueError(f"Statistic '{stat}' not supported.")
+        
+        return result
 
     def create_report(self) -> Dict:
+        """
+        Generates a report summarizing the time series data, including statistics,
+        start and end timestamps, and the list of values.
+        """
+        if not self.values:  # Handle empty Timeseries
+            return {
+                'start_time': None,
+                'end_time': None,
+                'values': [],
+                'statistics': {}
+            }
+
         statistics = self.calculate_statistics()
         timestamps = list(self.get_values().keys())
         values = list(self.get_values().values())
+
+        # Extract start and end times
         start_time = timestamps[0]
         end_time = timestamps[-1]
 
-        report = {
+        # Build and return the report
+        return {
             'start_time': start_time,
             'end_time': end_time,
             'values': values,
             'statistics': statistics
         }
-        return report
