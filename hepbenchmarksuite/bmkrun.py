@@ -28,6 +28,7 @@ from hepbenchmarksuite.exceptions import BenchmarkFailure
 from hepbenchmarksuite.exceptions import BenchmarkFullFailure
 
 from hepbenchmarksuite.plugins import send_queue
+from hepbenchmarksuite.plugins import send_opensearch
 from hepbenchmarksuite.__version__ import __version__
 
 
@@ -310,9 +311,14 @@ def publish_results(active_config, report_path):
     # Publish to AMQ broker if provided
     if active_config['global'].get('publish'):
         try:
-            send_queue.send_message(report_path, active_config['activemq'])
+            if active_config.get("activemq", False):
+                send_queue.send_message(report_path, active_config['activemq'])
+            elif active_config.get("opensearch", False):
+                send_opensearch.send_message(report_path, active_config['opensearch'])
+            else:
+                logger.error("configuration was set to publish but no publisher was configured.")
         except Exception as err:
-            logger.error("Something went wrong attempting to report via AMQ.")
+            logger.error("Something went wrong attempting to report via AMQ/OpenSearch.")
             logger.error("Results may not have been correctly transmitted.")
             logger.exception(err)
 

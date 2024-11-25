@@ -24,3 +24,79 @@ bats_test_docker_compose_qa:
     - if: $CI_COMMIT_BRANCH =~ /^qa.*$/ 
     - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/ 
     - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /^qa.*$/
+
+test_opensearch_plugin_bmksend_qa:
+  stage: test-parsing-and-injection
+  needs: []
+  services:
+    - name: opensearchproject/opensearch:latest
+      alias: opensearch
+      variables:
+        discovery.type: single-node # Nodes to look for when discovering the cluster
+        bootstrap.memory_lock: true # Disable JVM heap memory swapping
+        OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m" # Set min and max JVM heap sizes to at least 50% of system RAM
+        OPENSEARCH_INITIAL_ADMIN_PASSWORD: strongDummyPassword123!
+  image:
+    name: gitlab-registry.cern.ch/linuxsupport/alma8-base
+    entrypoint: [""]
+  variables:
+    CI_DEBUG_SERVICES: "true"
+    PYTHON_VERSION: python36
+    FF_NETWORK_PER_BUILD: 1
+    CONFIG: ${CI_PROJECT_DIR}/tests/data/opensearch_config_sample.yaml
+    REF_FILE: ${CI_PROJECT_DIR}/tests/data/result_profile_db12.json
+  before_script:
+    - yum install -y -q epel-release
+    - yum install -y -q apptainer git $PYTHON_VERSION --setopt=install_weak_deps=True
+    - yum install -y -q gettext moreutils lzo
+    - python3 -m pip install --user --upgrade pip
+    - export PATH=~/.local/bin:$PATH
+    - curl https://opensearch:9200 -ku admin:strongDummyPassword123!
+  script:
+    - python3 -m pip install --user .
+    - python3 -m pip install -r requirements.txt
+    - python3 -m pip install --user dictdiffer
+    - bmksend --config $CONFIG $REF_FILE -v -f
+    - python3 $CI_PROJECT_DIR/tests/query_os.py --config $CONFIG $REF_FILE
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /^qa.*$/
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /^qa.*$/
+
+test_opensearch_plugin_bmkrun_qa:
+  stage: test-parsing-and-injection
+  needs: []
+  services:
+    - name: opensearchproject/opensearch:latest
+      alias: opensearch
+      variables:
+        discovery.type: single-node # Nodes to look for when discovering the cluster
+        bootstrap.memory_lock: true # Disable JVM heap memory swapping
+        OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m" # Set min and max JVM heap sizes to at least 50% of system RAM
+        OPENSEARCH_INITIAL_ADMIN_PASSWORD: strongDummyPassword123!
+  image:
+    name: gitlab-registry.cern.ch/linuxsupport/alma8-base
+    entrypoint: [""]
+  variables:
+    CI_DEBUG_SERVICES: "true"
+    PYTHON_VERSION: python36
+    FF_NETWORK_PER_BUILD: 1
+    CONFIG: ${CI_PROJECT_DIR}/tests/data/opensearch_config_sample.yaml
+    REF_FILE: ${CI_PROJECT_DIR}/tests/data/result_profile_db12.json
+  before_script:
+    - yum install -y -q epel-release
+    - yum install -y -q apptainer git $PYTHON_VERSION --setopt=install_weak_deps=True
+    - yum install -y -q gettext moreutils lzo
+    - python3 -m pip install --user --upgrade pip
+    - export PATH=~/.local/bin:$PATH
+    - curl https://opensearch:9200 -ku admin:strongDummyPassword123!
+  script:
+    - python3 -m pip install --user .
+    - python3 -m pip install -r requirements.txt
+    - python3 -m pip install --user dictdiffer
+    - bmkrun --config $CONFIG
+    - python3 $CI_PROJECT_DIR/tests/query_os.py --config $CONFIG ./workdir/suite_results/*/bmkrun_report.json
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /^qa.*$/
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^qa.*$/
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /^qa.*$/
