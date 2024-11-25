@@ -2,8 +2,10 @@
 
 import logging
 import shutil
+import subprocess
+import platform
 
-from os import makedirs, path, cpu_count
+from os import makedirs, path, cpu_count, sysconf
 from hepbenchmarksuite import benchmarks, utils
 from hepbenchmarksuite.plugins.send_queue import is_key_password_protected
 
@@ -17,6 +19,7 @@ class Preflight:
         self.benchmarks_to_run = config['global']['benchmarks']
         self.global_config       = config['global']
         self.hw_config           = config['global']['hw_requirements']
+        self.sw_config           = config['global']['sw_requirements']
         self.full_config         = config
         self.failed_checks              = []
 
@@ -30,6 +33,9 @@ class Preflight:
         self.check_working_directories()
         self.validate_spec_config()
         self.check_disk_space()
+        self.check_mem_per_core()
+        self.check_selinux_disabled()
+        self.check_root_access()
 
         # Check if any pre-flight check failed
         if any(self.failed_checks):
@@ -90,28 +96,107 @@ class Preflight:
 
             # Flag for a failed check
             self.failed_checks.append(1)
+
     def check_mem_per_core(self):
         """ Check if the system has enough memory based on config requirements """
         _log.info(" - Checking if system has enough memory")
         _log.info(" - Getting cpu core count from configuration")
         cpus = self.get_ncores()
         if not cpus:
-            self.failed_checks.append(1)
+            _log.info(" - Unable to get CPU core count, exiting")
+            self.failed_checks.append("check_mem_per_core/get_ncores")
             return
-       
+
+        try:
+            cpus = float(cpus)
+        except ValueError:
+            _log.info(" - Unable to parse CPU core count, exiting")
+            self.failed_checks.append("check_mem_per_core/get_ncores")
+            return
+
+        if platform.system() == "Linux":
+            _log.info(" - Getting installed system memory from OS")
+            free_cmd_result = subprocess.getoutput("free -b")
+            free_cmd_lines = free_cmd_result.splitlines()
+            mem_total = 0
+            swap_total = 0
+            for line in free_cmd_lines:
+                if line.startswith("Mem:"):
+                    mem_total = int(line.split()[1])
+                elif line.startswith("Swap:"):
+                    swap_total = int(line.split()[1])
+            system_memory = (mem_total + swap_total) / (1024.**3)
+        else:
+            _log.info(" - OS is not Linux, cannot check for RAM, skipping check")
+            return
+
         if 'min_memory_per_core' not in self.hw_config:
-            #_log.warning("Hardware requirement configuration missing: 'min_memory_per_core'")
-            _log.error("Hardware requirement configuration missing: 'min_memory_per_core'")
+            _log.error(
+                "Hardware requirement configuration missing: 'min_memory_per_core'")
             # either set a default so it runs or return an error
             # for now we'll fail the check
-            self.failed_checks.append(1)
 
-        # self.hw_config.get('min_memory_per_core')
-        # possible methods to get memory:
-        #  1. crossplatform compatible: psutil, requires pypi install
-        #  2. linux only: read /proc/meminfo and parse output
-        #  3. linux only: use os.sysconf and manually multiply SC_PAGE_SIZE with SC_PHYS_PAGES
-        
+            # Flag a failed check if config property does not exist
+            self.failed_checks.append(
+                "check_mem_per_core/missing_config_property")
+            return
+
+        mem_per_core = system_memory / cpus
+        _log.info("Reported system memory: %s GB, GB per core: %s",
+                  system_memory, mem_per_core)
+
+        if mem_per_core < self.hw_config.get('min_memory_per_core'):
+            _log.error("Not enough system memory per core (%s GB reported, %s GB required).",
+                       mem_per_core, self.hw_config.get('min_memory_per_core'))
+            _log.error("Consider adding some swap.")
+            # Flag a failed check if there is not enough memory per core
+            self.failed_checks.append("check_mem_per_core/insufficient_memory")
+
+    def check_selinux_disabled(self):
+        if 'check_selinux_disabled' not in self.sw_config:
+            _log.error(
+                "Hardware requirement configuration missing: 'check_selinux_disabled'")
+            # Flag a failed check if config property does not exist
+            self.failed_checks.append(
+                "check_selinux_disabled/missing_config_property")
+
+        if not self.sw_config.get('check_selinux_disabled'):
+            return
+
+        selinux_status = subprocess.getoutput("sestatus")
+        if "enabled" in selinux_status.lower():
+            # Flag a failed check if SELinux is enabled
+            _log.error(
+                "Software requirement 'check_selinux_disabled' failed, please disable SELinux")
+            self.failed_checks.append("check_selinux/enabled")
+        return
+
+    def check_root_access(self):
+        if 'check_root_access' not in self.sw_config:
+            _log.error(
+                "Software requirement configuration missing: 'check_root_access'")
+            # Flag a failed check if config property does not exist
+            self.failed_checks.append(
+                "check_root_access/missing_config_property")
+
+        if not self.sw_config.get('check_root_access'):
+            return
+
+        current_user = subprocess.getoutput("whoami")
+        if "root" not in current_user.lower():
+            # Flag a failed check if user is not root
+            _log.error(
+                "Software requirement 'check_root_access' failed, please execute as root")
+            self.failed_checks.append("check_root_access/not_root")
+        return
+
+    def check_docker_version(self, docker_version):
+        if 'min_docker_version' in self.sw_config:
+            if utils.versiontuple(docker_version) < utils.versiontuple(self.sw_config.get('min_docker_version')):
+                _log.error("Software requirement docker_version > %s failed (current version: %s). Please upgrade docker.",
+                           self.sw_config.get('min_docker_version'), docker_version)
+                # Flag a failed check if version is below minimum
+                self.failed_checks.append("check_docker_version/bad_version")
 
     def validate_spec_config(self):
         """ Validate [HEP]Spec configuration """
@@ -153,6 +238,7 @@ class Preflight:
                 # TODO: change to match/case when moving to Python3.10
                 if mode == 'docker':
                     version, _ = utils.exec_cmd("docker version --format '{{.Server.Version}}'")
+                    self.check_docker_version(version)
 
                 elif mode == 'singularity':
                     version, _ = utils.exec_cmd('singularity version')
