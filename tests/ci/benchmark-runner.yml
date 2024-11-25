@@ -31,16 +31,16 @@ global:
   # Hardware Requirements to be checked during preflight
   hw_requirements:
     # Minmum required memory per cpu core in GB
-    min_memory_per_core: 2.0
+    min_memory_per_core: 1.0
     # Minimum required disk per core in GB
     min_disk_per_core: 1.0
 
   # Software Requirements to be checked during preflight
   sw_requirements:
     # Check for root access
-    check_root_access: true
+    check_root_access: false
     # Check if SELinux has to be disabled
-    check_selinux_disabled: true
+    check_selinux_disabled: false
     # Minimum docker version (enforced only when using docker mode)
     min_docker_version: "1.14"
 

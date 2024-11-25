@@ -111,7 +111,7 @@ db12_benchmark:
   script:
     - python3 -m pip install --user .
     - python3 -m pip install -r requirements.txt
-    - bmkrun --config default --rundir . --benchmarks db12
+    - bmkrun --config ./tests/ci/benchmark-runner.yml --rundir . --benchmarks db12
   artifacts:
     paths:
       - ./run_*/db12_result.json

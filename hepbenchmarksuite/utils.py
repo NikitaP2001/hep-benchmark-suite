@@ -367,3 +367,6 @@ def print_results_from_file(json_file):
     """
     with open(json_file, 'r') as jfile:
         print_results(json.loads(jfile.read()))
+
+def versiontuple(v):
+    return tuple(map(int, (v.split("."))))
