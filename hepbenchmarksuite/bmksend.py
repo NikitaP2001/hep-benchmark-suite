@@ -12,6 +12,7 @@ from pathlib import Path
 import sys
 import yaml
 from hepbenchmarksuite.plugins import send_queue
+from hepbenchmarksuite.plugins import send_opensearch
 
 
 logging.basicConfig(
@@ -58,7 +59,6 @@ def main():
     try:
         with args.config.resolve().open() as yam:
             active_config = yaml.full_load(yam)
-            connection = active_config["activemq"]
             logger.debug("Found config %s", args.config)
     except FileNotFoundError:
         print("Failed to load configuration file: {}".format(args.config.resolve()))
@@ -112,11 +112,18 @@ def main():
             pass
         else:
             try:
-                send_queue.send_message(file, connection)
+                if active_config.get("activemq", False):
+                    connection = active_config["activemq"]
+                    send_queue.send_message(file, connection)
+                elif active_config.get("opensearch", False):
+                    connection = active_config["opensearch"]
+                    send_opensearch.send_message(file, connection)
+                else:
+                    raise Exception("No publisher configuration was found.")
                 print("Sent {}".format(file))
                 sentcount += 1
             except Exception as err:
-                logger.error("Something went wrong attempting to report via AMQ.")
+                logger.error("Something went wrong attempting to report via AMQ/OpenSearch.")
                 logger.error("Results may not have been correctly transmitted.")
                 logger.exception(err)
 

@@ -11,5 +11,6 @@ statistics
 stomp.py<=7.0.0
 distro
 
+opensearch-py
 # Not required to install the suite, included so it is added as a wheel for offline installation
 git+https://gitlab.cern.ch/hep-benchmarks/hep-score.git@v1.5
