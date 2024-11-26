@@ -78,9 +78,10 @@ class HepBenchmarkSuite:
 
     def _run_plugins_synchronously(self, key, duration_mins: float):
         """Run a plugin synchronously for stage 'key'."""
-        _log.debug("Running plugins synchronously '%s' for %.1f minutes.", key, duration_mins)
+        _log.info("Collecting plugins for stage '%s'", key)
         self.plugin_runner.start_plugins()
 
+        _log.info("Idling system for %.1f minutes.", duration_mins)
         duration_secs = duration_mins * 60
         time.sleep(duration_secs)
 
