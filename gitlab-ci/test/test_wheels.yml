@@ -12,7 +12,13 @@ test_wheels:
     suite_config: !reference [.test_benchmarks, variables, suite_config]
     HEPSCORE_CONFIG: !reference [.test_benchmarks, variables, HEPSCORE_CONFIG]
   before_script:
-    - !reference [db12_benchmark, before_script]
+    - yum install -y -q epel-release
+    - yum install -y -q apptainer git $PYTHON_VERSION --setopt=install_weak_deps=True
+    - yum install -y -q gettext moreutils lzo
+    - yum install -y -q $PYTHON_VERSION --setopt=install_weak_deps=True
+    - if [ "${PYTHON_VERSION}" != "python36" ]; then yum install -y -q ${PYTHON_VERSION}-pip; fi
+    - python3 -m pip install --user --upgrade pip
+    - export PATH=~/.local/bin:$PATH
     - envsubst < $suite_config | sponge $suite_config   # Replace env variables in the config file
   script:
     - python3 -m pip install --user ${WHEELS_PATH}/*.whl

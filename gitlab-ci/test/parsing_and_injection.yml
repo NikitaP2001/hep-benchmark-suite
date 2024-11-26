@@ -43,7 +43,7 @@ test_opensearch_plugin_bmksend_qa:
     CI_DEBUG_SERVICES: "true"
     PYTHON_VERSION: python36
     FF_NETWORK_PER_BUILD: 1
-    CONFIG: ${CI_PROJECT_DIR}/tests/data/opensearch_config_sample.yaml
+    CONFIG: ${CI_PROJECT_DIR}/tests/ci/opensearch_config_sample.yaml
     REF_FILE: ${CI_PROJECT_DIR}/tests/data/result_profile_db12.json
   before_script:
     - yum install -y -q epel-release
@@ -81,7 +81,7 @@ test_opensearch_plugin_bmkrun_qa:
     CI_DEBUG_SERVICES: "true"
     PYTHON_VERSION: python36
     FF_NETWORK_PER_BUILD: 1
-    CONFIG: ${CI_PROJECT_DIR}/tests/data/opensearch_config_sample.yaml
+    CONFIG: ${CI_PROJECT_DIR}/tests/ci/opensearch_config_sample.yaml
     REF_FILE: ${CI_PROJECT_DIR}/tests/data/result_profile_db12.json
   before_script:
     - yum install -y -q epel-release

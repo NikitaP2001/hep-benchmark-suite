@@ -147,13 +147,13 @@ class TestSuite(unittest.TestCase):
 
         suite = HepBenchmarkSuite(sample_config)
 
-        with self.assertLogs('hepbenchmarksuite.hepbenchmarksuite', level='DEBUG') as log:
+        with self.assertLogs('hepbenchmarksuite.hepbenchmarksuite', level='INFO') as log:
             suite.start()
 
-            self.assertIn("DEBUG:hepbenchmarksuite.hepbenchmarksuite:"
-                          "Running plugins synchronously 'pre' for 1.0 minutes.", log.output)
-            self.assertIn("DEBUG:hepbenchmarksuite.hepbenchmarksuite:"
-                          "Running plugins synchronously 'post' for 2.0 minutes.", log.output)
+            self.assertIn("INFO:hepbenchmarksuite.hepbenchmarksuite:Collecting plugins for stage 'pre'", 
+                            log.output)
+            self.assertIn("INFO:hepbenchmarksuite.hepbenchmarksuite:Idling system for 1.0 minutes.",
+                            log.output)
 
 
 if __name__ == '__main__':

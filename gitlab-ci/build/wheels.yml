@@ -11,7 +11,9 @@ build_wheels:
     - !reference [.sshpass, before_script]
     - export GLIBC=$(ldd --version | awk 'NR==1 {gsub(/\./,"_",$NF); print $NF}')
     - export PKG_NAME=hep-benchmark-suite-wheels-${ID}-${PYTHON_VERSION/thon}-none-linux_${GLIBC}_${ARCH}.tar
-    - yum install -y -q $PYTHON_VERSION --setopt=install_weak_deps=True
+    - dnf install -y epel-release # To install python3.11 and above
+    - dnf install -y -q $PYTHON_VERSION --setopt=install_weak_deps=True
+    - if [ "${PYTHON_VERSION}" != "python36" ]; then dnf install -y -q ${PYTHON_VERSION}-pip; fi
     - python3 -m pip install --upgrade setuptools wheel pip
   script:
     - python3 -m pip wheel -r requirements.txt --wheel-dir=$WHEELS_PATH .
@@ -35,7 +37,7 @@ build_wheels:
   parallel:
     matrix:
       - ARCH: [x86_64, aarch64]
-        PYTHON_VERSION: [python36, python38, python39]
+        PYTHON_VERSION: [python36, python38, python39, python3.11]
 
 
 delete_dev_wheels:
