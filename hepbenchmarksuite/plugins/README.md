@@ -66,6 +66,28 @@ global:
   post-stage-duration: 5
 ```
 
+#### Statistics
+For each metric, a summary of statistical metrics can be generated. These statistics are calculated over the collected values and can be customized per metric. By default, the following statistical metrics are included:
+* min: Minimum value
+* q25: 25th percentile (first quartile)
+* mean: Arithmetic mean (average)
+* median: Median value (50th percentile)
+* q75: 75th percentile (third quartile)
+* q85: 85th percentile
+* q95: 95th percentile
+* max: Maximum value
+
+If desired, you can override the default configuration by specifying a comma-separated list of statistics in the statistics field. For example:
+```yaml
+cpu-frequency:
+    command: cpupower -c all frequency-info -f | grep 'current CPU frequency:' | grep -o '[0-9]\{7,\}' | awk '{s+=\$1; c++} END {print (s/c)/1000}'
+    regex: '(?P<value>\d+.\d+).*'
+    unit: MHz
+    interval_mins: 1
+    statistics: min,mean,median,max
+```
+Here, only the min, mean, median, and max values will be calculated for the CPU frequency metric.
+
 ### Results
 
 The results produced by these plugins are saved in the report created by the suite, alongside the benchmark 
@@ -92,7 +114,9 @@ then the `plugin` section of the following format will be generated in the final
           "statistics": {
             "min": 1269082.0,
             "mean": 1269082.0,
-            "max": 1269082.0
+            "max": 1269082.0,
+            "total_count": 1,
+            "valid_count": 1,
           },
           "config": {
             "interval_mins": 1.0,
@@ -140,12 +164,14 @@ plugins:
                 regex: '(?P<value>\d+.\d+).*'
                 unit: MHz
                 interval_mins: 1
+                statistics: default
             power-consumption:
                 command: ipmitool sdr elist
                 regex: 'PS \d Output.* (?P<value>\d+) Watts'
                 unit: W
                 interval_mins: 1
                 aggregation: sum
+                statistics: min,mean,max
             used-memory:
                 command: free -m
                 regex: 'Mem: *(\d+) *(?P<value>\d+).*'
@@ -162,6 +188,14 @@ It does not affect the plugin in any way.
 defines minimal granularity (by default 10 seconds). It will not run the command more often than that.
 * **aggregation**: an aggregation function to use in case the regular expression finds multiple occurrences of the value.
 Default function is sum.
+* **statistics**: Defines the statistical metrics to compute over the collected values. Supported metrics include:
+  * min, max: Minimum and maximum values.
+  * mean, median: Arithmetic mean and median (50th percentile).
+  * Quantiles: Includes predefined quantiles (q25, q75, q85, q95) and custom quantiles as qX, where X is a number between 0 and 100.
+By default, the statistics include min, q25, mean, median, q75, q85, q95, and max. You can:
+  * Explicitly define the statistics field as default to use these default metrics.
+  * Skip the statistics field altogether, and the default metrics will still be used.
+  * Customize the metrics by specifying a comma-separated list. For example: statistics: min,mean,max.
 
 See the `examples/plugins/catalogue.json` for other examples of useful configurations.
 **Run each command** on the target node **before running the suite** to check that the regular expression 
@@ -234,4 +268,3 @@ Plugins are executed concurrently to the HEP suite. Each plugin runs in its own 
 depending on the internal implementation of the suite. This is configurable in the `PluginRunner`. 
 Implementation-wise, this requires
 synchronization and results passing from threads or sub-processes to the main thread/process.
-

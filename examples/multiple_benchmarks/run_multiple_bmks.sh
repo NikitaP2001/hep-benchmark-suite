@@ -372,8 +372,8 @@ create_plugin_configuration() {
         description: 'Retrieves power consumption of the system. Requires elevated privileges.'
         command: 'ipmitool dcmi power reading'
         regex: 'Instantaneous power reading:\\s*(?P<value>\\d+) Watts'
-        interval_mins: 1
-        unit: 'W'"
+        unit: 'W'
+        interval_mins: 1"
     fi
 
     #  If plugins are requested include them in the config
