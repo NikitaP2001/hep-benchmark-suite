@@ -219,11 +219,11 @@ global:
   hw_requirements:
     min_memory_per_core: 2.0
     min_disk_per_core: 1.0
+
   sw_requirements:
     check_root_access: false
     check_selinux_disabled: false
     min_docker_version: "1.14"
-
 
 $SUITE_PLUGINS_CONFIG
 EOF2
@@ -331,8 +331,8 @@ create_plugin_configuration() {
         description: 'Retrieves power consumption of the system. Requires elevated privileges.'
         command: 'ipmitool dcmi power reading'
         regex: 'Instantaneous power reading:\\s*(?P<value>\\d+) Watts'
-        interval_mins: 1
-        unit: 'W'"
+        unit: 'W'
+        interval_mins: 1"
     fi
 
     #  If plugins are requested include them in the config
