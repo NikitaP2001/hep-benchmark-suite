@@ -12,7 +12,7 @@ import os
 import time
 import math
 
-import pkg_resources
+import importlib_resources
 
 from hepbenchmarksuite import benchmarks
 from hepbenchmarksuite import db12
@@ -53,8 +53,9 @@ class HepBenchmarkSuite:
         self.preflight = Preflight(config)
 
         plugin_config = config.get('plugins', {})
-        plugin_registry_path = pkg_resources.resource_filename('hepbenchmarksuite.plugins.registry', '')
-        self.plugin_metadata_provider = DynamicPluginMetadataProvider(plugin_registry_path)
+        ref = importlib_resources.files('hepbenchmarksuite.plugins.registry')
+        with importlib_resources.as_file(ref) as plugin_registry_path:
+            self.plugin_metadata_provider = DynamicPluginMetadataProvider(plugin_registry_path)
         plugin_builder = ConfigPluginBuilder(plugin_config, self.plugin_metadata_provider)
         self.plugin_runner = PluginRunner(plugin_builder)
 

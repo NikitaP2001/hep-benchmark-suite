@@ -16,3 +16,5 @@ stomp.py<=7.0.0
 parameterized
 distro
 opensearch-py
+packaging
+importlib_resources

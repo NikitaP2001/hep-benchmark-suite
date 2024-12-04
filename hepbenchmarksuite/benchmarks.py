@@ -13,7 +13,7 @@ import sys
 import yaml
 
 from importlib_metadata import version, PackageNotFoundError
-from pkg_resources import parse_version
+from packaging.version import parse as parse_version
 
 from hepbenchmarksuite import utils
 from hepbenchmarksuite.exceptions import InstallHEPscoreFailure
