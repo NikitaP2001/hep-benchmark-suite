@@ -37,7 +37,7 @@ build_wheels:
   parallel:
     matrix:
       - ARCH: [x86_64, aarch64]
-        PYTHON_VERSION: [python36, python38, python39, python3.11]
+        PYTHON_VERSION: [python36, python38, python39, python3.11, python3.12]
 
 
 delete_dev_wheels:
