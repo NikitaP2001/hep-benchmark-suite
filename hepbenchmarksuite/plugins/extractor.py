@@ -216,19 +216,30 @@ class Extractor:
         # Get the parsing result from lscpu
         cpu = self.get_cpu_parser(self.exec_cmd("lscpu"))
 
-        # Expand paths
-        scaling_governors = " ".join(glob("/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"))
-        scaling_drivers = " ".join(glob("/sys/devices/system/cpu/cpu*/cpufreq/scaling_driver"))
-
-        # Default to /dev/null [BMK-1258]
-        scaling_governors = scaling_governors if scaling_governors else "/dev/null"
-        scaling_drivers = scaling_drivers if scaling_drivers else "/dev/null"
+        scaling_drivers = []
+        scaling_governors = []
+        for _cpu in glob("/sys/devices/system/cpu/cpu*/cpufreq/scaling_driver"):
+            with open(_cpu, "r") as file:
+                try:
+                    _driver = file.read()
+                    scaling_drivers.append(_driver.strip())
+                # skip offline CPUs
+                except OSError:
+                    pass
+        for _cpu in glob("/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"):
+            with open(_cpu, "r") as file:
+                try:
+                    _governor = file.read()
+                    scaling_governors.append(_governor.strip())
+                # skip offline CPUs
+                except OSError:
+                    pass
 
         # Update with additional data
         cpu.update(
             {
-                "Power_Policy": self.exec_cmd(f"cat {scaling_governors} | sort | uniq"),
-                "Power_Driver": self.exec_cmd(f"cat {scaling_drivers} | sort | uniq"),
+                "Power_Policy": " ".join(sorted(set(scaling_governors))),
+                "Power_Driver": " ".join(sorted(set(scaling_drivers))),
                 "Microcode": self.exec_cmd("awk '/microcode/ {print $3}' /proc/cpuinfo | uniq"),
                 "SMT_Enabled": self.exec_cmd("cat /sys/devices/system/cpu/smt/active"),
             }
