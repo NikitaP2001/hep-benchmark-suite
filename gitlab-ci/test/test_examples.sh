@@ -6,7 +6,7 @@ function run_script(){
     cp ${EXEC_SCRIPT} $WORKDIR/test_script.sh
     envsubst '${SUITE_VERSION}' < $WORKDIR/test_script.sh | sponge $WORKDIR/test_script.sh
     # Let's make the test faster, running hello-world
-    sed -e 's@\(\s*config:\s*\)default@\1$CI_PROJECT_DIR/tests/ci/hepscore.yaml@' examples/hepscore/run_HEPscore.sh | sponge $WORKDIR/test_script.sh
+    sed -e 's@\(\s*config:\s*\)default@\1$CI_PROJECT_DIR/tests/ci/hepscore.yaml@' -e 's@min_memory_per_core: .*@min_memory_per_core: 1.0@' examples/hepscore/run_HEPscore.sh | sponge $WORKDIR/test_script.sh
     chmod u+x $WORKDIR/test_script.sh
     $WORKDIR/test_script.sh -s dummy -d $WORKDIR ${sversion} ${splugins} | tee log 
     grep "with return code 0" log
