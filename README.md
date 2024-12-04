@@ -184,7 +184,7 @@ Points of attention:
 
 - The aggregated results of the selected benchmarks are written to the location defined by the `--rundir=` argument or `rundir` in the `yaml` file.
 
-- By default, results are not sent via AMQ. To send the results, please refer to [Advanced Message Queuing (AMQ)](#Advanced-Message-Queuing-(AMQ)) section.
+- By default, results are retained locally and are not transmitted to any remote endpoint, AMQ (the official approach), or OpenSearch (an alternative approach). To publish the results, please refer to the relevant sections: [Advanced Message Queuing (AMQ)](#Advanced-Message-Queuing-(AMQ)), [OpenSearch](#OpenSearch)) section.
 
 - Benchmarks are executed in sequence.
 
@@ -257,6 +257,21 @@ subject=CN=Name Surname,CN=123456,CN=username,OU=Users,OU=Organic Units,DC=cern,
 
 Pass this information to the Messaging Team alongside the server and topic to set up the authentication. Additional information on user certificates can be found at [the official CERN CA documentation](https://ca.cern.ch/ca/Help).
 
+### OpenSearch
+
+OpenSearch publishing is implemented using the [opensearch-py library](https://github.com/opensearch-project/opensearch-py). Users must provide a valid username/password, in addition to the server and index. The relevant section of the [config yaml](hepbenchmarksuite/config/benchmarks.yml) is given below. You must then pass the argument `--publish` to the suite.
+
+#### username/password settings
+
+```yaml
+opensearch:
+  server: some-server.com
+  index: my-index
+  username: user
+  password: secret
+  port: 12345
+```
+
 ## Description of all arguments
 
 The `-h` option provides an explanation of all command line arguments
@@ -287,7 +302,7 @@ optional arguments:
   -t, --tags            Enable reading of user tags from ENV variables
                         (BMKSUITE_TAG_{TAG}). Tags specified in configuration
                         file are ignored.
-  -p, --publish         Enable reporting via AMQ credentials in YAML file.
+  -p, --publish         Enable reporting via AMQ/OpenSearch credentials in YAML file.
   -s, --show            Show running config and exit.
   -V, --extra_volumes VOLUME [VOLUME ...]
                         List of additional volumes to mount on the container.
