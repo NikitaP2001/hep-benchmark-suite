@@ -63,7 +63,6 @@ class Extractor:
             "lshw",
             "ipmitool",
             "dmidecode",
-            "facter",
             "nvidia-smi",
             "rocm-smi",
         )
@@ -349,6 +348,19 @@ class Extractor:
         except OSError:
             return "not_available"
 
+    def check_if_virtual(self, cmd="grep hypervisor /proc/cpuinfo"):
+        """
+        Checks if the system is virtualized by executing a command.
+
+        Args:
+            cmd (str): The command to check virtualization. Default is 'grep hypervisor /proc/cpuinfo'.
+
+        Returns:
+            bool: True if the system is virtualized, False otherwise.
+        """
+        is_virtual = self.exec_cmd(cmd) != "not_available"
+        return is_virtual
+
     def collect_system(self):
         """Collect relevant BIOS information."""
         _log.info("Collecting system information.")
@@ -359,15 +371,12 @@ class Extractor:
         else:
             parse_system = not_available
 
-        if self.pkg["ipmitool"] and self._permission:
+        try:
             parse_bmc_fru = self.get_parser(self.exec_cmd("ipmitool fru"), "BMC")
-        else:
-            parse_bmc_fru = not_available
+        except:
+            parse_bmc_fru = lambda x: "not_available"
 
-        if self.pkg["facter"]:
-            is_virtual = self.exec_cmd("facter is_virtual").casefold() == "true"
-        else:
-            is_virtual = self.exec_cmd("grep hypervisor /proc/cpuinfo") != "not_available"
+        is_virtual = self.check_if_virtual()
 
         system = {
             "Manufacturer"      : parse_system("Manufacturer"),

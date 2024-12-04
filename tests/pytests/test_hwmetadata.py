@@ -575,6 +575,65 @@ class TestHWExtractor(unittest.TestCase):
         if TMP_FILE.exists():
             TMP_FILE.unlink()
 
+class TestCheckIfVirtual(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # Mock executor
+        class MockExecutor:
+            def run_command(self, cmd):
+                with open(cmd.split(" ")[-1], "r") as f:
+                    return f.read()
+
+        cls.mock_executor = MockExecutor()
+        cls.extractor = Extractor(cls.mock_executor)
+
+        # Prepare mock test files
+        cls.file_A = "A_non_existing_file"  # Non-existent file
+        cls.file_B = "B.txt"  # File without hypervisor
+        cls.file_C = "C.txt"  # File with hypervisor
+
+        with open(cls.file_B, "w") as f:
+            f.write("physical system.\n")
+
+        with open(cls.file_C, "w") as f:
+            f.write("This system has a hypervisor.\n")
+
+    @classmethod
+    def tearDownClass(cls):
+        # Clean up test files
+        if os.path.exists(cls.file_B):
+            os.remove(cls.file_B)
+        if os.path.exists(cls.file_C):
+            os.remove(cls.file_C)
+
+    def test_non_existent_file(self):
+        cmd = f"grep hypervisor {self.file_A}"
+        result = self.extractor.check_if_virtual(cmd=cmd)
+        self.assertFalse(result, "File without hypervisor should return False.")
+
+    def test_file_without_hypervisor(self):
+        cmd = f"grep hypervisor {self.file_B}"
+        result = self.extractor.check_if_virtual(cmd=cmd)
+        self.assertFalse(result, "File without hypervisor should return False.")
+
+    def test_file_with_hypervisor(self):
+        cmd = f"grep hypervisor {self.file_C}"
+        result = self.extractor.check_if_virtual(cmd=cmd)
+        self.assertTrue(result, "File with hypervisor should return True.")
+
+    @patch.object(Extractor, "check_if_virtual")
+    def test_check_if_virtual_mocked(self, mock_check_if_virtual):
+        # Mock check_if_virtual behavior for a virtualized system
+        mock_check_if_virtual.return_value = True
+        result = self.extractor.check_if_virtual()
+        self.assertTrue(result, "Mocked method with virtual system should return True.")
+
+        # Mock check_if_virtual behavior for a non-virtualized system
+        mock_check_if_virtual.return_value = False
+        result = self.extractor.check_if_virtual()
+        self.assertFalse(result, "Mocked method with non-virtual system should return False.")
+
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
