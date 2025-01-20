@@ -86,6 +86,8 @@ Options:
                     m enables memory usage
                     s enables memory swap
                     p power consumption
+                    g gpu power consumption
+                    u gpu usage
                   -b needs a suite version >= 3.0rc5. 
                   Use it in combination with -v <suite_version>  
   -v version      Suite version. Default is latest"
@@ -247,7 +249,7 @@ create_plugin_configuration() {
     [[ -z $plugin_keys ]] && return
 
     # Allowed plugin keys
-    ALLOWED_PLUGIN_KEYS=(f l m s p)
+    ALLOWED_PLUGIN_KEYS=(f l m s p g u)
 
     # Check if the suite version is above a given version
     if [[ ! "$SUITE_VERSION" =~ ^[3-9]\.[[:alnum:]]*$ && ! "$SUITE_VERSION" =~ ^qa$ ]]; then
@@ -260,6 +262,8 @@ create_plugin_configuration() {
     collect_memory_usage=false
     collect_swap_usage=false
     collect_power_consumption=false
+    collect_gpu_power_consumption=false
+    collect_gpu_usage=false
 
     for pkey in "${ALLOWED_PLUGIN_KEYS[@]}"; do
       if [[ "$plugin_keys" =~ (^|.*,)"$pkey"(,.*|$) ]]; then
@@ -279,6 +283,12 @@ create_plugin_configuration() {
           p)
             collect_power_consumption=true
             ;;
+          g)
+            collect_gpu_power_consumption=true
+            ;;
+          u)
+            collect_gpu_usage=true
+            ;;
           *)
             echo "Unexpected plugin key $pkey. Ignoring it"
             ;;
@@ -292,6 +302,8 @@ create_plugin_configuration() {
     echo "collect_memory_usage: $collect_memory_usage"
     echo "collect_swap_usage: $collect_swap_usage"
     echo "collect_power_consumption: $collect_power_consumption"
+    echo "collect_gpu_power_consumption: $collect_gpu_power_consumption"
+    echo "collect_gpu_usage: $collect_gpu_usage"
 
 
     METRICS_CONFIG=""
@@ -340,6 +352,26 @@ create_plugin_configuration() {
         regex: 'Instantaneous power reading:\\s*(?P<value>\\d+) Watts'
         unit: 'W'
         interval_mins: 1"
+    fi
+
+    if [ "$collect_gpu_power_consumption" = true ]; then
+      METRICS_CONFIG="$METRICS_CONFIG
+      gpu-power-consumption:
+        description: 'Retrieves gpu power consumption.'
+        command: nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits -i 0
+        regex: '(?P<value>\d+(.\d+)?).*'
+        interval_mins: 0.1
+        unit: 'W'"
+    fi
+
+    if [ "$collect_gpu_usage" = true ]; then
+      METRICS_CONFIG="$METRICS_CONFIG
+      gpu-usage:
+        description: 'Retrieves gpu usage.'
+        command: nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i 0
+        regex: '(?P<value>\d+(.\d+)?).*'
+        interval_mins: 0.1
+        unit: ''"
     fi
 
     #  If plugins are requested include them in the config
