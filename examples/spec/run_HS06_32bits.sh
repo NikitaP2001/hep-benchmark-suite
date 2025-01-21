@@ -125,7 +125,7 @@ SUITE_CONFIG_FILE=$WORKDIR/bmkrun_config.yml
 HEPSCORE_CONFIG_FILE=$WORKDIR/hepscore_config.yml
 GiB_PER_CORE=1
 
-SUPPORTED_PY_VERSIONS=(py36 py38 py39)
+SUPPORTED_PY_VERSIONS=(py36 py38 py39 py3.11 py3.12)
 DEFAULT_PY_VERSION="py36"
 
 declare -A registries=( ["singularity"]="oras" ["docker"]="docker" )
