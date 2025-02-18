@@ -12,7 +12,7 @@
 
 [[_TOC_]]
 
-## Feedback/Support
+# Feedback/Support
 
 Feedback and support questions are welcome primarily through [GGUS tickets](https://w3.hepix.org/benchmarking/how_to_run_HS23.html#how-to-open-a-ggus-ticket) or in the HEP Benchmarks Project
 [Discourse Forum](https://wlcg-discourse.web.cern.ch/c/hep-benchmarks).
@@ -36,20 +36,7 @@ It is built in a modular approach to target the following use cases in HEP compu
 1. **Probe randomly assigned slots in a cloud environment**
    - In production can suggest deletion and re-provisioning of under-performing resources.
 
-## Examples
-
-This is a short list of configuration examples to run the suite.
-For an in depth understanding of the installation and configuration options refer to the dedicated [section](##installation)
-
-1. HEPscore example runscripts:
-   - [HEPscore default configuration](examples/hepscore/run_HEPscore.sh)
-   - [Run HEPscore custom configuration](examples/hepscore/run_HEPscore-slim_on_grid.sh)
-   - [Run HEPscore default configuration on HPC via SLURM](examples/hepscore/run_HEPscore_on_HPC_slurm.sh)
-1. HEP SPEC example runscripts:
-   - [Run](examples/spec/run_HS06_32bits.sh) HS06 32 bits
-   - [Run](examples/spec/run_HS06_64bits.sh) HS06 64 bits
-   - [Run](examples/spec/run_SPECCPU2017_intrate.sh) SPEC CPU 2017 Int Rate
-   - [Run](examples/spec/run_SPECCPU2017_cpp.sh) SPEC CPU 2017 Rate cpp
+For instructions on how to run the HEPScore23 benchmark, please refer to the [dedicated HEPiX Benchmark page](https://w3.hepix.org/benchmarking/how_to_run_HS23.html). The HEPScore23 scores for the benchmarked servers are reported in this [table](https://w3.hepix.org/benchmarking/scores_HS23.html).
 
 ## Benchmark suite architecture
 
@@ -85,7 +72,7 @@ Plugin        | Status |
 :---:         | :--:               |
 HW-Metadata   | :white_check_mark: |
 ActiveMQ      | :white_check_mark: |
-Elastic Search|:x:        |
+OpenSearch    | :white_check_mark: |
 
 ### Available benchmarks
 
@@ -113,6 +100,23 @@ Servers belonging to different data centres (or cloud providers) are benchmarked
 In this example, an AMQ consumer may then digest the messages from the broker, and insert them in an Elasticsearch cluster so that the benchmark results can be aggregated and visualized in dashboards. Metadata (such as UID, CPU architecture, OS, Cloud name, IP address, etc.) are also included into the searchable results.
 
 Users are free to build/use transport and aggregation/visualization tools of their choice to ingest the generated JSON results.
+
+## Quick Start: Running the Suite Examples
+
+This is a short list of configuration examples to run the suite.
+For an in depth understanding of the installation and configuration options refer to the dedicated [section](#installation)
+
+1. HEPscore example runscripts:
+   - [HEPscore default configuration](examples/hepscore/run_HEPscore.sh)
+   - [Run HEPscore custom configuration](examples/hepscore/run_HEPscore-slim_on_grid.sh)
+   - [Run HEPscore default configuration on HPC via SLURM](examples/hepscore/run_HEPscore_on_HPC_slurm.sh)
+2. HEP SPEC example runscripts:
+   - [Run](examples/spec/run_HS06_32bits.sh) HS06 32 bits
+   - [Run](examples/spec/run_HS06_64bits.sh) HS06 64 bits
+   - [Run](examples/spec/run_SPECCPU2017_intrate.sh) SPEC CPU 2017 Int Rate
+   - [Run](examples/spec/run_SPECCPU2017_cpp.sh) SPEC CPU 2017 Rate cpp
+
+You need to download the runscript you are interested in and run in the terminal.
 
 ## Installation
 
@@ -153,12 +157,14 @@ _Note: When using virtual environments, hep-score will also be installed in this
 ### Limited connectivity (wheel installation)
 
 An alternative installation method, not requiring git, is based on python wheels, which is suitable for environments with limited connectivity. All python wheels can be found [here](https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/).
+For example:
 
 ```sh
-export SUITE_RELEASE=hep-benchmark-suite-wheels-v2.1.tar
-wget https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/${SUITE_RELEASE}
+export SUITE_VERSION=3.0
+export SUITE_RELEASE=hep-benchmark-suite-wheels-3.0rc19-py39-none-linux_2_28_x86_64.tar 
+wget https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/${SUITE_VERSION}/${SUITE_RELEASE}
 tar -xvf ${SUITE_RELEASE}
-python3 -m pip install suite_wheels/*.whl
+python3 -m pip install suite_wheels*/*.whl
 ```
 
 ## How to run
@@ -190,6 +196,8 @@ Points of attention:
 
 - The following benchmarks: `hepscore`, `hs06`, `spec2017` are configured in their appropriate configuration sections.
 
+- If you want to run custom benchmark based on custom workloads you should follow the instructions described in [hep-score](https://gitlab.cern.ch/hep-benchmarks/hep-score#configuring-hepscore) and [hep-workloads](https://gitlab.cern.ch/hep-benchmarks/hep-workloads#add-a-new-workload)
+
 - In the case of running HS06, and/or SPEC CPU2017, the benchmark will look for the installation at the specified `hepspec_volume:`, and if it does not exist, it will attempt to install it via tarball argument `url_tarball:`, as defined in the [`benchmarks.yml`](hepbenchmarksuite/config/benchmarks.yml)).
 
 - Please have a look at the [Examples](#examples) section.
@@ -201,6 +209,8 @@ Points of attention:
 The suite ships with a [hardware metadata plugin](hepbenchmarksuite/plugins/extractor.py) which is responsible to collect system hardware and software information. This data is then compiled and reported in the results json file.
 
 This plugin relies on system tools such as: `lscpu`, `lshw`, `dmidecode`. Some of these tools require escalated privileges for a complete output. Please take this into consideration if some outputs are empty in the final json report.
+
+Read [Plugins README.md](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/tree/master/hepbenchmarksuite/plugins?ref_type=heads) for more information about the HEP Benchmark Suite Plugins.
 
 <div align="center">
   <img src="doc/images/HEP-Benchmark-Suite-Json.png" width="554" height="393" />
@@ -236,7 +246,7 @@ Please note that key/cert authentication is preferred to publish the results to 
 
 In order to authenticate this way, you can request a grid user certificate from the [CERN Certification Authority](https://ca.cern.ch). There you can check [whether you are elegible for a certificate](https://ca.cern.ch/ca/certificates/CheckAccount.aspx) as well as [request the certificate itself](https://ca.cern.ch/ca/user/Request.aspx?template=EE2User).
 
-As of today (08 Sep 2021), the certificate is issued in a single PKCS#12 file (.p12) containing both the certificate and the key. So as to use it in this application, it needs to be split into a certificate and a key PEM file by:
+As of 21 Jan 2025, the certificate is issued in a single PKCS#12 file (.p12) containing both the certificate and the key. So as to use it in this application, it needs to be split into a certificate and a key PEM file by:
 
 ```sh
 openssl pkcs12 -in user.p12 -out user.crt.pem -clcerts -nokeys
