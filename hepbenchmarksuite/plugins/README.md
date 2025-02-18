@@ -2,18 +2,17 @@
 # Plugins
 
 Plugins provide the means of adding functionality that runs independently of the suite.
-Typically, it allows collecting metrics that are otherwise not collected by the suite, such as memory usage.
-The plugins are inherently designed to run concurrently; thus, not interfering with the 
-benchmarking process.
+Typically, it allows collecting metrics that are otherwise not collected by the suite, such as load of the machine, power consumption or memory usage.
+The plugins are inherently designed to run concurrently; thus, not interfering with the benchmarking process.
 
-### Phases
+## Phases
 Plugins are executed by the suite in three major phases:
 1. Before benchmarking starts (pre) - useful for collecting metrics when the system is idle.
 2. During each benchmark
 3. After benchmarking finishes (post)
 
 The duration of the “pre” and “post” phases can be configured. By default, they run only for a brief moment, 
-giving a chance to retrieve a single measurement. See the [Configuration](#Configuration) section.
+giving a chance to retrieve a single measurement. See the [Configuration](###Configuration) section.
 
 ## Usage
 
@@ -66,7 +65,9 @@ global:
   post-stage-duration: 5
 ```
 
-#### Statistics
+In this case the `pre` and `post` stage will last 5 minutes each.
+
+### Statistics
 For each metric, a summary of statistical metrics can be generated. These statistics are calculated over the collected values and can be customized per metric. By default, the following statistical metrics are included:
 * min: Minimum value
 * q25: 25th percentile (first quartile)
@@ -87,6 +88,89 @@ cpu-frequency:
     statistics: min,mean,median,max
 ```
 Here, only the min, mean, median, and max values will be calculated for the CPU frequency metric.
+If not explicitly defined, the default configuration is used.
+
+### Using existing plugins
+
+The following table lists the existing plugins:
+
+| Plugin          | Description                                                                             |
+|-----------------|-----------------------------------------------------------------------------------------|
+| CommandExecutor | Executes command utilities in defined intervals and collects values from their outputs. |
+| TestPlugin      | The simplest implementation of a plugin that only increases a counter.                  |
+
+#### CommandExecutor
+Executes specified commands and retrieves the values by applying the regular expression on the output 
+of the command. Saves the values as timeseries. Generates a summary report at the end of its lifetime.
+
+See the example configuration of this plugin: 
+```yaml
+plugins:
+    CommandExecutor:
+        metrics:
+            cpu-frequency:
+                command: cpupower -c all frequency-info -f | grep 'current CPU frequency:' | grep -o '[0-9]\{7,\}' | awk '{s+=\$1; c++} END {print (s/c)/1000}'
+                regex: '(?P<value>\d+.\d+).*'
+                unit: MHz
+                interval_mins: 1
+                statistics: default
+            power-consumption:
+                command: ipmitool sdr elist
+                regex: 'PS \d Output.* (?P<value>\d+) Watts'
+                unit: W
+                interval_mins: 1
+                aggregation: sum
+                statistics: min,mean,max
+            used-memory:
+                command: free -m
+                regex: 'Mem: *(\d+) *(?P<value>\d+).*'
+                unit: MiB
+                interval_mins: 1
+```
+Each metric starts with its name, which can be arbitrary, but will be included in the final report.
+The following parameters must be specified for each metric: 
+* **command**: the command to be run in regular intervals
+* **regex**: a regular expression to retrieve a single or more numeric values from the output as a result of running the command
+* **unit**: a user-defined unit of the collected metric, which will be propagated into the final report.
+It does not affect the plugin in any way.
+* **interval_mins**: a floating-point value defining how often the value should be collected. The plugin internally 
+defines minimal granularity (by default 10 seconds). It will not run the command more often than that.
+* **aggregation**: an aggregation function to use in case the regular expression finds multiple occurrences of the value.
+Default function is `sum`.
+* **statistics**: Defines the statistical metrics to compute over the collected values. Supported metrics include:
+  * min, max: Minimum and maximum values.
+  * mean, median: Arithmetic mean and median (50th percentile).
+  * Quantiles: Includes predefined quantiles (q25, q75, q85, q95) and custom quantiles as qX, where X is a number between 0 and 100.
+By default, the statistics include min, q25, mean, median, q75, q85, q95, and max. You can:
+  * Explicitly define the statistics field as default to use these default metrics.
+  * Skip the statistics field altogether, and the default metrics will still be used.
+  * Customize the metrics by specifying a comma-separated list. For example: statistics: min,mean,max.
+
+See the `examples/plugins/catalogue.json` for other examples of useful configurations.
+**Run each command** on the target node **before running the suite** to check that the regular expression 
+corresponds to the produced output.
+
+### Creating new plugins based on bash commands
+
+If the new metric can be obtained via a bash command, you can easily integrate a new plugin by defining it in the YAML configuration file. For instance, the following example demonstrates how the `gpu-power-consumption plugin` was added:
+
+```yaml
+plugins:
+    CommandExecutor:
+        metrics:
+            power-consumption:
+                command: ipmitool sdr elist
+                regex: 'PS \d Output.* (?P<value>\d+) Watts'
+                unit: W
+                interval_mins: 1
+                aggregation: sum
+                statistics: min,mean,max
+            gpu-power-consumption:
+                command: nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits -i 0
+                regex: '(?P<value>\d+(.\d+)?).*'
+                interval_mins: 0.1
+                unit: 'W'
+```
 
 ### Results
 
@@ -141,72 +225,9 @@ then the `plugin` section of the following format will be generated in the final
 }
 ```
 
-### Using existing plugins
+### Creating new plugins using Python scripts
 
-The following table lists the existing plugins:
-
-| Plugin          | Description                                                                             |
-|-----------------|-----------------------------------------------------------------------------------------|
-| CommandExecutor | Executes command utilities in defined intervals and collects values from their outputs. |
-| TestPlugin      | The simplest implementation of a plugin that only increases a counter.                  |
-
-#### CommandExecutor
-Executes specified commands and retrieves the values by applying the regular expression on the output 
-of the command. Saves the values as timeseries. Generates a summary report at the end of its lifetime.
-
-See the example configuration of this plugin: 
-```yaml
-plugins:
-    CommandExecutor:
-        metrics:
-            cpu-frequency:
-                command: cpupower -c all frequency-info -f | grep 'current CPU frequency:' | grep -o '[0-9]\{7,\}' | awk '{s+=\$1; c++} END {print (s/c)/1000}'
-                regex: '(?P<value>\d+.\d+).*'
-                unit: MHz
-                interval_mins: 1
-                statistics: default
-            power-consumption:
-                command: ipmitool sdr elist
-                regex: 'PS \d Output.* (?P<value>\d+) Watts'
-                unit: W
-                interval_mins: 1
-                aggregation: sum
-                statistics: min,mean,max
-            used-memory:
-                command: free -m
-                regex: 'Mem: *(\d+) *(?P<value>\d+).*'
-                unit: MiB
-                interval_mins: 1
-```
-Each metric starts with its name, which can be arbitrary, but will be included in the final report.
-The following parameters must be specified for each metric: 
-* **command**: the command to be run in regular intervals
-* **regex**: a regular expression to retrieve a single or more numeric values from the output as a result of running the command
-* **unit**: a user-defined unit of the collected metric, which will be propagated into the final report.
-It does not affect the plugin in any way.
-* **interval_mins**: a floating-point value defining how often the value should be collected. The plugin internally 
-defines minimal granularity (by default 10 seconds). It will not run the command more often than that.
-* **aggregation**: an aggregation function to use in case the regular expression finds multiple occurrences of the value.
-Default function is sum.
-* **statistics**: Defines the statistical metrics to compute over the collected values. Supported metrics include:
-  * min, max: Minimum and maximum values.
-  * mean, median: Arithmetic mean and median (50th percentile).
-  * Quantiles: Includes predefined quantiles (q25, q75, q85, q95) and custom quantiles as qX, where X is a number between 0 and 100.
-By default, the statistics include min, q25, mean, median, q75, q85, q95, and max. You can:
-  * Explicitly define the statistics field as default to use these default metrics.
-  * Skip the statistics field altogether, and the default metrics will still be used.
-  * Customize the metrics by specifying a comma-separated list. For example: statistics: min,mean,max.
-
-See the `examples/plugins/catalogue.json` for other examples of useful configurations.
-**Run each command** on the target node **before running the suite** to check that the regular expression 
-corresponds to the produced output.
-
-
-
-
-### Creating new plugins
-
-New plugins can be created by inheriting from the `StatefulPlugin` or any other descendant of this class.
+New plugins can be also created by inheriting from the `StatefulPlugin` or any other descendant of this class.
 The new plugin **must be placed** in the registry directory. 
 Classes that are not descendents of the `StatefulPlugin` will not be recognized by the suite.
 
@@ -251,8 +272,7 @@ execution:
 
 The registry is a Python package with modules containing the plugins.
 It is located in `hepbenchmarksuite/plugins/registry`.
-Only classes as descendants of StatefulPlugin are considered as
-plugins; rest is ignored.
+Only classes as descendants of StatefulPlugin are considered as plugins; rest is ignored.
 
 #### Construction
 
