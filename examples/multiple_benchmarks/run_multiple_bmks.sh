@@ -347,14 +347,14 @@ create_plugin_configuration() {
       cpu-frequency:
         command: cpupower -c all frequency-info -f | grep 'current CPU frequency:' | grep -o '[0-9]\{7,\}' | awk '{s+=\$1; c++} END {print (s/c)/1000}'
         regex: '(?P<value>\d+.\d+).*'
-        unit: MHz
+        unit: 'MHz'
         interval_mins: 1"
     fi
 
     if [ "$collect_load" = true ]; then
       METRICS_CONFIG="$METRICS_CONFIG
       load:
-        command: uptime
+        command: 'uptime'
         regex: 'load average: (?P<value>\d+.\d+),'
         unit: ''
         interval_mins: 1"
@@ -363,26 +363,26 @@ create_plugin_configuration() {
     if [ "$collect_memory_usage" = true ]; then
       METRICS_CONFIG="$METRICS_CONFIG
       used-memory:
-        command: free -m
+        command: 'free -m'
         regex: 'Mem: *(\d+) *(?P<value>\d+).*'
-        unit: MiB
+        unit: 'MiB'
         interval_mins: 1"
     fi
 
     if [ "$collect_swap_usage" = true ]; then
       METRICS_CONFIG="$METRICS_CONFIG
       used-swap-memory:
-        command: free -m
+        command: 'free -m'
         regex: 'Swap: *\d+ *(?P<value>\d+).*'
-        unit: MiB
+        unit: 'MiB'
         interval_mins: 1"
     fi
 
     if [ "$collect_power_consumption" = true ]; then
       METRICS_CONFIG="$METRICS_CONFIG
-      power-consumption1:
-        description: 'Retrieves power consumption of the system. Requires elevated privileges.'
+      power-consumption:
         command: 'ipmitool dcmi power reading'
+        description: 'Retrieves power consumption of the system. Requires elevated privileges.'
         regex: 'Instantaneous power reading:\\s*(?P<value>\\d+) Watts'
         unit: 'W'
         interval_mins: 1"
@@ -391,21 +391,21 @@ create_plugin_configuration() {
     if [ "$collect_gpu_power_consumption" = true ]; then
       METRICS_CONFIG="$METRICS_CONFIG
       gpu-power-consumption:
+        command: 'nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits -i 0'
         description: 'Retrieves gpu power consumption.'
-        command: nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits -i 0
         regex: '(?P<value>\d+(.\d+)?).*'
-        interval_mins: 0.1
-        unit: 'W'"
+        unit: 'W'
+        interval_mins: 0.1"
     fi
 
     if [ "$collect_gpu_usage" = true ]; then
       METRICS_CONFIG="$METRICS_CONFIG
       gpu-usage:
+        command: 'nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i 0'
         description: 'Retrieves gpu usage.'
-        command: nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i 0
         regex: '(?P<value>\d+(.\d+)?).*'
-        interval_mins: 0.1
-        unit: ''"
+        unit: ''
+        interval_mins: 0.1"
     fi
 
     #  If plugins are requested include them in the config
