@@ -29,7 +29,7 @@ test_opensearch_plugin_bmksend_qa:
   stage: test-parsing-and-injection
   needs: []
   services:
-    - name: opensearchproject/opensearch:latest
+    - name: registry.cern.ch/docker.io/opensearchproject/opensearch:2.16.0
       alias: opensearch
       variables:
         discovery.type: single-node # Nodes to look for when discovering the cluster
@@ -67,7 +67,7 @@ test_opensearch_plugin_bmkrun_qa:
   stage: test-parsing-and-injection
   needs: []
   services:
-    - name: opensearchproject/opensearch:latest
+    - name: registry.cern.ch/docker.io/opensearchproject/opensearch:2.16.0
       alias: opensearch
       variables:
         discovery.type: single-node # Nodes to look for when discovering the cluster
