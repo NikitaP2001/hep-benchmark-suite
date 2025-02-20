@@ -27,6 +27,7 @@ class CatalogueTester(unittest.TestCase):
             'command': item['command'],
             'regex': item['regex'],
             'unit': item['unit'],
+            'aggregation': item.get('aggregation', 'default'),
             'interval_mins': 1
         })
 
@@ -48,17 +49,15 @@ class CatalogueJSONTester(unittest.TestCase):
         with open(catalogue_file_path, "r") as file:
             catalogue_items = json.load(file)
 
-        #print (catalogue_items['plugins'])
         for item in catalogue_items['plugins']['CommandExecutor']['metrics'].values():
-            #print(item)
             self._test_catalogue_item(item)
 
     def _test_catalogue_item(self, item: Dict):
-        #print(item)
         metric = MetricDefinition('metric', {
             'command': item['command'],
             'regex': item['regex'],
             'unit': item['unit'],
+            'aggregation': item.get('aggregation', 'default'),
             'interval_mins': 1
         })
 
@@ -80,9 +79,7 @@ class CatalogueYMLTester(unittest.TestCase):
         with open(catalogue_file_path, "r") as file:
             catalogue_items = yaml.safe_load(file)
 
-        #print (catalogue_items['plugins'])
         for k, item in catalogue_items['plugins']['CommandExecutor']['metrics'].items():
-            #print(item)
             self._test_catalogue_item(k, item)
 
     def _test_catalogue_item(self, k: str, item: Dict):
@@ -91,6 +88,7 @@ class CatalogueYMLTester(unittest.TestCase):
             'command': item['command'],
             'regex': item['regex'],
             'unit': item['unit'],
+            'aggregation': item.get('aggregation', 'default'),
             'interval_mins': 1
         })
 

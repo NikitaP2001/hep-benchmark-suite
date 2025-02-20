@@ -1,4 +1,6 @@
 import unittest
+import math
+import pytest
 import statistics
 from hepbenchmarksuite.exceptions import PluginBuilderException
 from hepbenchmarksuite.plugins.metric_definition import MetricDefinition
@@ -24,6 +26,43 @@ class TestMetricDefinition(unittest.TestCase):
         expected_value = 25
 
         self.assertEqual(expected_value, value)
+
+    def test_empty_parse_for_aggregations(self):
+        # Define a mapping of aggregation names to expected output on empty input.
+        # Note: adjust expected values if some functions (e.g. 'count') should return something different.
+        aggregations_expected = {
+            'average': math.nan,
+            'sum': math.nan,
+            'minimum': math.nan,
+            'maximum': math.nan,
+            'median': math.nan,
+            'mode': math.nan,
+            'product': math.nan,
+            'standard_deviation': math.nan,
+            'q50': math.nan,  # quantile-based aggregation example
+        }
+        
+        for aggregation, expected in aggregations_expected.items():
+            with self.subTest(aggregation=aggregation):
+                params = {
+                    'command': 'none',
+                    'regex': r'V\d+: (?P<value>\d+).*',
+                    'unit': 'none',
+                    'aggregation': aggregation,
+                    'interval_mins': 1
+                }
+                definition = MetricDefinition('metric', params)
+                
+                command_output = """
+                    V1:,
+                    V2:
+                """
+                value = definition.parse(command_output)
+                
+                if math.isnan(expected):
+                    self.assertTrue(math.isnan(value))
+                else:
+                    self.assertEqual(value, expected)
 
     def test_aggregations(self):
         agg_list = [

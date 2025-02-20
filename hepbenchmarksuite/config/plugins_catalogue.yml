@@ -22,7 +22,6 @@ plugins:
         regex: "load average: (?P<value>\\d+.\\d+),"
         interval_mins: 1
         unit: ""
-        aggregation: ""
         example-output: " 11:02:47 up  3:03,  1 user,  load average: 0.18, 0.38, 0.25"
         expected-value: 0.18
 
@@ -128,6 +127,7 @@ plugins:
         regex: "Sensor Reading\\s+:\\s*(?P<value>\\d+).*"
         interval_mins: 1
         unit: "W"
+        aggregation: "sum"
         example-output: |
           Locating sensor record...
           Sensor ID              : PS1 Power In (0x54)
