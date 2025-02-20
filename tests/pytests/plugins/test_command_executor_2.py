@@ -83,7 +83,7 @@ class TestCommandExecutor(unittest.TestCase):
         self.assertEqual('same_dummy', foo_config['command'])
         self.assertEqual(r'foo=(?P<value>\d+).*', foo_config['regex'])
         self.assertEqual('', foo_config['unit'])
-        self.assertEqual('sum', foo_config['aggregation'])
+        self.assertEqual('default', foo_config['aggregation'])
 
     def test_determine_time_until_next_execution(self):
         """

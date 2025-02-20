@@ -18,7 +18,6 @@
           "command": "uptime",
           "regex": "load average: (?P<value>\\d+.\\d+),",
           "unit": "",
-          "aggregation": "",
           "example-output": " 11:02:47 up  3:03,  1 user,  load average: 0.18, 0.38, 0.25",
           "expected-value": 0.18
         },
@@ -44,6 +43,7 @@
           "command": "ipmitool sensor get 'PS1 Power In' ; ipmitool sensor get 'PS2 Power In'",
           "regex": "Sensor Reading\\s+:\\s*(?P<value>\\d+).*",
           "unit": "W",
+          "aggregation": "sum",
           "example-output": "Locating sensor record...\nSensor ID              : PS1 Power In (0x54)\n Entity ID             : 10.1\n Sensor Type (Threshold)  : Other\n Sensor Reading        : 210 (+/- 0) Watts\n Status                : ok\n Lower Non-Recoverable : na\n Lower Critical        : na\n Lower Non-Critical    : na\n Upper Non-Critical    : 2030.000\n Upper Critical        : 2300.000\n Upper Non-Recoverable : na\n Positive Hysteresis   : Unspecified\n Negative Hysteresis   : Unspecified\n Assertion Events      : \n Assertions Enabled    : unc+ ucr+ \n Deassertions Enabled  : unc+ ucr+ \n\nLocating sensor record...\nSensor ID              : PS2 Power In (0x55)\n Entity ID             : 10.2\n Sensor Type (Threshold)  : Other\n Sensor Reading        : 210 (+/- 0) Watts\n Status                : ok\n Lower Non-Recoverable : na\n Lower Critical        : na\n Lower Non-Critical    : na\n Upper Non-Critical    : 2030.000\n Upper Critical        : 2300.000\n Upper Non-Recoverable : na\n Positive Hysteresis   : Unspecified\n Negative Hysteresis   : Unspecified\n Assertion Events      : \n Assertions Enabled    : unc+ ucr+ \n Deassertions Enabled  : unc+ ucr+ \n\n",
           "expected-value": 420
         },
