@@ -422,9 +422,44 @@ class TestHWExtractor(unittest.TestCase):
         # case nvidia-smi
         hw.pkg = {"nvidia-smi": True, "rocm-smi": False}
 
-        with open("tests/data/nvidia-smi.sample", "r") as smi_file:
+        # case wrong return of fields for a GPU
+        with open("tests/data/nvidia-smi_7fields.sample", "r") as smi_file:
             mock_exec_cmd.return_value = smi_file.read()
+        result = hw.collect_gpu()
 
+        nvresult = {
+            "nvidia0": {
+                "name": "NVIDIA H100 PCIe",
+                "memory_total": "81559 MiB",
+                "memory_used": "4 MiB",
+                "clock_graphics": "345 MHz",
+                "clock_sm": "345 MHz",
+                "pci_bus": "00000000:19:00.0",
+                "power_avg": "28.9 W",
+            },
+            "nvidia2": {
+                "name": "NVIDIA H100 PCIe",
+                "memory_total": "81559 MiB",
+                "memory_used": "4 MiB",
+                "clock_graphics": "345 MHz",
+                "clock_sm": "345 MHz",
+                "pci_bus": "00000000:33:00.0",
+                "power_avg": "28.9 W",
+            },
+            "nvidia3": {
+                "name": "NVIDIA H100 PCIe",
+                "memory_total": "81559 MiB",
+                "memory_used": "4 MiB",
+                "clock_graphics": "345 MHz",
+                "clock_sm": "345 MHz",
+                "pci_bus": "00000000:34:00.0",
+                "power_avg": "28.9 W",
+            },
+        }
+        self.assertEqual(result, nvresult)
+    
+        with open("tests/data/nvidia-smi.sample", "r") as smi_file:
+           mock_exec_cmd.return_value = smi_file.read()
         result = hw.collect_gpu()
 
         nvresult = {
@@ -494,6 +529,22 @@ class TestHWExtractor(unittest.TestCase):
             },
         }
         self.assertEqual(result, rocm_result)
+
+    def test_collect_gpu_fail_smi_call(self):
+        """
+        Test the collect_gpu method
+        """
+        # Collect no rocm-smi or nvidia-smi
+        hw = Extractor(extra={})
+        # see [BMK-1616]
+        hw.pkg = {"nvidia-smi": True, "rocm-smi": False}
+        result = hw.collect_gpu()
+        self.assertEqual(result, {})
+
+        hw.pkg = {"nvidia-smi": False, "rocm-smi": True}
+        result = hw.collect_gpu()
+        self.assertEqual(result, {})
+
 
     def test_full_metadata(self):
         """

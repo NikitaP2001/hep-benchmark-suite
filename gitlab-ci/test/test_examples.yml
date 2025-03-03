@@ -30,5 +30,5 @@ test_examples:
   parallel:
     matrix:
       - sversion: ["", "-v v2.2", "-v qa"]
-        splugins: ["", "-b h,l,k,m"]
+        splugins: ["", "-b h,l,k,m,g,u"]
  

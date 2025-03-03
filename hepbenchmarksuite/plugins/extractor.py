@@ -167,45 +167,54 @@ class Extractor:
         gpus = {}
 
         if self.pkg["nvidia-smi"]:
+            _log.debug("Executing nvidia-smi call")
             nvidia_smi = self.exec_cmd(
                 "nvidia-smi --format=csv,noheader --query-gpu=name,memory.total,memory.used,clocks.current.graphics,clocks.current.sm,pci.bus_id,index,power.draw"
             )
-            for gpu_info in nvidia_smi.splitlines():
-                gpu_data = gpu_info.split(",")
-                gpu_name = gpu_data[0].strip()
-                gpu_memory_total = gpu_data[1].strip()
-                gpu_memory_used = gpu_data[2].strip()
-                gpu_clock_graphics = gpu_data[3].strip()
-                gpu_clock_sm = gpu_data[4].strip()
-                gpu_pci_bus = gpu_data[5].strip()
-                gpu_index = gpu_data[6].strip()
-                gpu_power = gpu_data[7].strip()
-                gpus[f"nvidia{gpu_index}"] = {
-                    "name": gpu_name,
-                    "memory_total": gpu_memory_total,
-                    "memory_used": gpu_memory_used,
-                    "clock_graphics": gpu_clock_graphics,
-                    "clock_sm": gpu_clock_sm,
-                    "pci_bus": gpu_pci_bus,
-                    "power_avg": gpu_power,
-                }
+            _log.debug(f"nvidia-smi call returns: {nvidia_smi}")
+
+            #[BMK-1616] call can still fail
+            if nvidia_smi != "not_available":
+                for gpu_info in nvidia_smi.splitlines():
+                    gpu_data = [value.strip() for value in gpu_info.split(",")]
+
+                    if len(gpu_data) != 8:
+                        _log.warning(f"Unexpected nvidia-smi output format: {gpu_data}")
+                        continue
+                    
+                    gpu_name, mem_total, mem_used, clock_graphics, clock_sm, pci_bus, index, power_draw = gpu_data
+
+                    gpus[f"nvidia{index}"] = {
+                        "name": gpu_name,
+                        "memory_total": mem_total,
+                        "memory_used": mem_used,
+                        "clock_graphics": clock_graphics,
+                        "clock_sm": clock_sm,
+                        "pci_bus": pci_bus,
+                        "power_avg": power_draw,
+                    }
+                    
         if self.pkg["rocm-smi"]:
+            _log.debug("Executing rocm-smi call")
             rocm_smi = self.exec_cmd(
                 "rocm-smi --alldevices --showbus --showmemuse --showmeminfo VRAM \
                     --showproductname -P -u -c --json"
             )
-            gpu_info = json.loads(rocm_smi)
-            for gpu, keys in gpu_info.items():
-                gpus[gpu] = {
-                    "name": keys["Card model"] + " SKU: " + keys["Card SKU"],
-                    "memory_total": str(round(int(keys["VRAM Total Memory (B)"]) / (1024**2))) + " MiB",
-                    "memory_used": str(round(int(keys["VRAM Total Used Memory (B)"]) / (1024**2))) + " MiB",
-                    "clock_graphics": keys["sclk clock speed:"][1:-1],
-                    "clock_sm": keys["socclk clock speed:"][1:-1],
-                    "pci_bus": keys["PCI Bus"],
-                    "power_avg": keys["Average Graphics Package Power (W)"] + " W",
-                }
-
+            _log.debug(f"rocm_smi call returns: {rocm_smi}")
+            #[BMK-1616] call can still fail
+            if rocm_smi != "not_available":
+                gpu_info = json.loads(rocm_smi)
+                for gpu, keys in gpu_info.items():
+                    gpus[gpu] = {
+                        "name": keys["Card model"] + " SKU: " + keys["Card SKU"],
+                        "memory_total": str(round(int(keys["VRAM Total Memory (B)"]) / (1024**2))) + " MiB",
+                        "memory_used": str(round(int(keys["VRAM Total Used Memory (B)"]) / (1024**2))) + " MiB",
+                        "clock_graphics": keys["sclk clock speed:"][1:-1],
+                        "clock_sm": keys["socclk clock speed:"][1:-1],
+                        "pci_bus": keys["PCI Bus"],
+                        "power_avg": keys["Average Graphics Package Power (W)"] + " W",
+                    }
+        _log.debug(f"collect_gpu returns:{gpus}")
         return gpus
 
     def collect_cpu(self):
