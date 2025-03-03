@@ -53,7 +53,9 @@ coverage:
     - python3.6 -m pip install -U pip tox
   script:
     # This tests python3.6; move it to a matrix with python >= 3.8 versions [BMK-1206, 742]
-    - tox
+    - tox -- --log-cli-level=DEBUG
+    # Example for interactive selection of a single function
+    # tox -- --log-cli-level=DEBUG tests/pytests/test_hwmetadata.py::TestHWExtractor::test_collect_gpu 
   coverage: '/TOTAL.*\s+(\d+%)$/'
   artifacts:
     reports:
