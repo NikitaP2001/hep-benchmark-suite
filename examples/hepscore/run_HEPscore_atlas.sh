@@ -10,9 +10,15 @@
 # The configuration script sets the benchmarks to run and
 # defines some meta-parameters, including tags as the SITE name.
 #
-# The only requirements to run are
-# git python3-pip singularity
+# The only requirements to run are 
 #
+# Python version 3.9 or higher;
+# python3-pip 
+# Apptainer (version 1.1.6 or higher)
+# git
+#
+# For additional information refer to 
+# https://w3.hepix.org/benchmarking/how_to_run_HS23.html
 #####################################################################
 
 
@@ -126,7 +132,7 @@ HEPSCORE_CONFIG_FILE=$WORKDIR/hepscore_config.yml
 GiB_PER_CORE=1
 
 SUPPORTED_PY_VERSIONS=(py36 py38 py39 py3.11 py3.12)
-DEFAULT_PY_VERSION="py36"
+DEFAULT_PY_VERSION="py39"
 
 declare -A registries=( ["singularity"]="oras" ["docker"]="docker" )
 declare -A registry_suffixes=( ["singularity"]="-sif" ["docker"]="" )
@@ -462,18 +468,38 @@ install_suite_from_wheels() {
     ARCH=$(uname -m)
     GLIBC=$(ldd --version | awk 'NR==1 {gsub(/\./,"_",$NF); print $NF}')
 
-    if [[ $SUITE_VERSION =~ ^v ]];  then
-        wheels_version="hep-benchmark-suite-wheels-${PY_VERSION}-${ARCH}-${SUITE_VERSION}.tar"  # Old format < 3.0
-    else
-        wheels_version="hep-benchmark-suite-wheels-${SUITE_VERSION}-${PY_VERSION}-none-linux_${GLIBC}_${ARCH}.tar" # New format >= 3.0
-    fi
-
     # Find dev versions too
     wheels_path=""
     if ! [[ $SUITE_VERSION =~ ^[0-9v] ]]; then
         wheels_path="dev/"
     fi
     
+    if [[ $SUITE_VERSION =~ ^v ]];  then
+        wheels_version="hep-benchmark-suite-wheels-${PY_VERSION}-${ARCH}-${SUITE_VERSION}.tar"  # Old format < 3.0
+    else
+        # get list of available wheel version filtered on PY_Version, ARCH, and SUITE_VERSION
+        wheels_url="https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/${wheels_path}${SUITE_VERSION}/"
+        curl_output=$(curl -s "${wheels_url}"  | grep -oE "hep-benchmark-suite-wheels-${SUITE_VERSION}-${PY_VERSION}-none-linux_[0-9]{1,}_[0-9]{1,}_${ARCH}.tar" | uniq | grep -oE "none-linux_[0-9]{1,}_[0-9]{1,}" | grep -oE "[0-9]{1,}_[0-9]{1,}" )
+        exit_status=$?
+        if [ $exit_status -ne 0 ]; then
+            echo  echo -e "${ORANGE}Could not reach ${wheels_url} to check for available wheels.${NC}"
+        fi
+        # split string of versions into array of version
+        mapfile -t glibc_releases <<< "${curl_output}"
+        # helper function: check if version is lower
+        version_lt() {
+            [ "$1" = "$2" ] || [  "$1" = "$(echo -e "$1\n$2" | sort -V | head -n1)" ]
+        }
+        latest_glibc_version=${glibc_releases[0]}
+        for version in "${glibc_releases[@]}"; do
+            # check if version is lower or equal to GLIBC version
+            if version_lt "${version}" "${GLIBC}"; then
+                latest_glibc_version=${version}
+            fi
+        done
+        wheels_version="hep-benchmark-suite-wheels-${SUITE_VERSION}-${PY_VERSION}-none-linux_${latest_glibc_version}_${ARCH}.tar" # New format >= 3.0
+    fi
+
     # Download and extract the wheels
     echo -e "-> Downloading wheel: $wheels_version \n"    
     curl -O "https://hep-benchmarks.web.cern.ch/hep-benchmark-suite/releases/${wheels_path}${SUITE_VERSION}/${wheels_version}"
