@@ -1,0 +1,19 @@
+opensearch:
+  server: 'opensearch'
+  port: 9200
+  index: 'hepscore-topic'
+  username: 'admin'
+  password:  'strongDummyPassword123!'
+
+global:
+  benchmarks:
+  - db12
+  mode: singularity
+  publish: true
+  rundir: ./workdir/suite_results
+  show: true
+  tags:
+    site: SITE
+    purpose: "db12 test"
+  pre-stage-duration: 2
+  post-stage-duration: 2

@@ -1,0 +1,42 @@
+global:
+  mode: "singularity"
+  rundir: "/tmp/hep-spec_wd3"
+  ncores: something
+
+  tags:
+    cloud: "Suite CI"
+    vo: "Some VM"
+    other_tag: "Some text"
+
+  hw_requirements:
+    min_memory_per_core: 2.0
+    min_disk_per_core: 1.0
+
+  sw_requirements:
+    check_root_access: false
+    check_selinux_disabled: false
+    min_docker_version: "1.14"
+
+hs06:
+  image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:qa"
+  url_tarball: $HS06URL
+  # Define writeable directory for SPEC install in unpriveliged containers
+  hepspec_volume: "/tmp/SPEC"
+  iterations: 1
+  bmk_set: '453.povray'
+
+spec2017:
+  image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:qa"
+  # URL to fetch the spec2017. It will only be used if the software is not found under hepspec_volume.
+  url_tarball: $SPEC2017URL
+  # Define the location on where spec2017 should be found
+  # If spec2017 is not present, the directory should be writeable to allow the installation
+  hepspec_volume: "/tmp/SPEC"
+  # Number of iterations to run the benchmark
+  iterations: 1
+  # Run only a benchmark set
+  bmk_set: '508.namd_r'
+
+hepscore:
+  version: "${HEPSCORE_VER}"
+  config: "${HEPSCORE_CONFIG}"

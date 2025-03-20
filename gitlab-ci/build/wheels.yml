@@ -1,5 +1,6 @@
-.build_wheels:
+build_wheels:
   stage: deploy
+  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
   retry: 2
   tags:
     - $ARCH
@@ -10,7 +11,9 @@
     - !reference [.sshpass, before_script]
     - export GLIBC=$(ldd --version | awk 'NR==1 {gsub(/\./,"_",$NF); print $NF}')
     - export PKG_NAME=hep-benchmark-suite-wheels-${ID}-${PYTHON_VERSION/thon}-none-linux_${GLIBC}_${ARCH}.tar
-    - yum install -y -q $PYTHON_VERSION --setopt=install_weak_deps=True
+    - dnf install -y epel-release # To install python3.11 and above
+    - dnf install -y -q $PYTHON_VERSION --setopt=install_weak_deps=True
+    - if [ "${PYTHON_VERSION}" != "python36" ]; then dnf install -y -q ${PYTHON_VERSION}-pip; fi
     - python3 -m pip install --upgrade setuptools wheel pip
   script:
     - python3 -m pip wheel -r requirements.txt --wheel-dir=$WHEELS_PATH .
@@ -31,21 +34,10 @@
       variables:
         ID: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
         FULL_RELEASE_PATH: $CI_EOS_RELEASES/dev/$ID
-
-build_wheels_rhel7:
-  extends: .build_wheels
-  image: gitlab-registry.cern.ch/linuxsupport/cc7-base
-  variables:
-    ARCH: x86_64
-    PYTHON_VERSION: python36
-
-build_wheels_rhel8:
-  extends: .build_wheels
-  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
   parallel:
     matrix:
       - ARCH: [x86_64, aarch64]
-        PYTHON_VERSION: [python36, python38, python39]
+        PYTHON_VERSION: [python36, python38, python39, python3.11, python3.12]
 
 
 delete_dev_wheels:

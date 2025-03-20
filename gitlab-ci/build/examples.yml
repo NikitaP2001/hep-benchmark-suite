@@ -12,10 +12,12 @@ build_examples:
     - if [[ "$EXAMPLES_TO_BUILD" == "changed_examples" ]]; then export EXAMPLES=$(git diff --diff-filter=d --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA | grep "\.cfg"); fi
     # Set the branch name
     - if [[ "$CI_PIPELINE_SOURCE" == "merge_request_event" ]]; then export BRANCH=$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME; else export BRANCH=$CI_COMMIT_BRANCH; fi
+    # Set the project path
+    - export PROJECT_PATH=$CI_PROJECT_PATH; 
     # Setup git
     - git config user.email "benchmark-suite-wg@cern.ch"
     - git config user.name "HEP Suite Gitlab CI"
-    - git remote add gitlab_origin https://oauth2:$CI_API_TOKEN@gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite.git
+    - git remote add gitlab_origin "https://oauth2:$CI_API_TOKEN@gitlab.cern.ch/$PROJECT_PATH"
     # Pretty array prints
     - IFS=$'\n'
   script:
@@ -33,7 +35,7 @@ build_examples:
     - git add examples
     - description=$(echo "${built_examples[*]}")
     - FILES_CHANGED=$(git commit -m "Update examples" -m "Examples updated:" -m "$description" 1>&2; echo $?)
-    - if [[ $FILES_CHANGED -eq 0 ]]; then git push gitlab_origin HEAD:$BRANCH -o ci.skip; fi
+    - if [[ $FILES_CHANGED -eq 0 ]]; then git push gitlab_origin HEAD:$BRANCH; fi
   rules:
     - if: $CI_COMMIT_BRANCH =~ /^(qa|master)$/ || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^(qa|master)$/ || $CI_COMMIT_TAG
       when: never
@@ -42,7 +44,9 @@ build_examples:
       variables:
         EXAMPLES_TO_BUILD: all_examples
     - changes:
-      - examples/example_generator/**.cfg
+      - examples/example_generator/*/*/*.cfg
+      - examples/example_generator/*/*.cfg
+      - examples/example_generator/*.cfg
       variables:
         EXAMPLES_TO_BUILD: changed_examples
   artifacts:

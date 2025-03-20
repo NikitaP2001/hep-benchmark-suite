@@ -10,8 +10,9 @@ import json
 import logging
 import os
 import time
+import math
 
-import pkg_resources
+import importlib_resources
 
 from hepbenchmarksuite import benchmarks
 from hepbenchmarksuite import db12
@@ -52,8 +53,9 @@ class HepBenchmarkSuite:
         self.preflight = Preflight(config)
 
         plugin_config = config.get('plugins', {})
-        plugin_registry_path = pkg_resources.resource_filename('hepbenchmarksuite.plugins.registry', '')
-        self.plugin_metadata_provider = DynamicPluginMetadataProvider(plugin_registry_path)
+        ref = importlib_resources.files('hepbenchmarksuite.plugins.registry')
+        with importlib_resources.as_file(ref) as plugin_registry_path:
+            self.plugin_metadata_provider = DynamicPluginMetadataProvider(plugin_registry_path)
         plugin_builder = ConfigPluginBuilder(plugin_config, self.plugin_metadata_provider)
         self.plugin_runner = PluginRunner(plugin_builder)
 
@@ -77,9 +79,10 @@ class HepBenchmarkSuite:
 
     def _run_plugins_synchronously(self, key, duration_mins: float):
         """Run a plugin synchronously for stage 'key'."""
-        _log.debug("Running plugins synchronously '%s' for %.1f minutes.", key, duration_mins)
+        _log.info("Collecting plugins for stage '%s'", key)
         self.plugin_runner.start_plugins()
 
+        _log.info("Idling system for %.1f minutes.", duration_mins)
         duration_secs = duration_mins * 60
         time.sleep(duration_secs)
 
@@ -155,9 +158,23 @@ class HepBenchmarkSuite:
                 _log.warning('Skipping %s because of %s', bench, err)
 
     def _save_complete_report(self):
+
+        def nan2None(obj):
+            if isinstance(obj, dict):
+                return {k:nan2None(v) for k,v in obj.items()}
+            elif isinstance(obj, list):
+                return [nan2None(v) for v in obj]
+            elif isinstance(obj, float) and math.isnan(obj):
+                return None
+            return obj
+
+        class NanConverter(json.JSONEncoder):
+            def encode(self, obj, *args, **kwargs):
+                return super().encode(nan2None(obj), *args, **kwargs)
+
         report_file_path = os.path.join(self._config['rundir'], "bmkrun_report.json")
         with open(report_file_path, 'w', encoding='utf-8') as output_file:
-            dump = json.dumps(self._result)
+            dump = json.dumps(self._result, cls=NanConverter)
             _log.info("Saving final report: %s", report_file_path)
             _log.debug("Report: %s", dump)
             output_file.write(dump)

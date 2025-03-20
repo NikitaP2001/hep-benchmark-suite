@@ -12,6 +12,15 @@ global:
     vo: "Some VM"
     other_tag: "Some text"
 
+  hw_requirements:
+    min_memory_per_core: 1.0
+    min_disk_per_core: 1.0
+
+  sw_requirements:
+    check_root_access: false
+    check_selinux_disabled: false
+    min_docker_version: "1.14"
+
 hs06:
   image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:qa"
   url_tarball: $HS06URL
@@ -35,3 +44,41 @@ spec2017:
 hepscore:
   version: "${HEPSCORE_VER}"
   config: "${HEPSCORE_CONFIG}"
+
+plugins:
+  CommandExecutor:
+    metrics:
+      load:
+        description: "Retrieves the one minute system load average. Note that load of 1 on a 4-CPU system means that it was idle 75% of the time."
+        command: "uptime"
+        regex: "load average: (?P<value>\\d+.\\d+),"
+        unit: ""
+        interval_mins: 1
+        aggregation: "median"
+        example-output: " 11:02:47 up  3:03,  1 user,  load average: 0.18, 0.38, 0.25"
+        expected-value: 0.18
+
+      used-memory:
+        description: "Retrieves the current memory usage (without swap)."
+        command: "free -m"
+        regex: "Mem: *\\d+ *(?P<value>\\d+).*"
+        unit: "MiB"
+        interval_mins: 0.5
+        aggregation: "mode"
+        example-output: |
+          total        used        free      shared  buff/cache   available
+          Mem:          63791        1473       58132         508        4185       61156
+          Swap:         32223        2277       29946
+        expected-value: 1473
+
+      used-swap-memory:
+        description: "Retrieves the current swap memory usage."
+        command: "free -m"
+        regex: "Swap: *\\d+ *(?P<value>\\d+).*"
+        unit: "MiB"
+        interval_mins: 0.1
+        example-output: |
+          total        used        free      shared  buff/cache   available
+          Mem:          63791        1473       58132         508        4185       61156
+          Swap:         32223        2277       29946
+        expected-value: 2277

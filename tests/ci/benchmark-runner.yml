@@ -1,0 +1,129 @@
+---
+global:
+  # Type of container technology to use: Singularity or Docker
+  mode: "singularity"
+  # Run directory where all related suite material will be placed.
+  # User should have Write permissions to the specificed directory.
+  rundir: "/tmp/hep-benchmark-suite"
+  # Specify the number of cores available for benchmark
+  # Default will fetch all available CPUs
+  # ncores: "48"
+  # Specify the list of benchmarks to run
+  benchmarks:
+    - "hepscore"
+  #  - "db12"
+  #  - "hs06"
+  #  - "spec2017"
+  # User defined tags that will show on the metadata file
+  tags:
+    cloud: "Suite CI"
+    vo: "Some VM"
+    other_tag: "Some text"
+  # enable AMQ reporting using credentials in activemq
+  publish: False
+  # Specify the duration in minutes the suite should stay in these
+  # stages before and after running benchmarks (useful for
+  # running plugins for a longer duration)
+  pre-stage-duration: 0
+  post-stage-duration: 0
+
+
+  # Hardware Requirements to be checked during preflight
+  hw_requirements:
+    # Minmum required memory per cpu core in GB
+    min_memory_per_core: 1.0
+    # Minimum required disk per core in GB
+    min_disk_per_core: 1.0
+
+  # Software Requirements to be checked during preflight
+  sw_requirements:
+    # Check for root access
+    check_root_access: false
+    # Check if SELinux has to be disabled
+    check_selinux_disabled: false
+    # Minimum docker version (enforced only when using docker mode)
+    min_docker_version: "1.14"
+
+# Section to configure ActiveMQ
+# Evaluated ONLY if the parameter `publish` is set to True
+activemq:
+  server: 'your-AMQ-server.com'
+  port: 61613
+  topic: 'hepscore-topic'
+  ## If authentication is done with username/password
+  ## uncomment the following two lines username/password
+  ## and include the real credentials
+  #username: 'user'
+  #password: 'pw'
+  ## If authentication is done with X509 certificates
+  ## uncomment the following two lines key/cert
+  ## and include the real certificates
+  #key: 'key-file.key'
+  #cert: 'cert-file.pem'
+
+# Section to configure HEPSpec06 benchmark
+hs06:
+  # Use the docker registry
+  image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.1"
+  # Use the CVMFS registry (only available in Singularity)
+  # image: "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.1"
+  # URL to fetch the hepspec06. It will only be used if the software
+  # is  not found under hepspec_volume.
+  url_tarball: "https://www.example.com/"
+  # Define the location on where hepspec06 should be found
+  # If hepspec06 is not present, the directory should be writeable
+  # to allow the installation via the url_tarball
+  hepspec_volume: "/tmp/SPEC"
+  # Number of iterations to run the benchmark
+  iterations: 3
+  # Run only a benchmark set
+  # bmk_set: '453.povray'
+  ## Specifies if benchmark is run on 32 or 64 bit mode
+  ## Default is 64-bit
+  # mode: 32
+  ## Custom compiler configuration only for studies
+  ## Will invalidate the SPEC score results
+  # config: a_spec_config_file_in_the_spec_repo_config
+
+
+# Section to configure Spec2017 benchmark
+spec2017:
+  # Use the docker registry
+  image: "docker://gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.1"
+  # Use the CVMFS registry (only available in Singularity)
+  # image: "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/hep-benchmarks/hep-spec/hepspec-cc7-multiarch:v2.1"
+  # URL to fetch the spec2017. It will only be used if the software
+  # is not found under hepspec_volume.
+  url_tarball: "https://www.example.com/"
+  # Define the location on where spec2017 should be found
+  # If spec2017 is not present, the directory should be writeable
+  # to allow the installation via the url_tarball
+  hepspec_volume: "/tmp/SPEC"
+  # Number of iterations to run the benchmark
+  iterations: 3
+  # Run only a benchmark set
+  # bmk_set: '508.namd_r'
+  ## Specifies if benchmark is run on 32 or 64 bit mode
+  ## Default is 64-bit
+  # mode: 32
+  ## Custom compiler configuration only for studies
+  ## Will invalidate the SPEC score results
+  # config: a_spec_config_file_in_the_spec_repo_config
+
+# Section to configure HEPScore benchmark
+hepscore:
+  # Select which version of hep-score to use
+  version: "v1.2"
+  # Users can provide an alternative config file, three options are possible:
+  # "default"  - Uses the default configuration provided with hepscore.
+  # local path - Search locally for the configuration.
+  # remote     - Download from a remote url the configuration and uses it.
+  config: "default"
+  # config: "builtin://hepscore_testkv"
+  # config: "tests/hepscore_ci.yaml"
+  # config: "https://"
+  ## HEPScore extra options
+  #options:
+  # Enable if you will run the suite from within a singularity instance
+  # in that case make sure that /etc/sysctl.d/90-max_user_namespaces.conf is enabled
+  #    userns: True

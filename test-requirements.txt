@@ -1,12 +1,20 @@
-#setuptools
 bandit
 beautifulsoup4
 coverage
-git+https://gitlab.cern.ch/hep-benchmarks/hep-score.git@qa-v1.0
+importlib-metadata
+git+https://gitlab.cern.ch/hep-benchmarks/hep-score.git@v1.5
+numpy
 pem
 pyOpenSSL>=21.0.0
 pylint
-pytest
+# pytest 7.0.1 is last version to support py3.6
+pytest<=7.0.1
 requests
 schema
+statistics
 stomp.py<=7.0.0
+parameterized
+distro
+opensearch-py
+packaging
+importlib_resources

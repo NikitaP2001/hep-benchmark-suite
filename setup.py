@@ -27,7 +27,7 @@ setup(
     long_description_content_type="text/markdown",
     url=about['__url__'],
     license=about['__license__'],
-    scripts=['bin/bmkrun', 'bin/bmk_show_metadata', 'bin/bmksend'],
+    # Remove 'scripts' field
     packages=['hepbenchmarksuite',
               'hepbenchmarksuite.plugins',
               'hepbenchmarksuite.plugins.construction',
@@ -37,5 +37,15 @@ setup(
     package_data={'hepbenchmarksuite': ['config/*.yml']},
     python_requires='~=3.6',
     install_requires=['beautifulsoup4', 'importlib-metadata', 'pem', 'pip>=21.3.1',
-                      'pyOpenSSL>=21.0.0', 'pyyaml>=5.1', 'requests', 'stomp.py<=7.0.0']
+                      'pyOpenSSL>=21.0.0', 'pyyaml>=5.1', 'requests', 'stomp.py<=7.0.0', 'numpy',
+                      'distro', 'opensearch-py', 'packaging' , 'importlib_resources'],
+    # Add 'entry_points' for console scripts
+    entry_points={
+        'console_scripts': [
+            'bmkrun = hepbenchmarksuite.bmkrun:main',
+            'bmk_show_metadata = hepbenchmarksuite.bmk_show_metadata:main',
+            'bmksend = hepbenchmarksuite.bmksend:main',
+        ],
+    },
 )
+

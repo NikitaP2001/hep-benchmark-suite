@@ -1,0 +1,30 @@
+Model: DELL PERC 6/i (scsi)
+Disk /dev/sda: 1000GB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags: 
+
+Number  Start   End     Size   Type     File system  Flags
+ 1      1049kB  525MB   524MB  primary  ext4         boot
+ 2      525MB   1000GB  999GB  primary               lvm
+
+Model: DELL PERC 6/i (scsi)
+Disk /dev/sdc: 1000GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags: 
+
+Number  Start   End     Size    File system  Name                  Flags
+ 1      1049kB  1000GB  1000GB               zfs-ff5eba70e9aedfa7
+ 9      1000GB  1000GB  8389kB
+
+Model: DELL PERC 6/i (scsi)
+Disk /dev/sdd: 1000GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags: 
+
+Number  Start   End     Size    File system  Name                  Flags
+ 1      1049kB  1000GB  1000GB               zfs-ab8229f82ec2feae
+ 9      1000GB  1000GB  8389kB
+
