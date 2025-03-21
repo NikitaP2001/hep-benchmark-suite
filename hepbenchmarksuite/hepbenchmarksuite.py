@@ -25,6 +25,7 @@ from hepbenchmarksuite.plugins.construction.dynamic_metadata_provider import Dyn
 from hepbenchmarksuite.plugins.extractor import Extractor
 from hepbenchmarksuite.plugins.runner import PluginRunner
 from hepbenchmarksuite.preflight import Preflight
+from hepbenchmarksuite.__version__ import __version__
 
 _log = logging.getLogger(__name__)
 
@@ -50,6 +51,9 @@ class HepBenchmarkSuite:
         self._extra = {}
         self._result = {}
         self.failures = []
+
+        _log.info(f"Initializing HEP Benchmark Suite {__version__}")
+
         self.preflight = Preflight(config)
 
         plugin_config = config.get('plugins', {})
