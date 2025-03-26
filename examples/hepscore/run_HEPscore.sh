@@ -65,7 +65,6 @@ while getopts ':c:k:iprs:e:wd:b:v:' OPTION; do
       ;;
     b)
       plugin_keys="$OPTARG"
-      echo "Requesting to enable the following plugin keys ${plugin_keys}"
       ;;
     v)
       suite_version="$OPTARG"
@@ -77,25 +76,26 @@ while getopts ':c:k:iprs:e:wd:b:v:' OPTION; do
 Usage: $(basename "$0") [OPTIONS]
 
 Options:
-  -c path       Path to the certificate to use to authenticate to AMQ
-  -k path       Path to the key of the certificate used for AMQ
-  -i            Install only, don't run the suite
-  -r            Run only, skip installation
-  -p            Publish the results to AMQ
-  -s site       Site name to tag the results with
-  -e executor   Container executor to use (singularity or docker)
-  -d workdir    Set the working directory to workdir
-  -w            Install the suite from wheels rather than the repository
-  -b plugin_keys  Bundle time series plugins listed by key 'f,l,m,s,p,g,u' where 
-                    f enables cpu_frequency
-                    l enables load
-                    m enables memory usage
-                    s enables memory swap
-                    p power consumption
-                    g gpu power consumption
-                    u gpu usage
-                  -b needs a suite version >= 3.0rc5. 
-                  Use it in combination with -v <suite_version>  
+  -c path         Path to the certificate for AMQ authentication 
+  -k path         Path to the private key for AMQ authentication 
+  -i              Install only, do not  run the suite
+  -r              Run only, skip installation
+  -p              Publish the results to AMQ
+  -s site         Site name to tag the results with
+  -e executor     Container executor to use (singularity or docker)
+  -d workdir      Set the working directory to workdir
+  -w              Install the suite from prebuilt wheels instead of the repository
+  -b plugin_keys  Enable time series monitoring plugins using the following keys:
+                     f - CPU frequency  
+                     l - System load  
+                     m - Memory usage  
+                     s - Memory swap  
+                     p - Power consumption  
+                     g - GPU power consumption  
+                     u - GPU usage  
+		               Default enabled: 'f,l,m,s,p'  
+                   Disable all plugins: -b none  
+                   Requires suite version >= 3.0           
   -v version      Suite version. Default is latest"
       exit 1
       ;;
@@ -256,17 +256,26 @@ EOF2
 }
 
 create_plugin_configuration() {
-    # Skip if version is lower than 3.0
-
-    [[ -z $plugin_keys ]] && return
-
     # Allowed plugin keys
     ALLOWED_PLUGIN_KEYS=(f l m s p g u)
 
-    # Check if the suite version is above a given version
-    if [[ ! "$SUITE_VERSION" =~ ^[3-9]\.[[:alnum:]]*$ && ! "$SUITE_VERSION" =~ ^qa$ ]]; then
-      echo "Suite version ${SUITE_VERSION} is not adequate to run plugins. Exiting."
+    # Skip if version is lower than 3.0
+    # Check if the suite version is above a given version    
+    if [[ ! "$SUITE_VERSION" =~ ^[3-9]\.[[:alnum:]]*$ && ! "$SUITE_VERSION" =~ ^qa$ && ! "$SUITE_VERSION" =~ ^latest$ ]]; then
+      echo "[create_plugin_configuration] Suite version ${SUITE_VERSION} is not adequate to run plugins. Exiting."
       return 1
+    fi
+
+    if [[ "$plugin_keys" == "none" ]]; then
+        echo "[create_plugin_configuration] Plugins are disabled"
+        return 0
+    fi 
+     
+    if [[ -z $plugin_keys ]]; then
+        plugin_keys='f,l,m,s,p'
+        echo "[create_plugin_configuration] using default plugin keys ${plugin_keys}"
+    else
+        echo "[create_plugin_configuration] Requested to enable the following plugin keys ${plugin_keys}"
     fi
 
     collect_cpu_frequency=false
@@ -308,14 +317,14 @@ create_plugin_configuration() {
       fi
     done
 
-    # Print the status of each collection flag
-    echo "collect_cpu_frequency: $collect_cpu_frequency"
-    echo "collect_load: $collect_load"
-    echo "collect_memory_usage: $collect_memory_usage"
-    echo "collect_swap_usage: $collect_swap_usage"
-    echo "collect_power_consumption: $collect_power_consumption"
-    echo "collect_gpu_power_consumption: $collect_gpu_power_consumption"
-    echo "collect_gpu_usage: $collect_gpu_usage"
+    # Print the status of each collection flag 
+    echo "[create_plugin_configuration] collect_cpu_frequency: $collect_cpu_frequency"
+    echo "[create_plugin_configuration] collect_load: $collect_load"
+    echo "[create_plugin_configuration] collect_memory_usage: $collect_memory_usage"
+    echo "[create_plugin_configuration] collect_swap_usage: $collect_swap_usage"
+    echo "[create_plugin_configuration] collect_power_consumption: $collect_power_consumption"
+    echo "[create_plugin_configuration] collect_gpu_power_consumption: $collect_gpu_power_consumption"
+    echo "[create_plugin_configuration] collect_gpu_usage: $collect_gpu_usage"
 
 
     METRICS_CONFIG=""
