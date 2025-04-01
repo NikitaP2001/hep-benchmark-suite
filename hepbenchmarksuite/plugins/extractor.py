@@ -167,55 +167,89 @@ class Extractor:
         gpus = {}
 
         if self.pkg["nvidia-smi"]:
-            _log.debug("Executing nvidia-smi call")
-            nvidia_smi = self.exec_cmd(
-                "nvidia-smi --format=csv,noheader --query-gpu=name,memory.total,memory.used,clocks.current.graphics,clocks.current.sm,pci.bus_id,index,power.draw"
-            )
-            _log.debug(f"nvidia-smi call returns: {nvidia_smi}")
+            try:       
+                gpus = self.collect_gpu_nvidia()
+            except Exception as e:
+                _log.error(f"Failed to retrieve GPU info: {e}")
 
-            #[BMK-1616] call can still fail
-            if nvidia_smi != "not_available":
-                for gpu_info in nvidia_smi.splitlines():
-                    gpu_data = [value.strip() for value in gpu_info.split(",")]
-
-                    if len(gpu_data) != 8:
-                        _log.warning(f"Unexpected nvidia-smi output format: {gpu_data}")
-                        continue
-                    
-                    gpu_name, mem_total, mem_used, clock_graphics, clock_sm, pci_bus, index, power_draw = gpu_data
-
-                    gpus[f"nvidia{index}"] = {
-                        "name": gpu_name,
-                        "memory_total": mem_total,
-                        "memory_used": mem_used,
-                        "clock_graphics": clock_graphics,
-                        "clock_sm": clock_sm,
-                        "pci_bus": pci_bus,
-                        "power_avg": power_draw,
-                    }
-                    
         if self.pkg["rocm-smi"]:
-            _log.debug("Executing rocm-smi call")
-            rocm_smi = self.exec_cmd(
-                "rocm-smi --alldevices --showbus --showmemuse --showmeminfo VRAM \
-                    --showproductname -P -u -c --json"
-            )
-            _log.debug(f"rocm_smi call returns: {rocm_smi}")
-            #[BMK-1616] call can still fail
-            if rocm_smi != "not_available":
-                gpu_info = json.loads(rocm_smi)
-                for gpu, keys in gpu_info.items():
-                    gpus[gpu] = {
-                        "name": keys["Card model"] + " SKU: " + keys["Card SKU"],
-                        "memory_total": str(round(int(keys["VRAM Total Memory (B)"]) / (1024**2))) + " MiB",
-                        "memory_used": str(round(int(keys["VRAM Total Used Memory (B)"]) / (1024**2))) + " MiB",
-                        "clock_graphics": keys["sclk clock speed:"][1:-1],
-                        "clock_sm": keys["socclk clock speed:"][1:-1],
-                        "pci_bus": keys["PCI Bus"],
-                        "power_avg": keys["Average Graphics Package Power (W)"] + " W",
-                    }
-        _log.debug(f"collect_gpu returns:{gpus}")
+            try:
+                gpus = self.collect_gpu_rocm()
+            except Exception as e:
+                _log.error(f"Failed to retrieve GPU info: {e}")
+
+        _log.debug(f"collect_gpu returns:{json.dumps(gpus)}")
         return gpus
+    
+    def collect_gpu_nvidia(self):
+        """Collect nvidia GPU information """
+        _log.debug("Executing nvidia-smi call")
+        gpus = {}
+        nvidia_smi = self.exec_cmd(
+            "nvidia-smi --format=csv,noheader --query-gpu=name,memory.total,memory.used,clocks.current.graphics,clocks.current.sm,pci.bus_id,index,power.draw"
+        )
+        _log.debug(f"nvidia-smi call returns: {nvidia_smi}")
+
+        #[BMK-1616] call can still fail
+        if nvidia_smi != "not_available":
+            for gpu_info in nvidia_smi.splitlines():
+                gpu_data = [value.strip() for value in gpu_info.split(",")]
+
+                if len(gpu_data) != 8:
+                    _log.warning(f"Unexpected nvidia-smi output format: {gpu_data}")
+                    continue
+                
+                gpu_name, mem_total, mem_used, clock_graphics, clock_sm, pci_bus, index, power_draw = gpu_data
+
+                gpus[f"nvidia{index}"] = {
+                    "name": gpu_name,
+                    "memory_total": mem_total,
+                    "memory_used": mem_used,
+                    "clock_graphics": clock_graphics,
+                    "clock_sm": clock_sm,
+                    "pci_bus": pci_bus,
+                    "power_avg": power_draw,
+                }
+        return gpus
+
+    def collect_gpu_rocm(self):
+        """Collect rocm-smi GPU information """
+        gpus = {}
+        _log.debug("Executing rocm-smi call")
+        rocm_smi = self.exec_cmd(
+            "rocm-smi --alldevices --showbus --showmemuse --showmeminfo VRAM \
+                --showproductname -P -u -c --json"
+        )
+        _log.debug(f"rocm_smi call returns: {rocm_smi}")
+        #[BMK-1616] call can still fail
+        if rocm_smi != "not_available":
+            gpu_info = json.loads(rocm_smi)
+            for gpu, keys in gpu_info.items():
+                # [BMK-1635] Normalize keys once (lowercase transformation)
+                normalized_keys = {k.lower(): v for k, v in keys.items()}
+
+                def format_memory(key):
+                    """Convert memory from bytes to MiB, return 'not_available' if missing."""
+                    value = normalized_keys.get(key)
+                    if value is None:
+                        return "not_available"
+                    try:
+                        return f"{round(int(value) / (1024**2))} MiB"
+                    except ValueError:
+                        return "not_available"
+                    
+                gpus[gpu] = {
+                    "name": f"{normalized_keys.get('card model', 'not_available')} SKU: {normalized_keys.get('card sku', 'not_available')}",
+                    "memory_total": format_memory("vram total memory (b)"),
+                    "memory_used": format_memory("vram total used memory (b)"),
+                    "clock_graphics": normalized_keys.get("sclk clock speed:", "not_available")[1:-1] if isinstance(normalized_keys.get("sclk clock speed:"), str) else "not_available",
+                    "clock_sm": normalized_keys.get("socclk clock speed:", "not_available")[1:-1] if isinstance(normalized_keys.get("socclk clock speed:"), str) else "not_available",
+                    "pci_bus": normalized_keys.get("pci bus", "not_available"),
+                    "power_avg": f"{normalized_keys.get('average graphics package power (w)', 'not_available')} W",
+                }
+        return gpus
+
+
 
     def collect_cpu(self):
         """Collect all relevant CPU information."""

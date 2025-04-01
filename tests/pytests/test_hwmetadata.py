@@ -530,6 +530,61 @@ class TestHWExtractor(unittest.TestCase):
         }
         self.assertEqual(result, rocm_result)
 
+    @patch("hepbenchmarksuite.plugins.extractor.Extractor.exec_cmd")
+    def test_collect_gpu_rocm(self, mock_exec_cmd):
+        """
+        Test the collect_gpu method
+        """
+        hw = Extractor(extra={})
+        
+        # case rocm-smi
+        hw.pkg = {"nvidia-smi": False, "rocm-smi": True}
+        with open("tests/data/rocm-smi_other_format.json", "r") as smi_file:
+            mock_exec_cmd.return_value = smi_file.read()
+
+        result = hw.collect_gpu()
+
+        rocm_result = {
+            "card0": {
+                "name": "0x7408 SKU: D65201",
+                "memory_total": "65520 MiB",
+                "memory_used": "10 MiB",
+                "clock_graphics": "800Mhz",
+                "clock_sm": "1090Mhz",
+                "pci_bus": "0000:C1:00.0",
+                "power_avg": "93.0 W"
+            },
+            "card1": {
+                "name": "0x7408 SKU: D65201",
+                "memory_total": "65520 MiB",
+                "memory_used": "10 MiB",
+                "clock_graphics": "800Mhz",
+                "clock_sm": "1090Mhz",
+                "pci_bus": "0000:C6:00.0",
+                "power_avg": "N/A (Secondary die) W"
+            }
+        }
+        self.assertEqual(result, rocm_result)
+
+        # Test presence of wrong keys
+        with open("tests/data/rocm-smi_wrong_format.json", "r") as smi_file:
+            mock_exec_cmd.return_value = smi_file.read()
+
+        result = hw.collect_gpu()
+
+        rocm_result = {
+            "card0": {
+                "name": "not_available SKU: D65201",
+                "memory_total": "not_available",
+                "memory_used": "10 MiB",
+                "clock_graphics": "800Mhz",
+                "clock_sm": "1090Mhz",
+                "pci_bus": "not_available",
+                "power_avg": "93.0 W"
+            }            
+        }
+        self.assertEqual(result, rocm_result)
+
     def test_collect_gpu_fail_smi_call(self):
         """
         Test the collect_gpu method
