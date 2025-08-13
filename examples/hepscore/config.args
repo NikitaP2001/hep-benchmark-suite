@@ -1,0 +1,4 @@
+-s CI_TEST
+-b f,l,m
+--hepscore-version v2.0
+--ncores 8

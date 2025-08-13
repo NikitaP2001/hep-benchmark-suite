@@ -170,23 +170,51 @@ class Preflight:
             self.failed_checks.append("check_mem_per_core/insufficient_memory")
 
     def check_selinux_disabled(self):
+        """
+        Check if SELinux is disabled or in permissive mode.
+
+        This function verifies the SELinux status on the system based on configuration.
+        If SELinux is not installed, it logs a message and exits early.
+        If the `check_selinux_disabled` config property is missing or set to True and
+        SELinux is enforcing, the check fails and is recorded.
+
+        Raises:
+            Logs an error and appends to self.failed_checks if compliance fails.
+        
+        Returns:
+            None
+        """
+        _log.info(" - Checking for SELinux...")
+
+        # Ensure the configuration property exists
         if 'check_selinux_disabled' not in self.sw_config:
-            _log.error(
-                "Hardware requirement configuration missing: 'check_selinux_disabled'")
-            # Flag a failed check if config property does not exist
+            _log.error("Missing configuration property: 'check_selinux_disabled'")
             self.failed_checks.append(
                 "check_selinux_disabled/missing_config_property")
-
-        if not self.sw_config.get('check_selinux_disabled'):
             return
 
-        selinux_status = subprocess.getoutput("sestatus")
-        if "enabled" in selinux_status.lower():
-            # Flag a failed check if SELinux is enabled
+        # Respect configuration: if the check is explicitly disabled, skip it
+        if self.sw_config.get('check_selinux_disabled') is False:
+            _log.info("SELinux check is explicitly disabled in configuration.")
+            return
+
+        # Check if SELinux is installed
+        selinux_installed = shutil.which("getenforce")
+        if not selinux_installed:
+            _log.info("SELinux is not installed on the system. Skipping check.")
+            return
+
+        selinux_status = subprocess.getoutput("getenforce").strip().lower()
+        _log.info(" - SELinux status: %s",selinux_status)
+
+        # Fail if SELinux is enforcing
+        if selinux_status == "enforcing":
+            # Flag a failed check if SELinux is enforced
             _log.error(
-                "Software requirement 'check_selinux_disabled' failed, please disable SELinux")
+                "SELinux is enforcing. Please disable it or set it to permissive.")
             self.failed_checks.append("check_selinux/enabled")
-        return
+            return
+        
 
     def check_root_access(self):
         if 'check_root_access' not in self.sw_config:
