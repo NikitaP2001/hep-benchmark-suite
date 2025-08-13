@@ -102,7 +102,7 @@ def parse_arguments():
                         choices=['singularity', 'docker'],
                         nargs='?',
                         help="Run benchmarks in singularity or docker containers.",
-                        default=None)
+                        default='singularity')
 
     parser.add_argument("-n", "--ncores",
                         nargs='?',

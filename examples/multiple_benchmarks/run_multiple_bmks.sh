@@ -22,85 +22,109 @@
 #####################################################################
 
 
-while getopts ':c:k:iprs:e:wd:b:v:' OPTION; do
+# --- Extract --config early ---
+CONFIG_PATH=""
+PARSED_ARGS=()
+while [[ $# -gt 0 ]]; do
+  if [[ "$1" == "--config" ]]; then
+    CONFIG_PATH="$2"
+    shift 2
+  else
+    PARSED_ARGS+=("$1")
+    shift
+  fi
+done
 
+# Read config file if specified
+if [ -n "$CONFIG_PATH" ] && [ -f "$CONFIG_PATH" ]; then
+  echo "Using config file: $CONFIG_PATH"
+  args=()
+  while IFS= read -r line || [ -n "$line" ]; do
+    for arg in $line; do args+=("$arg"); done
+  done < "$CONFIG_PATH"
+  set -- "${args[@]}" "${PARSED_ARGS[@]}"
+else
+  set -- "${PARSED_ARGS[@]}"
+fi
+
+# Normalize long options to short ones
+TEMP_ARGS=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --cert) TEMP_ARGS+=("-c" "$2"); shift 2;;
+    --key) TEMP_ARGS+=("-k" "$2"); shift 2;;
+    --install-only) TEMP_ARGS+=("-i"); shift;;
+    --run-only) TEMP_ARGS+=("-r"); shift;;
+    --publish) TEMP_ARGS+=("-p"); shift;;
+    --site) TEMP_ARGS+=("-s" "$2"); shift 2;;
+    --executor) TEMP_ARGS+=("-e" "$2"); shift 2;;
+    --workdir) TEMP_ARGS+=("-d" "$2"); shift 2;;
+    --wheels) TEMP_ARGS+=("-w"); shift;;
+    --plugins) TEMP_ARGS+=("-b" "$2"); shift 2;;
+    --suite-version) TEMP_ARGS+=("-v" "$2"); shift 2;;
+    --hepscore-version) TEMP_ARGS+=("-x" "$2"); shift 2;;
+    --ncores) TEMP_ARGS+=("-n" "$2"); shift 2;;
+    --threadscan) TEMP_ARGS+=("-t"); shift;;
+    --help) TEMP_ARGS+=("-?"); shift;;
+    --*) echo "Unknown option: $1" >&2; exit 1;;
+    *) TEMP_ARGS+=("$1"); shift;;
+  esac
+done
+
+# Replace original arguments with normalized ones
+set -- "${TEMP_ARGS[@]}"
+
+# -- Argument parsing --
+while getopts ':c:k:iprts:e:wd:b:v:x:n:' OPTION; do
   case "$OPTION" in
-    c)
-      cert="$(realpath "$OPTARG")"
-      echo "Setting certificate to $cert"
-      ;;
-
-    k)
-      key="$(realpath "$OPTARG")"
-      echo "Setting key to $key"
-      ;;
-
-    i)
-      install_only=true
-      echo "Install only do not run"
-      ;;
-    r)
-      run_only=true
-      echo "Run only do not install"
-      ;;
-    p)
-      publish=true
-      echo "Results will be published"
-      ;;
-    s)
-      site="$OPTARG"
-      echo "Setting site to $site"
-      ;;
-    e)
-      executor="$OPTARG"
-      echo "Setting the container executor to $executor"
-      ;;
-    w)
-      install_from_wheels=true
-      echo "Installing the suite from wheels"
-      ;;
-    d)
-      workdir="$(realpath "$OPTARG")"
-      echo "Setting the working directory to $workdir"
-      ;;
-    b)
-      plugin_keys="$OPTARG"
-      ;;
-    v)
-      suite_version="$OPTARG"
-      echo "Using suite version ${suite_version} instead of latest"
-      ;;
-
+    c) cert="$(realpath "$OPTARG")"; echo "Setting certificate to $cert";;
+    k) key="$(realpath "$OPTARG")"; echo "Setting key to $key";;
+    i) install_only=true; echo "Install only do not run";;
+    r) run_only=true; echo "Run only do not install";;
+    p) publish=true; echo "Results will be published";;
+    s) site="$OPTARG"; echo "Setting site to $site";;
+    e) executor="$OPTARG"; echo "Setting the container executor to $executor";;
+    w) install_from_wheels=true; echo "Installing the suite from wheels";;
+    d) workdir="$(realpath "$OPTARG")"; echo "Setting the working directory to $workdir";;
+    b) plugin_keys="$OPTARG"; echo "Requesting to enable the following plugin keys ${plugin_keys}";;
+    v) suite_version="$OPTARG"; echo "Using suite version ${suite_version} instead of latest";;
+    x) HEPSCORE_VERSION="$OPTARG"; echo "Using HEPSCORE version ${HEPSCORE_VERSION}";;
+    n) n_cores="$OPTARG"; n_flag_set=true; echo "Using ${n_cores} cores instead of all";;
+    t) threadscan_flag=true; echo "Thread scan mode enabled";;
     ?)
-      echo "
+      cat >&2 <<EOF
+
 Usage: $(basename "$0") [OPTIONS]
 
 Options:
-  -c path         Path to the certificate for AMQ authentication 
-  -k path         Path to the private key for AMQ authentication 
-  -i              Install only, do not  run the suite
-  -r              Run only, skip installation
-  -p              Publish the results to AMQ
-  -s site         Site name to tag the results with
-  -e executor     Container executor to use (singularity or docker)
-  -d workdir      Set the working directory to workdir
-  -w              Install the suite from prebuilt wheels instead of the repository
-  -b plugin_keys  Enable time series monitoring plugins using the following keys:
-                     f - CPU frequency  
-                     l - System load  
-                     m - Memory usage  
-                     s - Memory swap  
-                     p - Power consumption  
-                     g - GPU power consumption  
-                     u - GPU usage  
-		               Default enabled: 'f,l,m,s,p'  
-                   Disable all plugins: -b none  
-                   Requires suite version >= 3.0           
-  -v version      Suite version. Default is latest"
-      exit 1
-      ;;
+  --config file           Load arguments from file (one flag per line)
+  -c, --cert path         Path to the certificate for AMQ authentication
+  -k, --key path          Path to the private key for AMQ authentication
+  -i, --install-only      Install only, do not run the suite
+  -r, --run-only          Run only, skip installation
+  -p, --publish           Publish the results to AMQ
+  -s, --site site         Site name to tag the results with
+  -e, --executor type     Container executor to use (singularity or docker)
+  -d, --workdir path      Set the working directory
+  -w, --wheels            Install from prebuilt wheels instead of repo
+  -b, --plugins keys      Enable plugins using the following keys:
+                          f - CPU frequency
+                          l - System load
+                          m - Memory usage
+                          s - Memory swap
+                          p - Power consumption
+                          g - GPU power consumption
+                          u - GPU usage
+                          Default: f,l,m,s,p | Disable: -b none
+                          Requires suite version >= 3.0
+  -v, --suite-version ver Suite version (default: latest)
+  -x, --hepscore-version  HEPSCORE version (default: v1.5)
+  -n, --ncores number     Number of cores (requires HEPSCORE >= 2.0)
+  -t, --threadscan        Run thread scaling tests (4, 25%, 50%, 75%, 100%)
+  --help                  Show this help message
+EOF
+      exit 1;;
   esac
-
 done
 
 #--------------[Start of user editable section]----------------------
@@ -113,6 +137,8 @@ RUN_ONLY="${run_only:-false}"
 EXECUTOR="${executor:-singularity}"
 INSTALL_FROM_WHEELS="${install_from_wheels:-false}"
 WORKDIR="${workdir:-$(pwd)/workdir}"
+NCORES="${n_cores:-$(nproc)}"
+THREADSCAN="${threadscan_flag:-false}"
 #--------------[End of user editable section]-------------------------
 
 # AMQ
@@ -121,7 +147,8 @@ PORT=61123
 TOPIC=/topic/vm.spec
 
 SCRIPT_VERSION="3.0"
-HEPSCORE_VERSION="v1.5"
+SUPPORTED_HEPSCORE_VERSIONS=(v1.5 v2.0)
+HEPSCORE_VERSION="${HEPSCORE_VERSION:-v1.5}"
 SUITE_VERSION=${suite_version-latest} # Use "latest" for the latest stable release
 
 RUNDIR=$WORKDIR/suite_results
@@ -167,6 +194,7 @@ validate_params(){
     validate_site
     validate_publish
     validate_container_executor
+    validate_hepscore_version
 }
 
 validate_site(){
@@ -195,6 +223,51 @@ validate_container_executor(){
         echo "The executor has got to be one of: ${!registries[*]}. Wrong input value: $executor"
         exit 1
     fi
+}
+
+validate_hepscore_version() {
+  # Validates and adjusts the selected HEPSCORE version.
+  # - If the version is not supported, it falls back to:
+  #     * v2.0 if -n or THREADSCAN (-t) is set
+  #     * v1.5 otherwise
+  # - If the version is supported but < v2.0 and -n or -t is set,
+  #   exit and inform the user about it.
+  #
+  # After this function:
+  # - HEPSCORE_VERSION is always valid and supported
+
+  DEFAULT_VERSION="v1.5"
+  NCORES_VERSION="v2.0"
+
+  # Normalize version: add "v" prefix if missing
+  if [[ ! "$HEPSCORE_VERSION" =~ ^v ]]; then
+    HEPSCORE_VERSION="v$HEPSCORE_VERSION"
+  fi
+
+  # Check if the version is supported
+  if [[ ! "${SUPPORTED_HEPSCORE_VERSIONS[*]}" == *"${HEPSCORE_VERSION}"* ]]; then
+    echo "Warning: HEPSCORE version '${HEPSCORE_VERSION}' is not supported."
+    echo "Supported versions: ${SUPPORTED_HEPSCORE_VERSIONS[*]}"
+
+    if [[ "$n_flag_set" == true || "$THREADSCAN" == true ]]; then
+      echo "Falling back to compatible version: ${NCORES_VERSION}"
+      HEPSCORE_VERSION="$NCORES_VERSION"
+    else
+      echo "Falling back to default version: ${DEFAULT_VERSION}"
+      HEPSCORE_VERSION="$DEFAULT_VERSION"
+    fi
+  fi
+
+  # If threadscan or ncores flags are set, ensure version is >= v2.0
+  if [[ "$n_flag_set" == true || "$THREADSCAN" == true ]]; then
+    version_number=$(echo "$HEPSCORE_VERSION" | sed 's/^v//' | cut -d. -f1,2)
+    if (( $(echo "$version_number < 2.0" | bc -l) )); then
+      echo "Error: The options -n (ncores) or -t (threadscan) require HEPSCORE version >= v2.0."
+      echo "Current version: '${HEPSCORE_VERSION}' is not compatible."
+      echo "Please specify a compatible version using the -x flag, e.g., '-x v2.0'."
+      exit 1
+    fi
+  fi
 }
 
 create_config_file(){
@@ -277,19 +350,27 @@ spec2017:
 $SUITE_PLUGINS_CONFIG
 EOF2
 
-
     if [ -f "$HEPSCORE_CONFIG_FILE" ]; then
         cat "$HEPSCORE_CONFIG_FILE"
     fi
 }
 
 create_plugin_configuration() {
+    # This function sets up plugin configuration for system metrics collection.
+    # It determines which plugins (CPU frequency, load, memory, power, GPU stats, etc.) should be enabled
+    # based on the provided plugin keys and the selected suite version.
+    # The function generates corresponding YAML configuration for each enabled metric plugin,
+    # which will be included in the final suite configuration file.
+
     # Allowed plugin keys
     ALLOWED_PLUGIN_KEYS=(f l m s p g u)
 
     # Skip if version is lower than 3.0
-    # Check if the suite version is above a given version    
-    if [[ ! "$SUITE_VERSION" =~ ^[3-9]\.[[:alnum:]]*$ && ! "$SUITE_VERSION" =~ ^qa$ && ! "$SUITE_VERSION" =~ ^latest$ ]]; then
+    # Check if the suite version is above a given version or BMK* branch
+    if [[ ! "$SUITE_VERSION" =~ ^[3-9]\.[[:alnum:]]*$ && \
+          ! "$SUITE_VERSION" =~ ^qa$ && \
+          ! "$SUITE_VERSION" =~ ^latest$ && \
+          ! "$SUITE_VERSION" =~ ^BMK ]]; then
       echo "[create_plugin_configuration] Suite version ${SUITE_VERSION} is not adequate to run plugins. Exiting."
       return 1
     fi
@@ -297,6 +378,11 @@ create_plugin_configuration() {
     if [[ "$plugin_keys" == "none" ]]; then
         echo "[create_plugin_configuration] Plugins are disabled"
         return 0
+    fi 
+
+    if [[ "$plugin_keys" == "all" ]]; then
+        plugin_keys=$(IFS=,; echo "${ALLOWED_PLUGIN_KEYS[*]}")
+        echo "[create_plugin_configuration]: All ($plugin_keys) plugins are enabled"
     fi 
      
     if [[ -z $plugin_keys ]]; then
@@ -398,7 +484,7 @@ create_plugin_configuration() {
       power-consumption:
         command: 'ipmitool dcmi power reading'
         description: 'Retrieves power consumption of the system. Requires elevated privileges.'
-        regex: 'Instantaneous power reading:\\s*(?P<value>\\d+) Watts'
+        regex: 'Instantaneous power reading:\s*(?P<value>\d+) Watts'
         unit: 'W'
         interval_mins: 1"
     fi
@@ -433,9 +519,95 @@ plugins:
     fi
 }
 
+add_tag_to_suite_config() {
+    # This function adds a key-value tag to the 'tags:' section of the SUITE_CONFIG_FILE.
+    # If the tag already exists, it skips modification. If the 'tags:' section is missing,
+    # it raises an error. This helps dynamically annotate the benchmark configuration with context
+    # like thread count or test type (e.g., threadscan, core_fraction).
+
+    local tag_key="$1"
+    local tag_value="$2"
+
+    if grep -q "^\s*${tag_key}:" "$SUITE_CONFIG_FILE"; then
+        echo "[add_tag_to_suite_config] Tag '$tag_key' already exists. Skipping."
+    else
+        echo "[add_tag_to_suite_config] Adding '$tag_key: $tag_value' to 'tags:' section in $SUITE_CONFIG_FILE"
+
+        awk -v key="$tag_key" -v val="$tag_value" '
+            BEGIN { tag_indent=""; done=0 }
+            /^\s+tags:/ {
+                tag_indent = gensub(/( *)(tags:)/, "\\1", 1)
+                print
+                print tag_indent "  " key ": " val
+                done=1
+                next
+            }
+            { print }
+            END {
+                if (!done) {
+                    print "[ERROR] tags: section not found!" > "/dev/stderr"
+                    exit 1
+                }
+            }
+        ' "$SUITE_CONFIG_FILE" > "${SUITE_CONFIG_FILE}.tmp" && mv "${SUITE_CONFIG_FILE}.tmp" "$SUITE_CONFIG_FILE"
+    fi
+}
+
+run_threadscan() {
+  # Performs a thread scaling benchmark by running the suite multiple times
+  # using varying numbers of CPU cores.
+    echo "[run_threadscan] Preparing thread scan run..."
+
+    add_tag_to_suite_config "threadscan" "true"
+
+    total_cores=$(nproc)
+    declare -a raw_counts=("4" "$((total_cores / 4))" "$((total_cores / 2))" "$(((3 * total_cores) / 4))" "$total_cores")
+    declare -a labels=("minimum" "25%" "50%" "75%" "maximum")
+    declare -A seen=()
+
+    valid_core_counts=()
+    valid_labels=()
+
+    for i in "${!raw_counts[@]}"; do
+        cores="${raw_counts[$i]}"
+        label="${labels[$i]}"
+
+        # Round up to next multiple of 4, maxing out at total_cores
+        if (( cores % 4 != 0 )); then
+            cores=$(( ((cores + 3) / 4) * 4 ))
+        fi
+        if (( cores > total_cores )); then
+            cores=$total_cores
+        fi
+
+        # Avoid duplicates
+        if [[ -z "${seen[$cores]}" ]]; then
+            seen[$cores]=1
+            valid_core_counts+=("$cores")
+            valid_labels+=("$label")
+        fi
+    done
+
+    for i in "${!valid_core_counts[@]}"; do
+        cores="${valid_core_counts[$i]}"
+        label="${valid_labels[$i]}"
+
+        echo -e "\n[run_threadscan] Running benchmark with $cores cores ($label)..."
+
+        add_tag_to_suite_config "core_fraction" "$cores"
+
+        NCORES="$cores"
+        n_flag_set=true
+
+        hepscore_run
+
+        sed -i '/core_fraction:/d' "$SUITE_CONFIG_FILE"
+    done
+}
+
+
 hepscore_install(){
 
-    validate_params
     create_python_venv
     install_suite
 
@@ -577,7 +749,11 @@ hepscore_run(){
     check_workdir_space
 
     MEM_BEFORE=$(awk '/MemAvailable/ {print $2}' /proc/meminfo)
-    bmkrun -c "$SUITE_CONFIG_FILE" | tee -i "$LOGFILE"
+    if [[ "$n_flag_set" == true ]]; then
+        bmkrun -c "$SUITE_CONFIG_FILE" -n "$NCORES" | tee -i "$LOGFILE"
+    else
+        bmkrun -c "$SUITE_CONFIG_FILE" | tee -i "$LOGFILE"
+    fi
     MEM_AFTER=$(awk '/MemAvailable/ {print $2}' /proc/meminfo)
 
     RESULTS=$(awk '/Full results can be found in.*/ {print $(NF-1)}' "$LOGFILE")
@@ -596,6 +772,22 @@ hepscore_run(){
 create_workdir
 cd "$WORKDIR" || exit 1
 create_config_file
+
+# Always validate parameters
+validate_params
+
+# Ensure -n and -t are not used together
+if [[ "$n_flag_set" == true && "$THREADSCAN" == true ]]; then
+    echo "Error: The options -n (number of cores) and -t (threadscan) cannot be used together."
+    exit 1
+fi
+
+# Run threadscan if requested and skip everything else
+if [[ "$THREADSCAN" == true ]]; then
+    hepscore_install
+    run_threadscan
+    exit 0
+fi
 
 if [[ $INSTALL_ONLY == false && $RUN_ONLY == false ]] ; then
 

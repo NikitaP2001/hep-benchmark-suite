@@ -29,6 +29,17 @@ test_examples:
       when: always
   parallel:
     matrix:
+      # Test default (3.0), v2.2, and QA suite versions with no plugins or a minimal plugin subset (f, l, m)
       - sversion: ["", "-v v2.2", "-v qa"]
-        splugins: ["", "-b h,l,k,m,g,u"]
- 
+        splugins: ["", "-b f,l,m"]
+
+      # Test v2.0 hepscore version with:
+      # - default configuration
+      # - full plugin set with threadscan enabled (-t)
+      - sversion: ["-x v2.0"]
+        splugins: ["", "-b f,l,m,s,p -t"]
+        
+      # Test script with passing flags as a config
+      - sversion: [""]
+        splugins: [""]
+        config_mode: examples/hepscore/config.args

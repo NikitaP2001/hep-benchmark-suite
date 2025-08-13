@@ -391,12 +391,12 @@ class Extractor:
         except OSError:
             return "not_available"
 
-    def check_if_virtual(self, cmd="grep hypervisor /proc/cpuinfo"):
+    def check_if_virtual(self, cmd="awk '/hypervisor/' /proc/cpuinfo"):
         """
         Checks if the system is virtualized by executing a command.
 
         Args:
-            cmd (str): The command to check virtualization. Default is 'grep hypervisor /proc/cpuinfo'.
+            cmd (str): The command to check virtualization. Default is 'awk '/hypervisor/' /proc/cpuinfo'.
 
         Returns:
             bool: True if the system is virtualized, False otherwise.

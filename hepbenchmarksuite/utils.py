@@ -179,7 +179,7 @@ def run_piped_commands(cmd_str, env=None):
             _log.warning("Command not found: %s", e.filename)
             return None, None, f"Command not found: {e.filename}"
         except subprocess.CalledProcessError as e:
-            _log.warning("Error executing command: %s\nReturn code: %s\nOutput: %s", e.cmd, e.returncode, e.output.decode(errors='replace'))
+            _log.warning("Error executing command: %s | Piped command's return code: %s | Output: %s", e.cmd, e.returncode, e.output.decode(errors='replace').strip() or "-")
             return e.returncode, e.output.decode(errors='replace'), e.stderr.decode(errors='replace')
         except Exception as e:
             _log.warning("Error executing command: %s", str(e))
@@ -267,6 +267,7 @@ def bench_versions(conf):
 
 def prepare_metadata(full_conf, extra, extractor):
     """Construct a json with cli inputs and extra fields.
+    The function is now called before benchmark execution to prevent a failure after the full run [BMK-1464].
 
     Args:
       cli_inputs: Arguments that were passed directly with cli
@@ -284,7 +285,6 @@ def prepare_metadata(full_conf, extra, extractor):
     result.update({
         '_id'           : str(uuid.uuid4()),
         '_timestamp'    : extra['start_time'],
-        '_timestamp_end': extra['end_time'],
         'json_version'  : __version__
     })
 
@@ -298,7 +298,7 @@ def prepare_metadata(full_conf, extra, extractor):
 
     # Hep-benchmark-suite flags
     flags = {
-        'ncores'  : params['ncores'],
+        'ncores'  : params.get('ncores', None),
         'run_mode': params['mode'],
     }
 

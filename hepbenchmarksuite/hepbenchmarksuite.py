@@ -69,6 +69,10 @@ class HepBenchmarkSuite:
 
         self._extra['start_time'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
 
+        # Collecting Metadata at the start to prevent failures after the full run [BMK-1464]
+        extractor = Extractor(self._config)
+        self._result = utils.prepare_metadata(self._config_full, self._extra, extractor)
+
         if self.preflight.check():
             _log.info("Pre-flight checks passed successfully.")
             self.plugin_runner.initialize()
@@ -107,29 +111,37 @@ class HepBenchmarkSuite:
             _log.info("Completed %s with return code %s", bench2run, return_code)
 
     def _run_benchmark(self, bench2run):
-        if bench2run == 'db12':
-            return_code = 0
-            result = db12.run_db12(rundir=self._config['rundir'],
-                                   cpu_num=self._config_full['global']['ncores'])
+        """
+        Execute the specified benchmark using the suite's configuration.
 
-            if not result['DB12']['value']:
-                self.failures.append(bench2run)
-                return_code = 1
+        Args:
+            bench2run (str): Name of the benchmark to execute, one of: 'db12', 'hepscore', 'hs06', 'spec2017'.
 
-        elif bench2run == 'hepscore':
-            # Prepare hepscore
-            if benchmarks.prep_hepscore(self._config_full) == 0:
-                # Run hepscore
-                return_code = benchmarks.run_hepscore(self._config_full)
-                if return_code < 0:
-                    self.failures.append(bench2run)
-            else:
-                _log.error("Skipping hepscore due to failed installation.")
+        Returns:
+            int: 0 if successful, 1 otherwise.
 
-        elif bench2run in ('hs06', 'spec2017'):
-            return_code = benchmarks.run_hepspec(conf=self._config_full, bench=bench2run)
-            if return_code > 0:
-                self.failures.append(bench2run)
+        Raises:
+            Exception: If a benchmark crashes, the exception is logged to error and the return code is set to 1.
+        """
+        return_code = 1
+        try:
+            if bench2run == 'db12':
+                result = db12.run_db12(rundir=self._config['rundir'],
+                                       cpu_num=self._config_full['global']['ncores'])
+                if result['DB12']['value']:
+                    return_code = 0
+            elif bench2run == 'hepscore':
+                if benchmarks.prep_hepscore(self._config_full) == 0:
+                    return_code = benchmarks.run_hepscore(self._config_full)
+                else:
+                    _log.error("Skipping hepscore due to failed installation.")
+            elif bench2run in ('hs06', 'spec2017'):
+                return_code = benchmarks.run_hepspec(conf=self._config_full, bench=bench2run)
+        except Exception as e:
+            _log.error(f"Benchmark {bench2run} crashed: {e}")
+
+        if return_code != 0:
+            self.failures.append(bench2run)
 
         return return_code
 
@@ -140,8 +152,7 @@ class HepBenchmarkSuite:
         self._check_for_workload_errors()
 
     def _compile_benchmark_results(self):
-        extractor = Extractor(self._config)
-        self._result = utils.prepare_metadata(self._config_full, self._extra, extractor)
+        self._result.update({'_timestamp_end': self._extra['end_time']})  # Update metadata: _timestamp_end [BMK-1464]
         self._result.update({'plugins': self.plugin_runner.get_results()})
         self._result.update({'profiles': {}})
 
