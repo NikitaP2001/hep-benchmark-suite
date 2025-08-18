@@ -6,7 +6,7 @@ Each entry includes a reference to the related Jira ticket or issue number (e.g.
 
 ---
 
-## [v3.1] – Unreleased
+## [v3.1] – Released 14 Aug 2025
 
 ### Added
 - **Suite:** [BMK-1685] Adapted run script to HEPScore v2.0 logic
