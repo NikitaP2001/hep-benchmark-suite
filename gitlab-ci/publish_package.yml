@@ -6,12 +6,52 @@ update_release_info:
   variables: !reference [.sshpass, variables]
   before_script: !reference [.sshpass, before_script]
   script:
-    - >
-      curl -X POST "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/releases"
-      --header "PRIVATE-TOKEN: ${CI_API_TOKEN}"
-      --header "Content-Type: application/json"
-      --data "{\"tag_name\": \"${CI_COMMIT_TAG}\", \"name\": \"${CI_COMMIT_TAG}\", \"description\": \"${CI_COMMIT_TAG_MESSAGE:-No release notes.}\", \"assets\": { \"links\": [{ \"name\": \"HEP Benchmark Suite Python3 wheels\", \"url\": \"${CI_WEB_RELEASES}/${CI_COMMIT_TAG}\", \"link_type\":\"other\" }] }}"
-      --fail --output "/dev/null" --silent --show-error --write-out "HTTP response: ${http_code:-OK}\n\n"
+    # Build JSON payload safely
+    - |
+      REQUEST_JSON=$(cat <<'JSON'
+      {
+        "tag_name": "__TAG__",
+        "name": "__TAG__",
+        "description": "__DESC__",
+        "assets": {
+          "links": [{
+            "name": "HEP Benchmark Suite Python3 wheels",
+            "url": "__URL__",
+            "link_type": "other"
+          }]
+        }
+      }
+      JSON
+      )
+      REQUEST_JSON=${REQUEST_JSON//__TAG__/${CI_COMMIT_TAG:-no_tag}}
+      REQUEST_JSON=${REQUEST_JSON//__DESC__/${CI_COMMIT_TAG_MESSAGE:-No release notes.}}
+      REQUEST_JSON=${REQUEST_JSON//__URL__/${CI_WEB_RELEASES}/${CI_COMMIT_TAG:-no_tag}}
+      printf '%s\n' "$REQUEST_JSON" > request.json
+      cat request.json
+    - |
+        echo curl -X POST "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/releases" \
+        --header "PRIVATE-TOKEN: ${CI_API_TOKEN}" \
+        --header "Content-Type: application/json" \
+        --data @request.json \
+        --fail --silent --show-error \
+        --output "release-response.json" \
+        --write-out "HTTP response: %{http_code}\nResponse saved to: release-response.json\n"
+    - |
+      curl -X POST "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/releases" \
+        --header "PRIVATE-TOKEN: ${CI_API_TOKEN}" \
+        --header "Content-Type: application/json" \
+        --data @request.json \
+        --fail --silent --show-error \
+        --output "release-response.json" \
+        --write-out "HTTP response: %{http_code}\nResponse saved to: release-response.json\n"
+
     - sshpass -e ssh cpubmk@lxplus.cern.ch "echo ${CI_COMMIT_TAG} > ${CI_EOS_RELEASES}/latest"
   rules:
     - if: $CI_COMMIT_TAG =~ $PEP440_VERSION_REGEX && $CI_COMMIT_TAG !~ /.*rc[0-9].*/
+  artifacts:
+    paths:
+      - request.json
+      - release-response.json
+    when: always
+    expose_as: "Release API Response"  # Creates a direct download link in the UI
+    
