@@ -659,7 +659,7 @@ install_suite_from_wheels() {
         curl_output=$(curl -s "${wheels_url}"  | grep -oE "hep-benchmark-suite-wheels-${SUITE_VERSION}-${PY_VERSION}-none-linux_[0-9]{1,}_[0-9]{1,}_${ARCH}.tar" | uniq | grep -oE "none-linux_[0-9]{1,}_[0-9]{1,}" | grep -oE "[0-9]{1,}_[0-9]{1,}" )
         exit_status=$?
         if [ $exit_status -ne 0 ]; then
-            echo  echo -e "${ORANGE}Could not reach ${wheels_url} to check for available wheels.${NC}"
+            echo -e "${ORANGE}Could not reach ${wheels_url} to check for available wheels.${NC}"
         fi
         # split string of versions into array of version
         mapfile -t glibc_releases <<< "${curl_output}"

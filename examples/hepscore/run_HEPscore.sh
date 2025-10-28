@@ -275,6 +275,13 @@ create_config_file(){
     SUITE_PLUGINS_CONFIG=""
     create_plugin_configuration
 
+    # Set HEPSCORE configuration based on flags
+    if [[ "$n_flag_set" == true ]]; then
+        HEPSCORE_CONFIG="builtin://hepscore-ncores"
+    else
+        HEPSCORE_CONFIG="default"
+    fi
+
     cat > "$SUITE_CONFIG_FILE" <<EOF2
 activemq:
   server: $SERVER
@@ -307,7 +314,7 @@ global:
 
 hepscore:
   version: $HEPSCORE_VERSION
-  config: default
+  config: $HEPSCORE_CONFIG
   # list of configurations valid only for 
   # hepscore v2.0 (here as documentation)
   #config:  builtin://hepscore-default                                                                                                                                                                                                              
@@ -631,7 +638,7 @@ install_suite_from_wheels() {
         curl_output=$(curl -s "${wheels_url}"  | grep -oE "hep-benchmark-suite-wheels-${SUITE_VERSION}-${PY_VERSION}-none-linux_[0-9]{1,}_[0-9]{1,}_${ARCH}.tar" | uniq | grep -oE "none-linux_[0-9]{1,}_[0-9]{1,}" | grep -oE "[0-9]{1,}_[0-9]{1,}" )
         exit_status=$?
         if [ $exit_status -ne 0 ]; then
-            echo  echo -e "${ORANGE}Could not reach ${wheels_url} to check for available wheels.${NC}"
+            echo -e "${ORANGE}Could not reach ${wheels_url} to check for available wheels.${NC}"
         fi
         # split string of versions into array of version
         mapfile -t glibc_releases <<< "${curl_output}"
