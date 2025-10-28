@@ -2,6 +2,24 @@
 
 Examples for running HEP-Benchmark-Suite in different configurations. Details are in the main [README.md](../README.md#examples)
 
+## HEPscore Examples
+
+The main HEPscore example script (`run_HEPscore.sh`) provides comprehensive functionality including:
+
+- **Plugin support** - Real-time system monitoring with configurable metrics
+- **Threadscan** - Running benchmark on increasing number of cores
+- **Config file support** - Load arguments from configuration files
+- **HEPSCORE v2.0 support** - Advanced features like custom core counts
+- **Enhanced error handling** - Better validation and user feedback
+
+### Key Features
+
+- **Plugin keys**: `f` (CPU frequency), `l` (load), `m` (memory), `s` (swap), `p` (power), `g` (GPU power), `u` (GPU usage)
+- **Threadscan mode**: `-t` flag runs benchmarks with 4, 25%, 50%, 75%, and 100% of available cores (requires `-x v2.0`)
+- **Custom number of cores**: `-n` flag limits execution to specified number of cores (requires `-x v2.0`)
+- **Config files**: `--config` flag loads arguments from external files
+- **Version support**: HEPSCORE v1.5 and v2.0 with automatic version validation (`-x v2.0`, default `v1.5`)
+
 ## Considerations on HPC/Cloud
 
 ### Avoiding redundant image pulls

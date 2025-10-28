@@ -107,7 +107,8 @@ This is a short list of configuration examples to run the suite.
 For an in depth understanding of the installation and configuration options refer to the dedicated [section](#installation)
 
 1. HEPscore example runscripts:
-   - [HEPscore default configuration](examples/hepscore/run_HEPscore.sh)
+   - [HEPscore default configuration](examples/hepscore/run_HEPscore.sh) - Full-featured script with plugin support, thread scan, and config file support
+   - [HEPscore configurable ncores](examples/hepscore/run_HEPscore_configurable_ncores.sh) - Legacy script for custom core configurations
    - [Run HEPscore custom configuration](examples/hepscore/run_HEPscore-slim_on_grid.sh)
    - [Run HEPscore default configuration on HPC via SLURM](examples/hepscore/run_HEPscore_on_HPC_slurm.sh)
 2. HEP SPEC example runscripts:
@@ -209,6 +210,34 @@ Points of attention:
 The suite ships with a [hardware metadata plugin](hepbenchmarksuite/plugins/extractor.py) which is responsible to collect system hardware and software information. This data is then compiled and reported in the results json file.
 
 This plugin relies on system tools such as: `lscpu`, `lshw`, `dmidecode`. Some of these tools require escalated privileges for a complete output. Please take this into consideration if some outputs are empty in the final json report.
+
+### System monitoring plugins
+
+The suite supports real-time system monitoring through configurable plugins that collect metrics during benchmark execution. Available metrics include:
+
+- **CPU frequency** - CPU frequency monitoring
+- **System load** - One-minute load average
+- **Memory usage** - RAM and swap memory utilization
+- **Power consumption** - CPU and GPU power monitoring
+- **GPU metrics** - GPU power and utilization (when available)
+
+**Note**: Thread scanning (`-t`) and limiting number of cores (`-n`) require HEPSCORE version >= 2.0, which must be specified using the `-x` flag.
+
+These plugins can be easily enabled using the `--plugins` (or `-b`) option in the HEPscore example scripts:
+
+```bash
+# Enable default monitoring (CPU frequency, load, memory, swap, power)
+./run_HEPscore.sh -s mysite
+
+# Enable all available plugins including GPU monitoring
+./run_HEPscore.sh -s mysite -b all
+
+# Enable specific plugins
+./run_HEPscore.sh -s mysite -b f,l,m,p  # CPU frequency, load, memory, power
+
+# Disable all plugins
+./run_HEPscore.sh -s mysite -b none
+```
 
 Read [Plugins README.md](https://gitlab.cern.ch/hep-benchmarks/hep-benchmark-suite/-/tree/master/hepbenchmarksuite/plugins?ref_type=heads) for more information about the HEP Benchmark Suite Plugins.
 
@@ -351,6 +380,24 @@ optional arguments:
 
     ```sh
     bmkrun -c <alternate config>  -b hs06 spec2017
+    ```
+
+- Run HEPscore with thread scaling analysis (requires HEPSCORE >= v2.0)
+
+    ```sh
+    ./run_HEPscore.sh -s mysite -t -x v2.0  # Run with 4, 25%, 50%, 75%, 100% of available cores
+    ```
+
+- Run HEPscore with custom core count (requires HEPSCORE >= v2.0)
+
+    ```sh
+    ./run_HEPscore.sh -s mysite -n 16 -x v2.0  # Use 16 cores instead of all available
+    ```
+
+- Run HEPscore with configuration file
+
+    ```sh
+    ./run_HEPscore.sh --config myconfig.args -s mysite
     ```
 
 - Parallel running (HPC, Cloud, etc)
