@@ -5,6 +5,29 @@ Plugins provide the means of adding functionality that runs independently of the
 Typically, it allows collecting metrics that are otherwise not collected by the suite, such as load of the machine, power consumption or memory usage.
 The plugins are inherently designed to run concurrently; thus, not interfering with the benchmarking process.
 
+## Quick Start
+
+**By default plugins are available, no additional action is required (see Default enabled plugins below).** The easiest way to enable **desired** plugins is through the `--plugins` (or `-b`) command-line option in the HEPscore example scripts. This option accepts a comma-separated list of plugin keys:
+
+- `f` - CPU frequency
+- `l` - System load  
+- `m` - Memory usage
+- `s` - Memory swap
+- `p` - Power consumption
+- `g` - GPU power consumption
+- `u` - GPU usage
+
+**Default enabled plugins**: `f,l,m,s,p`  
+**Disable all plugins**: `-b none`  
+**Requires suite version >= 3.0**
+
+Example usage:
+```bash
+./run_HEPscore.sh -s mysite -b f,l,m,p  # Enable CPU frequency, load, memory, and power
+./run_HEPscore.sh -s mysite -b all      # Enable all available plugins
+./run_HEPscore.sh -s mysite -b none     # Disable all plugins
+```
+
 ## Phases
 Plugins are executed by the suite in three major phases:
 1. Before benchmarking starts (pre) - useful for collecting metrics when the system is idle.
@@ -43,7 +66,7 @@ plugins:
             cpu-frequency:
                 command: cpupower -c all frequency-info -f | grep 'current CPU frequency:' | grep -o '[0-9]\{7,\}' | awk '{s+=\$1; c++} END {print (s/c)/1000}'
                 regex: '(?P<value>\d+.\d+).*'
-                unit: MHz
+                unit: 'MHz'
                 interval_mins: 1
 ```
 
@@ -111,21 +134,41 @@ plugins:
             cpu-frequency:
                 command: cpupower -c all frequency-info -f | grep 'current CPU frequency:' | grep -o '[0-9]\{7,\}' | awk '{s+=\$1; c++} END {print (s/c)/1000}'
                 regex: '(?P<value>\d+.\d+).*'
-                unit: MHz
+                unit: 'MHz'
                 interval_mins: 1
-                statistics: default
-            power-consumption:
-                command: ipmitool sdr elist
-                regex: 'PS \d Output.* (?P<value>\d+) Watts'
-                unit: W
+            load:
+                command: 'uptime'
+                regex: 'load average: (?P<value>\d+.\d+),'
+                unit: ''
                 interval_mins: 1
-                aggregation: sum
-                statistics: min,mean,max
             used-memory:
-                command: free -m
+                command: 'free -m'
                 regex: 'Mem: *(\d+) *(?P<value>\d+).*'
-                unit: MiB
+                unit: 'MiB'
                 interval_mins: 1
+            used-swap-memory:
+                command: 'free -m'
+                regex: 'Swap: *\d+ *(?P<value>\d+).*'
+                unit: 'MiB'
+                interval_mins: 1
+            power-consumption:
+                command: 'ipmitool dcmi power reading'
+                description: 'Retrieves power consumption of the system. Requires elevated privileges.'
+                regex: 'Instantaneous power reading:\s*(?P<value>\d+) Watts'
+                unit: 'W'
+                interval_mins: 1
+            gpu-power-consumption:
+                command: 'nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits -i 0'
+                description: 'Retrieves gpu power consumption.'
+                regex: '(?P<value>\d+(.\d+)?).*'
+                unit: 'W'
+                interval_mins: 0.1
+            gpu-usage:
+                command: 'nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i 0'
+                description: 'Retrieves gpu usage.'
+                regex: '(?P<value>\d+(.\d+)?).*'
+                unit: ''
+                interval_mins: 0.1
 ```
 Each metric starts with its name, which can be arbitrary, but will be included in the final report.
 The following parameters must be specified for each metric: 
@@ -152,24 +195,30 @@ corresponds to the produced output.
 
 ### Creating new plugins based on bash commands
 
-If the new metric can be obtained via a bash command, you can easily integrate a new plugin by defining it in the YAML configuration file. For instance, the following example demonstrates how the `gpu-power-consumption plugin` was added:
+If the new metric can be obtained via a bash command, you can easily integrate a new plugin by defining it in the YAML configuration file. For instance, the following example demonstrates how the `gpu-power-consumption` and `gpu-usage` plugins were added:
 
 ```yaml
 plugins:
     CommandExecutor:
         metrics:
             power-consumption:
-                command: ipmitool sdr elist
-                regex: 'PS \d Output.* (?P<value>\d+) Watts'
-                unit: W
-                interval_mins: 1
-                aggregation: sum
-                statistics: min,mean,max
-            gpu-power-consumption:
-                command: nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits -i 0
-                regex: '(?P<value>\d+(.\d+)?).*'
-                interval_mins: 0.1
+                command: 'ipmitool dcmi power reading'
+                description: 'Retrieves power consumption of the system. Requires elevated privileges.'
+                regex: 'Instantaneous power reading:\s*(?P<value>\d+) Watts'
                 unit: 'W'
+                interval_mins: 1
+            gpu-power-consumption:
+                command: 'nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits -i 0'
+                description: 'Retrieves gpu power consumption.'
+                regex: '(?P<value>\d+(.\d+)?).*'
+                unit: 'W'
+                interval_mins: 0.1
+            gpu-usage:
+                command: 'nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i 0'
+                description: 'Retrieves gpu usage.'
+                regex: '(?P<value>\d+(.\d+)?).*'
+                unit: ''
+                interval_mins: 0.1
 ```
 
 ### Results
