@@ -1,5 +1,6 @@
 import ctypes
 import os
+import re
 import time
 from typing import Optional
 
@@ -20,23 +21,42 @@ class _EnergyReader:
 class _PowercapReader(_EnergyReader):
     _BASE_DIR = "/sys/class/powercap"
     _PREFIX = "intel-rapl:"
+    _TOP_LEVEL_RE = re.compile(r"^intel-rapl:\d+$")
 
     def __init__(self, debug: bool = False):
         self.debug = debug
+        self.selected_domains = []
         self.energy_paths = self._find_energy_paths()
         self._is_supported = self._test_read()
+
+    def _read_zone_name(self, dir_path: str) -> str:
+        name_path = os.path.join(dir_path, "name")
+        try:
+            with open(name_path, "r", encoding="utf-8") as handle:
+                return handle.read().strip()
+        except OSError:
+            return ""
 
     def _find_energy_paths(self):
         if not os.path.isdir(self._BASE_DIR):
             return []
-        paths = []
+        top_level = []
         for entry in os.listdir(self._BASE_DIR):
-            if not entry.startswith(self._PREFIX):
+            if not self._TOP_LEVEL_RE.match(entry):
                 continue
             dir_path = os.path.join(self._BASE_DIR, entry)
+            if not os.path.isdir(dir_path):
+                continue
+            zone_name = self._read_zone_name(dir_path)
             energy_path = os.path.join(dir_path, "energy_uj")
             if os.path.isfile(energy_path):
-                paths.append(energy_path)
+                top_level.append((zone_name, energy_path))
+
+        # Prefer package domains to avoid overlapping counters like core/uncore/psys.
+        package_only = [item for item in top_level if item[0].startswith("package-")]
+        selected = package_only if package_only else top_level
+        self.selected_domains = [name for name, _ in selected]
+        paths = [path for _, path in selected]
         return paths
 
     def _test_read(self) -> bool:
@@ -236,6 +256,11 @@ class _EnergySelector:
             return None
         return self.reader.read_energy_j()
 
+    def selected_domains(self):
+        if not self.reader or not hasattr(self.reader, "selected_domains"):
+            return []
+        return list(self.reader.selected_domains)
+
     def close(self) -> None:
         if self.reader:
             self.reader.close()
@@ -250,6 +275,7 @@ class RaplPowerPlugin(TimeseriesCollectorPlugin):
         self.selector = None
         self.selected_method = None
         self.status = "init"
+        self.domains = []
         self.last_time = None
         self.last_energy = None
 
@@ -260,6 +286,7 @@ class RaplPowerPlugin(TimeseriesCollectorPlugin):
             self.status = "unsupported"
             return
         self.selected_method = self.selector.method
+        self.domains = self.selector.selected_domains()
         self.last_time = time.time()
         self.last_energy = self.selector.read_energy_j()
         self.status = "ok" if self.last_energy is not None else "no_data"
@@ -296,4 +323,5 @@ class RaplPowerPlugin(TimeseriesCollectorPlugin):
         report = super().on_end()
         report["method"] = self.selected_method
         report["status"] = self.status
+        report["domains"] = self.domains
         return report
